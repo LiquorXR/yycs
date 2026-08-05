@@ -5,3 +5,6 @@ Desktop.ini
 .vscode/
 .idea/
 .opencode
+
+# Rules
+AGENTS.md
