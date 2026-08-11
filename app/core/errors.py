@@ -36,19 +36,19 @@ class ErrorCode:
 
 
 _HTTP_STATUS_MAP: dict[int, int] = {
-    ErrorCode.PARAM_VALIDATION: 422,
+    ErrorCode.PARAM_VALIDATION: 400,
     ErrorCode.UNAUTHENTICATED: 401,
     ErrorCode.FORBIDDEN: 403,
     ErrorCode.NOT_FOUND: 404,
     ErrorCode.CONFLICT: 409,
     ErrorCode.RATE_LIMITED: 429,
     ErrorCode.AMOUNT_INVALID: 400,
-    ErrorCode.ORDER_ALREADY_PAID: 400,
+    ErrorCode.ORDER_ALREADY_PAID: 409,
     ErrorCode.ORDER_STATUS_INVALID: 409,
     ErrorCode.PAYMENT_RAISE_FAILED: 502,
     ErrorCode.CALLBACK_SIGN_FAILED: 400,
     ErrorCode.PRODUCT_NOT_FOUND: 404,
-    ErrorCode.DIVINATION_INFO_INVALID: 400,
+    ErrorCode.DIVINATION_INFO_INVALID: 422,
     ErrorCode.REPORT_NOT_UNLOCKED: 403,
     ErrorCode.INTERNAL_ERROR: 500,
 }
