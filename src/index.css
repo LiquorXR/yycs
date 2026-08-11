@@ -1,13 +1,118 @@
 @import "tailwindcss";
 
-:root {
-  color-scheme: light dark;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* ------------------------------------------------------------------ *
+ * 振凡命理 · 国潮红金 设计令牌
+ * 主红 #C8102E / 深红 #8E0E2E / 古金 #C9A063 / 亮金 #D4AF37
+ * 浅金 #F5E6C8 / 宣纸底 #FBF6EC / 墨色 #2B2B2B
+ * ------------------------------------------------------------------ */
+
+@theme {
+  /* 色彩 */
+  --color-cinnabar: #c8102e; /* 主红：按钮、强调、渐变主色 */
+  --color-cinnabar-dark: #a10d26; /* 主红 hover / active */
+  --color-crimson: #8e0e2e; /* 深红：渐变底、深色区文字 */
+  --color-gold: #c9a063; /* 古金：标题渐变、描边、装饰 */
+  --color-gold-dark: #a97f3e; /* 古金加深（浅底上文字用） */
+  --color-gold-bright: #d4af37; /* 亮金：标题渐变亮端 */
+  --color-gold-pale: #f5e6c8; /* 浅金：卡片底、分隔 */
+  --color-paper: #fbf6ec; /* 宣纸底：页面主底色 */
+  --color-ink: #2b2b2b; /* 墨色：正文 */
+
+  /* 字体 */
+  --font-kai: "STKaiti", "KaiTi", "楷体", "Songti SC", "SimSun", serif;
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  /* 阴影 */
+  --shadow-card: 0 4px 16px rgb(200 16 46 / 0.06);
+  --shadow-gold: 0 6px 18px rgb(201 160 99 / 0.35);
+  --shadow-cinnabar: 0 8px 20px rgb(200 16 46 / 0.35);
+
+  /* 动效（克制，兼容快手 WebView） */
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-fade-up: fade-up 0.5s ease-out both;
+
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 }
 
-body {
-  margin: 0;
+@layer base {
+  :root {
+    color-scheme: light;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    overscroll-behavior-y: none;
+  }
+
+  ::selection {
+    background-color: rgb(200 16 46 / 0.18);
+    color: var(--color-crimson);
+  }
+
+  input,
+  select,
+  button {
+    font-family: inherit;
+  }
+}
+
+/* 顶部 / 底部安全区工具类（刘海屏 + 底部手势条） */
+@utility pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* 金色渐变文字（标题用） */
+@utility text-gold-grad {
+  background-image: linear-gradient(180deg, #e3c072 0%, var(--color-gold-bright) 38%, var(--color-gold) 72%, #a97f3e 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* 隐藏滚动条（横向滚动的卡片行） */
+@utility no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
