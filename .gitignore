@@ -6,5 +6,10 @@ Desktop.ini
 .idea/
 .opencode
 
+# Python
+.venv/
+__pycache__/
+*.pyc
+
 # Rules
 AGENTS.md
