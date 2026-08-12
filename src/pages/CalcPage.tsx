@@ -1,20 +1,35 @@
-import { useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Select, type SelectOption } from '@/components/ui/select'
-import { Huiwen } from '@/components/decor/Huiwen'
-import PageHeader from '@/components/PageHeader'
-import { createProfile, newIdempotencyKey, type CreateProfileResult } from '@/api/profiles'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { createProfile, newIdempotencyKey } from '@/api/profiles'
 
-const HOURS: SelectOption[] = [
-  { value: '', label: '不详（选填）' },
-  ...['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'].map(
-    (h) => ({ value: h, label: `${h}时` }),
-  ),
+const HOURS = [
+  { value: '子', label: '子时 (23:00 - 00:59)' },
+  { value: '丑', label: '丑时 (01:00 - 02:59)' },
+  { value: '寅', label: '寅时 (03:00 - 04:59)' },
+  { value: '卯', label: '卯时 (05:00 - 06:59)' },
+  { value: '辰', label: '辰时 (07:00 - 08:59)' },
+  { value: '巳', label: '巳时 (09:00 - 10:59)' },
+  { value: '午', label: '午时 (11:00 - 12:59)' },
+  { value: '未', label: '未时 (13:00 - 14:59)' },
+  { value: '申', label: '申时 (15:00 - 16:59)' },
+  { value: '酉', label: '酉时 (17:00 - 18:59)' },
+  { value: '戌', label: '戌时 (19:00 - 20:59)' },
+  { value: '亥', label: '亥时 (21:00 - 22:59)' },
+  { value: '', label: '吉时 (时辰不详 · 系统推算)' },
 ]
+
+const FOCUS_TAGS = ['八字五行匹配', '正缘结婚年限', '婚后财运旺衰', '性格相克化解', '子女缘分推演']
+const DEFAULT_FOCUS = ['八字五行匹配', '正缘结婚年限', '婚后财运旺衰']
+
+const LOADING_STEPS = [
+  '排盘天干地支四柱与纳音五行...',
+  '推演二人八字喜用相生相克...',
+  '计算正缘结婚转折年份与婚后财运...',
+  '生成月老密签与化解锦囊...',
+]
+
+/** 预览结果持久化：提交成功后跳 /order，返回本页时仍展示预览卡 */
+const RESULT_KEY = 'calc-last-result'
 
 interface PersonForm {
   name: string
@@ -22,10 +37,18 @@ interface PersonForm {
   birthHour: string
 }
 
+interface StoredResult {
+  profileId: string
+  title: string
+  lockedNote?: string
+}
+
 type PersonKey = 'A' | 'B'
 type FieldErrors = Partial<Record<'nameA' | 'birthA' | 'nameB' | 'birthB', string>>
 
 const EMPTY: PersonForm = { name: '', birth: '', birthHour: '' }
+
+const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
 
 function validateName(name: string): string | undefined {
   const trimmed = name.trim()
@@ -48,85 +71,269 @@ function validateBirth(birth: string): string | undefined {
   return undefined
 }
 
+/* ---------------- 全屏推演遮罩（03-loading） ---------------- */
+
+function CalcLoading({
+  maleName,
+  femaleName,
+  progress,
+}: {
+  maleName: string
+  femaleName: string
+  progress: number
+}) {
+  const doneCount = progress >= 100 ? 4 : Math.floor(progress / 25)
+
+  return (
+    <div
+      className="fx-paper fx-cloud fade-in fixed inset-0 z-50 flex flex-col items-center overflow-y-auto bg-[radial-gradient(circle_at_50%_20%,#2b110a_0%,#170b08_55%,#0d0604_100%)] px-5 py-8 text-center"
+      role="status"
+      aria-live="polite"
+    >
+      <div>
+        <h2 className="mb-1.5 font-kai text-[22px] tracking-[0.08em] text-gold-light">
+          天机交感 · 姻缘推演
+        </h2>
+        <p className="text-[13px] text-muted">
+          正在排盘计算双方八字五行生克与宿世姻缘
+        </p>
+      </div>
+
+      {/* 双人命盘两极 + 红线 */}
+      <div className="relative my-5 flex w-full items-center justify-around">
+        <div className="relative z-10 flex flex-col items-center gap-1.5">
+          <span className="grid size-[58px] animate-pulse-glow-slow place-items-center rounded-full border-2 border-gold bg-[radial-gradient(circle,#361912_0%,#1c0b08_100%)] font-kai text-lg text-gold-light shadow-[0_0_16px_rgba(226,180,95,0.4)]">
+            乾
+          </span>
+          <span className="max-w-[120px] truncate text-[13px] font-medium text-fg">
+            {maleName}
+          </span>
+        </div>
+
+        <div
+          aria-hidden="true"
+          className="absolute top-[29px] right-[20%] left-[20%] z-0 h-0.5 bg-gradient-to-r from-accent via-pink to-accent shadow-[0_0_10px_var(--color-accent)]"
+        />
+        <span className="absolute top-1/2 left-1/2 z-10 grid size-6 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-gold-light bg-accent text-[11px] text-white shadow-[0_0_12px_var(--color-accent)]">
+          缘
+        </span>
+
+        <div className="relative z-10 flex flex-col items-center gap-1.5">
+          <span className="grid size-[58px] animate-pulse-glow-slow place-items-center rounded-full border-2 border-gold bg-[radial-gradient(circle,#361912_0%,#1c0b08_100%)] font-kai text-lg text-gold-light shadow-[0_0_16px_rgba(226,180,95,0.4)]">
+            坤
+          </span>
+          <span className="max-w-[120px] truncate text-[13px] font-medium text-fg">
+            {femaleName}
+          </span>
+        </div>
+      </div>
+
+      {/* 太极罗盘 */}
+      <div className="relative mx-auto my-2.5 flex size-[180px] items-center justify-center">
+        <div
+          aria-hidden="true"
+          className="absolute size-[180px] animate-compass-fast rounded-full border-2 border-dashed border-border-gold"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute size-[130px] animate-reverse-fast rounded-full border-[1.5px] border-accent shadow-[0_0_15px_rgba(217,56,41,0.4)]"
+        />
+        <div
+          className="relative size-[70px] animate-taiji rounded-full border-2 border-gold shadow-[0_0_20px_rgba(226,180,95,0.5)]"
+          style={{ background: 'conic-gradient(#f8ebdb 0deg 180deg, #100806 180deg 360deg)' }}
+        >
+          <span
+            aria-hidden="true"
+            className="absolute top-0 left-[25%] size-[35px] rounded-full bg-[#f8ebdb] shadow-[inset_0_0_0_6px_#100806]"
+          />
+          <span
+            aria-hidden="true"
+            className="absolute bottom-0 left-[25%] size-[35px] rounded-full bg-[#100806] shadow-[inset_0_0_0_6px_#f8ebdb]"
+          />
+        </div>
+      </div>
+
+      {/* 实时演算状态日志 */}
+      <div className="w-full rounded-[16px] border border-border-gold bg-surface/85 p-4 text-left">
+        {LOADING_STEPS.map((text, i) => {
+          const done = i < doneCount
+          const active = !done && i === doneCount
+          return (
+            <div
+              key={text}
+              className={`mb-2 flex items-center gap-2.5 text-[13px] transition-colors duration-300 ${
+                done
+                  ? 'text-jade'
+                  : active
+                    ? 'font-medium text-gold-light'
+                    : 'text-muted'
+              }`}
+            >
+              <span
+                aria-hidden="true"
+                className="grid size-4 shrink-0 place-items-center rounded-full border text-[10px]"
+                style={{ borderColor: 'currentColor' }}
+              >
+                {done ? '✓' : i + 1}
+              </span>
+              <span>{text}</span>
+            </div>
+          )
+        })}
+
+        <div className="mt-2.5">
+          <div
+            className="h-1.5 overflow-hidden rounded-full border border-border bg-[#4a271c]/60"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={progress}
+          >
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-accent to-gold shadow-[0_0_10px_var(--color-gold)] transition-[width] duration-100"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <span
+            className="mt-1.5 block text-right font-mono text-xs text-gold"
+            aria-live="polite"
+          >
+            {progress}%
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ---------------- 个人信息卡片（乾造 / 坤造） ---------------- */
+
 function PersonSection({
-  label,
-  person,
+  gender,
+  name,
+  birth,
+  birthHour,
   calendar,
+  onToggleCalendar,
   onChange,
   nameError,
   birthError,
 }: {
-  label: string
-  person: PersonForm
+  gender: 'male' | 'female'
+  name: string
+  birth: string
+  birthHour: string
   calendar: '公历' | '农历'
+  onToggleCalendar: (cal: '公历' | '农历') => void
   onChange: (patch: Partial<PersonForm>) => void
   nameError?: string
   birthError?: string
 }) {
+  const isMale = gender === 'male'
   return (
-    <Card className="p-5">
-      <div className="flex items-center gap-2">
-        <span className="flex size-7 items-center justify-center rounded-md border-2 border-cinnabar/70 bg-cinnabar/5 font-kai text-sm font-bold text-cinnabar">
-          {label}
-        </span>
-        <h2 className="font-serif text-lg font-bold text-ink">
-          {label === '甲' ? '甲方' : '乙方'}生辰
-        </h2>
+    <section className="rounded-[16px] border border-border-gold bg-surface-card p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <div
+          className={`font-kai text-[15px] font-bold ${
+            isMale ? 'text-blue' : 'text-pink'
+          }`}
+        >
+          {isMale ? '乾造（男方信息）' : '坤造（女方信息）'}
+        </div>
+        <div
+          className="flex rounded-full border border-border bg-[#100806]/80 p-0.5 text-[11px]"
+          role="group"
+          aria-label="历法切换"
+        >
+          {(['公历', '农历'] as const).map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => onToggleCalendar(c)}
+              aria-pressed={calendar === c}
+              className={`cal-opt ${calendar === c ? 'active' : ''}`}
+            >
+              {c === '公历' ? '公历(阳历)' : '农历(阴历)'}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="mt-4 space-y-4">
+      <div className="space-y-3">
         <div>
-          <Label htmlFor={`name-${label}`}>
-            姓名{calendar === '农历' ? '（可填农历名）' : ''}
-          </Label>
-          <Input
-            id={`name-${label}`}
-            value={person.name}
+          <label
+            htmlFor={`${gender}-name`}
+            className="mb-1 block text-xs text-fg-secondary"
+          >
+            {isMale ? '男方姓名/昵称' : '女方姓名/昵称'}
+          </label>
+          <input
+            id={`${gender}-name`}
+            type="text"
+            className="input-guofeng"
+            value={name}
             maxLength={20}
-            placeholder="请输入姓名（2~20 字）"
+            placeholder={`请输入${isMale ? '男方' : '女方'}姓名`}
             aria-invalid={Boolean(nameError)}
             autoComplete="off"
             onChange={(e) => onChange({ name: e.target.value })}
           />
           {nameError ? (
-            <p className="mt-1.5 text-xs text-cinnabar" role="alert">
+            <p className="mt-1.5 text-xs text-accent" role="alert">
               {nameError}
             </p>
           ) : null}
         </div>
 
-        <div>
-          <Label htmlFor={`birth-${label}`}>
-            出生日期{calendar === '农历' ? '（农历）' : ''}
-          </Label>
-          <Input
-            id={`birth-${label}`}
-            type="date"
-            value={person.birth}
-            aria-invalid={Boolean(birthError)}
-            onChange={(e) => onChange({ birth: e.target.value })}
-          />
-          {birthError ? (
-            <p className="mt-1.5 text-xs text-cinnabar" role="alert">
-              {birthError}
-            </p>
-          ) : null}
-        </div>
-
-        <div>
-          <Label htmlFor={`hour-${label}`}>出生时辰</Label>
-          <Select
-            id={`hour-${label}`}
-            options={HOURS}
-            value={person.birthHour}
-            aria-label={`${label === '甲' ? '甲方' : '乙方'}出生时辰`}
-            onChange={(e) => onChange({ birthHour: e.target.value })}
-          />
+        <div className="grid grid-cols-2 gap-2.5">
+          <div>
+            <label
+              htmlFor={`${gender}-date`}
+              className="mb-1 block text-xs text-fg-secondary"
+            >
+              出生日期{calendar === '农历' ? '（农历）' : ''}
+            </label>
+            <input
+              id={`${gender}-date`}
+              type="date"
+              className="input-guofeng"
+              value={birth}
+              aria-invalid={Boolean(birthError)}
+              onChange={(e) => onChange({ birth: e.target.value })}
+            />
+            {birthError ? (
+              <p className="mt-1.5 text-xs text-accent" role="alert">
+                {birthError}
+              </p>
+            ) : null}
+          </div>
+          <div>
+            <label
+              htmlFor={`${gender}-hour`}
+              className="mb-1 block text-xs text-fg-secondary"
+            >
+              出生时辰
+            </label>
+            <select
+              id={`${gender}-hour`}
+              className="input-guofeng"
+              value={birthHour}
+              onChange={(e) => onChange({ birthHour: e.target.value })}
+            >
+              {HOURS.map((h) => (
+                <option key={h.value || 'unknown'} value={h.value}>
+                  {h.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
-    </Card>
+    </section>
   )
 }
+
+/* ---------------- 预览报告（返回本页时展示） ---------------- */
 
 function LockIcon({ className }: { className?: string }) {
   return (
@@ -135,7 +342,7 @@ function LockIcon({ className }: { className?: string }) {
       className={className}
       fill="none"
       stroke="currentColor"
-      strokeWidth="2"
+      strokeWidth="2.2"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
@@ -148,97 +355,124 @@ function LockIcon({ className }: { className?: string }) {
 
 const MASK_LINES = [0.8, 0.66, 0.92, 0.6, 0.85, 0.58, 0.78, 0.72]
 
-function PreviewReport({ result }: { result: CreateProfileResult }) {
-  const { profileId, previewReport } = result
+function PreviewReport({ result }: { result: StoredResult }) {
   return (
-    <section className="mt-10 scroll-mt-20" aria-label="预览报告">
-      <div className="flex items-center gap-2">
-        <Huiwen className="h-2 w-10 text-ink/30" />
-        <h2 className="font-serif text-xl font-bold text-ink">测算结果</h2>
-        <Huiwen className="h-2 w-10 text-ink/30" />
-      </div>
+    <section className="mt-4" aria-label="预览报告">
+      <div className="overflow-hidden rounded-[16px] border border-border-gold bg-surface-card shadow-card">
+        <div className="border-b border-border bg-gradient-to-b from-[#2a1711]/60 to-transparent px-5 py-4">
+          <p className="text-xs tracking-[0.3em] text-muted">合婚测算 · 预览报告</p>
+          <h3 className="mt-1 font-kai text-lg font-bold text-gold-light">
+            {result.title}
+          </h3>
+          <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-fg-secondary">
+            <div className="flex items-center gap-1.5">
+              契合指数：<span className="font-bold text-gold">★★★★☆</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              五行互补：<span className="font-bold text-gold">4 / 5 项</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              上等婚配：<span className="font-bold text-gold">中等偏上</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              正缘时机：<span className="font-bold text-gold">今明两年</span>
+            </div>
+          </div>
+        </div>
 
-      <Card className="mt-4 overflow-hidden border-ink/10">
-        <CardContent className="p-0">
-          <div className="border-b border-ink/10 bg-paper-deep/50 px-5 py-4">
-            <p className="text-xs tracking-[0.3em] text-ink-faint">
-              合婚测算 · 预览报告
+        {/* 掩码区域 */}
+        <div className="relative px-5 py-6">
+          <div aria-hidden="true" className="space-y-2.5 blur-sm select-none">
+            {MASK_LINES.map((w, i) => (
+              <div
+                key={i}
+                className={`h-2.5 rounded-sm ${
+                  i % 3 === 0 ? 'bg-gold/20' : 'bg-gold/10'
+                }`}
+                style={{ width: `${w * 100}%` }}
+              />
+            ))}
+          </div>
+
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-bg/60 px-6 text-center backdrop-blur-[1px]">
+            <span className="flex size-14 items-center justify-center rounded-full bg-gradient-to-b from-gold to-gold-dark text-[#2b110a] shadow-[0_0_20px_rgba(226,180,95,0.6)]">
+              <LockIcon className="size-7" />
+            </span>
+            <p className="mt-3 font-kai text-base font-bold text-gold-light">
+              {result.lockedNote ?? '完整版需付费解锁'}
             </p>
-            <h3 className="mt-1 font-serif text-lg font-bold text-ink">
-              {previewReport.title}
-            </h3>
-            <div className="mt-3 grid grid-cols-2 gap-2 font-serif text-xs text-ink-soft">
-              <div className="flex items-center gap-1.5">
-                契合指数：
-                <span className="font-bold text-cinnabar">★★★★☆</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                五行互补：<span className="font-bold text-cinnabar">4 / 5 项</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                上等婚配：<span className="font-bold text-cinnabar">中等偏上</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                正缘时机：<span className="font-bold text-cinnabar">今明两年</span>
-              </div>
-            </div>
+            <p className="mt-1 text-xs leading-relaxed text-fg-secondary">
+              解锁后可查看完整合婚报告与
+              <br />
+              专属缘分建议
+            </p>
           </div>
+        </div>
 
-          {/* 掩码区域 */}
-          <div className="relative px-5 py-6">
-            <div aria-hidden="true" className="space-y-2.5 blur-sm select-none">
-              {MASK_LINES.map((w, i) => (
-                <div
-                  key={i}
-                  className={`h-2.5 rounded-sm ${i % 3 === 0 ? 'bg-ink/20' : 'bg-ink/8'}`}
-                  style={{ width: `${w * 100}%` }}
-                />
-              ))}
-            </div>
-
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-paper/55 px-6 text-center backdrop-blur-[1px]">
-              <span className="flex size-14 items-center justify-center rounded-full bg-ink text-paper-light shadow-ink">
-                <LockIcon className="size-7" />
-              </span>
-              <p className="mt-3 font-serif text-base font-bold text-ink">
-                {previewReport.lockedNote ?? '完整版需付费解锁'}
-              </p>
-              <p className="mt-1 font-serif text-xs leading-relaxed text-ink-soft">
-                解锁后可查看完整合婚报告与
-                <br />
-                专属缘分建议
-              </p>
-            </div>
-          </div>
-
-          <p className="border-t border-ink/10 px-5 pt-3 pb-4 text-center font-serif text-xs text-ink-faint">
-            报告编号：{profileId}
-          </p>
-        </CardContent>
-      </Card>
+        <p className="border-t border-border px-5 pt-3 pb-4 text-center text-xs text-muted">
+          报告编号：{result.profileId}
+        </p>
+      </div>
     </section>
   )
 }
 
+/* ---------------- 页面 ---------------- */
+
 function CalcPage() {
+  const navigate = useNavigate()
   const [personA, setPersonA] = useState<PersonForm>(EMPTY)
   const [personB, setPersonB] = useState<PersonForm>(EMPTY)
   const [isLunar, setIsLunar] = useState(false)
+  const [focusTags, setFocusTags] = useState<string[]>(DEFAULT_FOCUS)
   const [errors, setErrors] = useState<FieldErrors>({})
-  const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
-  const [result, setResult] = useState<CreateProfileResult | null>(null)
-  const previewRef = useRef<HTMLDivElement>(null)
+  const [result, setResult] = useState<StoredResult | null>(null)
+  const [showLoading, setShowLoading] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const calendar = isLunar ? '农历' : '公历'
 
+  /* 返回本页时恢复上次测算的预览卡 */
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(RESULT_KEY)
+      if (raw) {
+        const stored = JSON.parse(raw) as StoredResult
+        if (stored?.profileId && stored?.title) setResult(stored)
+      }
+    } catch {
+      /* 忽略损坏数据 */
+    }
+  }, [])
+
+  /* 卸载时清理进度定时器 */
+  useEffect(
+    () => () => {
+      if (progressTimerRef.current) clearInterval(progressTimerRef.current)
+    },
+    [],
+  )
+
   const patch = (person: PersonKey, patchValue: Partial<PersonForm>) => {
-    setErrors((prev) => ({ ...prev, [`name${person}`]: undefined, [`birth${person}`]: undefined }))
+    setErrors((prev) => ({
+      ...prev,
+      [`name${person}`]: undefined,
+      [`birth${person}`]: undefined,
+    }))
     if (person === 'A') setPersonA((p) => ({ ...p, ...patchValue }))
     else setPersonB((p) => ({ ...p, ...patchValue }))
   }
 
+  const toggleFocus = (tag: string) => {
+    setFocusTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
+    )
+  }
+
   const handleSubmit = async () => {
+    if (showLoading) return
     const nextErrors: FieldErrors = {
       nameA: validateName(personA.name),
       birthA: validateBirth(personA.birth),
@@ -251,168 +485,202 @@ function CalcPage() {
       const first = (['nameA', 'birthA', 'nameB', 'birthB'] as const).find(
         (k) => nextErrors[k],
       )
-      const fieldId = { nameA: 'name-甲', birthA: 'birth-甲', nameB: 'name-乙', birthB: 'birth-乙' } as const
+      const fieldId = {
+        nameA: 'male-name',
+        birthA: 'male-date',
+        nameB: 'female-name',
+        birthB: 'female-date',
+      } as const
       if (first) document.getElementById(fieldId[first])?.focus()
       return
     }
 
-    setSubmitting(true)
     setSubmitError(null)
+    setShowLoading(true)
+    setProgress(0)
+
+    const timer = setInterval(() => {
+      setProgress((p) => Math.min(p + 2, 100))
+    }, 50)
+    progressTimerRef.current = timer
+
     try {
-      const res = await createProfile(
-        {
-          nameA: personA.name.trim(),
-          birthA: personA.birth,
-          birthHourA: personA.birthHour || undefined,
-          nameB: personB.name.trim(),
-          birthB: personB.birth,
-          birthHourB: personB.birthHour || undefined,
-          isLunar,
-        },
-        newIdempotencyKey(),
-      )
-      setResult(res)
-      requestAnimationFrame(() => previewRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+      const [res] = await Promise.all([
+        createProfile(
+          {
+            nameA: personA.name.trim(),
+            birthA: personA.birth,
+            birthHourA: personA.birthHour || undefined,
+            nameB: personB.name.trim(),
+            birthB: personB.birth,
+            birthHourB: personB.birthHour || undefined,
+            isLunar,
+          },
+          newIdempotencyKey(),
+        ),
+        delay(2600),
+      ])
+      if (progressTimerRef.current) clearInterval(progressTimerRef.current)
+      setProgress(100)
+      const stored: StoredResult = {
+        profileId: res.profileId,
+        title: res.previewReport.title,
+        lockedNote: res.previewReport.lockedNote,
+      }
+      sessionStorage.setItem(RESULT_KEY, JSON.stringify(stored))
+      setResult(stored)
+      await delay(500)
+      navigate(`/order?profileId=${res.profileId}`)
     } catch (err) {
-      const msg =
-        err instanceof Error && err.message ? err.message : '提交失败，请稍后重试'
-      setSubmitError(msg)
-    } finally {
-      setSubmitting(false)
+      if (progressTimerRef.current) clearInterval(progressTimerRef.current)
+      setShowLoading(false)
+      setSubmitError(
+        err instanceof Error && err.message ? err.message : '提交失败，请稍后重试',
+      )
     }
   }
 
   return (
-    <main className="min-h-screen pb-28 text-ink">
-      <PageHeader title="姻缘测算" backTo="/" />
+    <main className={`fx-paper fx-cloud fade-in min-h-screen ${result ? 'pb-28' : 'pb-6'}`}>
+      {/* 顶部导航 */}
+      <div className="border-b border-border px-5 pt-3 pb-2">
+        <div className="flex items-center justify-between">
+          <Link
+            to="/"
+            aria-label="返回首页"
+            className="flex items-center gap-1 text-[13px] text-muted transition-colors hover:text-gold"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              className="size-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+            <span>返回</span>
+          </Link>
+          <h2 className="font-kai text-[17px] text-gold-light">生辰八字排盘</h2>
+          <span className="seal-mark">八字合婚</span>
+        </div>
+      </div>
 
-      <div className="px-5">
-        {/* 表单头部说明 */}
-        <section className="pt-7 pb-5 text-center">
-          <h1 className="font-serif text-[1.65rem] font-bold text-ink">
-            生辰合婚 · 缘分测算
-          </h1>
-          <p className="mt-2 font-serif text-sm leading-relaxed text-ink-soft">
-            填写双方生辰信息，免费生成专属合婚预览报告
+      <form
+        className="flex flex-col gap-4 px-5 pt-4"
+        onSubmit={(e) => {
+          e.preventDefault()
+          void handleSubmit()
+        }}
+        noValidate
+      >
+        <PersonSection
+          gender="male"
+          name={personA.name}
+          birth={personA.birth}
+          birthHour={personA.birthHour}
+          calendar={calendar}
+          onToggleCalendar={(c) => setIsLunar(c === '农历')}
+          onChange={(p) => patch('A', p)}
+          nameError={errors.nameA}
+          birthError={errors.birthA}
+        />
+
+        <PersonSection
+          gender="female"
+          name={personB.name}
+          birth={personB.birth}
+          birthHour={personB.birthHour}
+          calendar={calendar}
+          onToggleCalendar={(c) => setIsLunar(c === '农历')}
+          onChange={(p) => patch('B', p)}
+          nameError={errors.nameB}
+          birthError={errors.birthB}
+        />
+
+        {/* 核心关注维度 */}
+        <section className="rounded-[16px] border border-border-gold bg-surface-card p-4">
+          <p className="mb-2 text-xs font-medium text-gold-light">
+            核心关注维度 (可多选)
           </p>
-
-          {/* 公历/农历切换 */}
-          <div className="mx-auto mt-5 flex w-fit rounded-full border border-ink/15 bg-paper-deep/60 p-1 shadow-card">
-            {(['公历', '农历'] as const).map((c) => (
+          <div className="flex flex-wrap gap-2">
+            {FOCUS_TAGS.map((tag) => (
               <button
-                key={c}
+                key={tag}
                 type="button"
-                onClick={() => setIsLunar(c === '农历')}
-                aria-pressed={calendar === c}
-                className={`rounded-full px-5 py-1.5 font-serif text-sm transition-all ${
-                  calendar === c
-                    ? 'bg-gradient-to-r from-cinnabar to-cinnabar-dark font-medium text-paper-light shadow-cinnabar'
-                    : 'text-ink-soft'
-                }`}
+                onClick={() => toggleFocus(tag)}
+                aria-pressed={focusTags.includes(tag)}
+                className={`tag-chip ${focusTags.includes(tag) ? 'active' : ''}`}
               >
-                {c}
+                {tag}
               </button>
             ))}
           </div>
         </section>
 
-        <form
-          className="space-y-5"
-          onSubmit={(e) => {
-            e.preventDefault()
-            void handleSubmit()
-          }}
-          noValidate
-        >
-          <PersonSection
-            label="甲"
-            person={personA}
-            calendar={calendar}
-            onChange={(p) => patch('A', p)}
-            nameError={errors.nameA}
-            birthError={errors.birthA}
-          />
-          <PersonSection
-            label="乙"
-            person={personB}
-            calendar={calendar}
-            onChange={(p) => patch('B', p)}
-            nameError={errors.nameB}
-            birthError={errors.birthB}
-          />
-
-          {submitError ? (
-            <p
-              className="rounded-lg border border-cinnabar/25 bg-cinnabar/6 px-4 py-3 font-serif text-sm text-cinnabar"
-              role="alert"
-            >
-              {submitError}
-            </p>
-          ) : null}
-
-          <Button
-            type="submit"
-            size="lg"
-            disabled={submitting}
-            className="w-full rounded-full text-base font-bold"
+        {submitError ? (
+          <p
+            className="rounded-lg border border-accent/25 bg-accent/10 px-4 py-3 text-sm text-accent-hover"
+            role="alert"
           >
-            {submitting ? (
-              <>
-                <svg
-                  className="size-5 animate-spin"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  aria-hidden="true"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-90"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4z"
-                  />
-                </svg>
-                正在测算…
-              </>
-            ) : (
-              '开始免费测算'
-            )}
-          </Button>
-        </form>
+            {submitError}
+          </p>
+        ) : null}
 
-        <div ref={previewRef}>{result ? <PreviewReport result={result} /> : null}</div>
-      </div>
+        <button type="submit" className="btn-guofeng-primary" disabled={showLoading}>
+          <span>天地交泰 · 开启命盘演练</span>
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            aria-hidden="true"
+          >
+            <path d="M5 12h14M12 5l7 7-7 7" />
+          </svg>
+        </button>
+      </form>
 
-      {/* 底部固定 CTA */}
+      {result ? <div className="px-5">
+        <PreviewReport result={result} />
+      </div> : null}
+
+      {/* 底部固定解锁栏（返回本页且有预览结果时） */}
       {result ? (
-        <div className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-ink/10 bg-paper/95 backdrop-blur-md">
+        <div className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-border-gold bg-bg/95 backdrop-blur-md">
           <div className="flex items-center justify-between gap-4 px-5 py-3">
             <div>
-              <p className="font-serif text-xs text-ink-faint">解锁完整版</p>
-              <p className="font-serif text-xl font-bold text-cinnabar">
+              <p className="text-xs text-muted">解锁完整版</p>
+              <p className="font-kai text-xl font-bold text-gold">
                 ¥99
-                <span className="ml-1 font-serif text-xs font-normal text-ink-faint">
+                <span className="ml-1 text-xs font-normal text-muted">
                   一次解锁 · 永久查看
                 </span>
               </p>
             </div>
-            <Link to={`/order?profileId=${result.profileId}`} className="shrink-0">
-              <Button
-                variant="gold"
-                size="lg"
-                className="w-32 rounded-full text-base font-bold"
-              >
-                解锁完整版
-              </Button>
-            </Link>
+            <div className="w-32 shrink-0">
+              <Link to={`/order?profileId=${result.profileId}`} className="block">
+                <button type="button" className="btn-guofeng-primary !min-h-[46px] !text-[15px]">
+                  解锁完整版
+                </button>
+              </Link>
+            </div>
           </div>
         </div>
+      ) : null}
+
+      {/* 全屏推演遮罩 */}
+      {showLoading ? (
+        <CalcLoading
+          maleName={personA.name.trim() || '男方'}
+          femaleName={personB.name.trim() || '女方'}
+          progress={progress}
+        />
       ) : null}
     </main>
   )

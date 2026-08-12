@@ -30,23 +30,23 @@ const STATE_LABEL: Record<string, string> = {
 function NativeQrArea({ codeUrl }: { codeUrl: string }) {
   return (
     <div className="flex flex-col items-center">
-      <div className="relative flex size-52 items-center justify-center rounded-xl border-2 border-dashed border-ink/25 bg-paper-light p-4 shadow-card">
+      <div className="relative flex size-52 items-center justify-center rounded-xl border-2 border-dashed border-border-gold bg-surface-card p-4 shadow-card">
         <svg viewBox="0 0 100 100" className="size-full" aria-hidden="true">
-          <rect x="6" y="6" width="34" height="34" fill="none" stroke="#2b2620" strokeWidth="5" />
-          <rect x="60" y="6" width="34" height="34" fill="none" stroke="#2b2620" strokeWidth="5" />
-          <rect x="6" y="60" width="34" height="34" fill="none" stroke="#2b2620" strokeWidth="5" />
-          <path d="M16 16h14v14H16z M70 16h14v14H70z M16 70h14v14H16z" fill="#2b2620" />
-          <path d="M10 46h10v5H10z M10 60h5v5H10z M20 50h5v10h-5z M34 44h8v4h-8z M38 54h6v6h-6z M52 12h6v4h-6z M58 20h8v8h-8z M52 30h5v6h-5z M64 10h4v6h-4z M46 52h6v4h-6z M56 56h4v4h-4z M52 70h10v6h-10z M70 54h8v6h-8z M66 44h4v6h-4z M80 40h6v8h-6z M80 54h6v5h-6z M46 70h4v6h-4z" fill="#2b2620" />
+          <rect x="6" y="6" width="34" height="34" fill="none" stroke="#e2b45f" strokeWidth="5" />
+          <rect x="60" y="6" width="34" height="34" fill="none" stroke="#e2b45f" strokeWidth="5" />
+          <rect x="6" y="60" width="34" height="34" fill="none" stroke="#e2b45f" strokeWidth="5" />
+          <path d="M16 16h14v14H16z M70 16h14v14H70z M16 70h14v14H16z" fill="#e2b45f" />
+          <path d="M10 46h10v5H10z M10 60h5v5H10z M20 50h5v10h-5z M34 44h8v4h-8z M38 54h6v6h-6z M52 12h6v4h-6z M58 20h8v8h-8z M52 30h5v6h-5z M64 10h4v6h-4z M46 52h6v4h-6z M56 56h4v4h-4z M52 70h10v6h-10z M70 54h8v6h-8z M66 44h4v6h-4z M80 40h6v8h-6z M80 54h6v5h-6z M46 70h4v6h-4z" fill="#e2b45f" />
         </svg>
-        <span className="absolute right-2 bottom-2 rounded bg-paper-deep px-1.5 py-0.5 text-[10px] text-ink-faint">
+        <span className="absolute right-2 bottom-2 rounded bg-surface px-1.5 py-0.5 text-[10px] text-muted">
           长按保存
         </span>
       </div>
-      <p className="mt-4 font-serif text-sm text-ink-soft">长按二维码保存到相册，打开微信「扫一扫」完成支付</p>
-      <p className="mt-1 font-serif text-xs text-ink-faint">
+      <p className="mt-4 text-sm text-fg-secondary">长按二维码保存到相册，打开微信「扫一扫」完成支付</p>
+      <p className="mt-1 text-xs text-muted">
         长按识别失败？请复制下方链接在微信中打开
       </p>
-      <p className="mt-2 w-full max-w-[300px] break-all rounded-lg border border-ink/10 bg-paper-deep/60 px-3 py-2 font-serif text-xs text-ink-soft select-all">
+      <p className="mt-2 w-full max-w-[300px] rounded-lg border border-border-gold bg-surface/60 px-3 py-2 text-xs text-fg-secondary break-all select-all">
         {codeUrl}
       </p>
     </div>
@@ -57,16 +57,16 @@ function NativeQrArea({ codeUrl }: { codeUrl: string }) {
 function PayChannelEmpty() {
   return (
     <div className="flex flex-col items-center px-6 py-12 text-center">
-      <span className="flex size-16 items-center justify-center rounded-full border border-ink/20 bg-paper-deep/60 text-ink-soft">
+      <span className="grid size-16 place-items-center rounded-full border border-border-gold bg-surface/60 text-muted">
         <svg viewBox="0 0 24 24" className="size-8" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <rect x="3" y="6" width="18" height="13" rx="2.5" />
           <path d="M3 10h18M7 15h4" />
         </svg>
       </span>
-      <p className="mt-5 font-serif text-lg font-bold text-ink">
+      <p className="mt-5 font-kai text-lg font-bold text-gold-light">
         支付通道即将上线，敬请期待
       </p>
-      <p className="mt-2 font-serif text-sm leading-relaxed text-ink-soft">
+      <p className="mt-2 text-sm leading-relaxed text-fg-secondary">
         支付功能正在建设中，完成后即可解锁完整报告
       </p>
     </div>
@@ -127,7 +127,7 @@ function PayPage() {
   const showEmpty = !showH5 && !showNative
 
   return (
-    <main className="min-h-screen pb-28 text-ink">
+    <main className="fx-paper fx-cloud fade-in min-h-screen pb-28">
       <PageHeader
         title="订单支付"
         backTo={order?.profileId ? `/order?profileId=${order.profileId}` : '/'}
@@ -135,15 +135,15 @@ function PayPage() {
 
       <div className="px-5 pt-6">
         {/* 订单金额卡 */}
-        <Card className="overflow-hidden border-ink/10">
-          <div className="relative border-b border-ink/10 bg-paper-deep/50 px-5 py-6 text-center">
-            <p className="font-serif text-xs tracking-[0.25em] text-ink-faint">应付金额</p>
-            <p className="mt-1 font-serif text-[2.2rem] leading-none font-bold text-cinnabar">
+        <Card className="overflow-hidden">
+          <div className="relative border-b border-border bg-gradient-to-b from-[#2a1711]/60 to-transparent px-5 py-6 text-center">
+            <p className="text-xs tracking-[0.25em] text-muted">应付金额</p>
+            <p className="mt-1 font-kai text-[2.2rem] leading-none font-bold text-gold">
               {order ? formatPrice(order.amount) : '¥0.00'}
             </p>
             <div className="mt-3 flex items-center justify-center gap-2">
               <Badge variant="gold">{stateLabel || '…'}</Badge>
-              <span className="font-mono text-xs text-ink-faint">{order?.orderNo ?? orderNo}</span>
+              <span className="font-mono text-xs text-muted">{order?.orderNo ?? orderNo}</span>
             </div>
           </div>
         </Card>
@@ -151,20 +151,20 @@ function PayPage() {
         {/* 支付方式区 */}
         <section className="mt-6" aria-label="支付方式">
           <div className="flex items-center gap-2">
-            <Huiwen className="h-2 w-8 text-ink/30" />
-            <h2 className="font-serif text-lg font-bold text-ink">微信支付</h2>
+            <Huiwen className="h-2 w-8 text-gold/40" />
+            <h2 className="font-kai text-lg font-bold text-gold-light">微信支付</h2>
           </div>
 
-          <Card className="mt-3 border-ink/10">
+          <Card className="mt-3">
             <CardContent className="p-5">
               {loading ? (
                 <div className="animate-pulse space-y-3 py-6" aria-label="加载中">
-                  <div className="mx-auto h-8 w-40 rounded bg-ink/10" />
-                  <div className="mx-auto h-3 w-56 rounded bg-ink/10" />
+                  <div className="mx-auto h-8 w-40 rounded bg-gold/10" />
+                  <div className="mx-auto h-3 w-56 rounded bg-gold/10" />
                 </div>
               ) : error ? (
                 <div className="flex flex-col items-center py-6 text-center">
-                  <p className="font-serif text-sm text-cinnabar" role="alert">
+                  <p className="text-sm text-accent-hover" role="alert">
                     {error}
                   </p>
                   <Button variant="outline" className="mt-4" onClick={() => void fetchOrder()}>
@@ -173,13 +173,13 @@ function PayPage() {
                 </div>
               ) : isPaid ? (
                 <div className="flex flex-col items-center py-6 text-center">
-                  <span className="flex size-16 items-center justify-center rounded-full bg-cinnabar text-paper-light shadow-cinnabar">
+                  <span className="grid size-16 place-items-center rounded-full bg-gradient-to-b from-gold to-gold-dark text-[#2b110a] shadow-gold">
                     <svg viewBox="0 0 24 24" className="size-8" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <path d="M5 12l4.5 4.5L19 7" />
                     </svg>
                   </span>
-                  <p className="mt-4 font-serif text-lg font-bold text-ink">支付成功</p>
-                  <p className="mt-1 font-serif text-sm text-ink-soft">完整报告已解锁，立即查看吧</p>
+                  <p className="mt-4 font-kai text-lg font-bold text-gold-light">支付成功</p>
+                  <p className="mt-1 text-sm text-fg-secondary">完整报告已解锁，立即查看吧</p>
                   <Link to={`/report/${orderNo}`} className="mt-6 w-full max-w-[280px]">
                     <Button size="lg" variant="gold" className="w-full rounded-full text-base font-bold">
                       查看完整报告
@@ -188,7 +188,7 @@ function PayPage() {
                 </div>
               ) : showH5 ? (
                 <div className="flex flex-col items-center py-4 text-center">
-                  <p className="font-serif text-sm leading-relaxed text-ink-soft">
+                  <p className="text-sm leading-relaxed text-fg-secondary">
                     将拉起微信完成支付
                     <br />
                     支付成功后自动返回本页查看报告
@@ -198,7 +198,7 @@ function PayPage() {
                       点击唤起微信支付
                     </Button>
                   </a>
-                  <p className="mt-3 font-serif text-xs text-ink-faint">
+                  <p className="mt-3 text-xs text-muted">
                     未自动跳转？请点击右上角在浏览器中打开
                   </p>
                 </div>
@@ -213,11 +213,11 @@ function PayPage() {
 
         {/* 未支付时的刷新引导 */}
         {!loading && !error && order && !isPaid && order.state === 'CREATED' && !showH5 && !showNative ? (
-          <p className="mt-4 text-center font-serif text-xs text-ink-faint">
+          <p className="mt-4 text-center text-xs text-muted">
             已支付？{' '}
             <button
               type="button"
-              className="text-cinnabar underline underline-offset-2"
+              className="text-gold underline underline-offset-2"
               onClick={() => void fetchOrder({ silent: true })}
             >
               刷新支付状态

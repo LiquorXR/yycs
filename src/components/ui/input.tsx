@@ -6,11 +6,11 @@ function Input({ className, type, ...props }: React.ComponentProps<'input'>) {
     <input
       type={type}
       className={cn(
-        'h-11 w-full rounded-lg border border-ink/20 bg-paper-light/80 px-3.5 text-base text-ink shadow-sm outline-none transition-colors',
-        'placeholder:text-ink-faint/70',
-        'focus:border-cinnabar focus:ring-2 focus:ring-cinnabar/20',
+        'h-11 w-full rounded-[10px] border border-border-gold bg-[#140a08]/80 px-3.5 text-base text-fg shadow-sm outline-none transition-colors',
+        'placeholder:text-muted/70',
+        'focus:border-gold focus:ring-2 focus:ring-gold/20',
         'disabled:cursor-not-allowed disabled:opacity-50',
-        'aria-[invalid=true]:border-cinnabar aria-[invalid=true]:focus:ring-cinnabar/20',
+        'aria-[invalid=true]:border-accent aria-[invalid=true]:focus:ring-accent/20',
         className,
       )}
       {...props}

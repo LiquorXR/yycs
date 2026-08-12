@@ -3,17 +3,17 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-all duration-200 outline-none select-none active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-cinnabar/30 focus-visible:ring-offset-2 focus-visible:ring-offset-paper',
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap font-kai font-medium transition-all duration-200 outline-none select-none active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-gold/40 focus-visible:ring-offset-2 focus-visible:ring-offset-bg',
   {
     variants: {
       variant: {
         default:
-          'bg-gradient-to-b from-cinnabar to-cinnabar-dark text-paper-light shadow-cinnabar hover:from-cinnabar-dark hover:to-cinnabar-dark',
-        gold: 'bg-gradient-to-b from-cinnabar to-cinnabar-dark text-paper-light shadow-cinnabar hover:from-cinnabar-dark hover:to-cinnabar-dark',
+          'border border-gold-light/70 bg-gradient-to-b from-accent-hover to-accent-dark text-white shadow-red hover:brightness-110',
+        gold: 'border border-gold-light/60 bg-gradient-to-b from-gold-light via-gold to-gold-dark text-[#2b110a] shadow-gold hover:brightness-105',
         outline:
-          'border border-ink/30 bg-paper-light/60 text-ink hover:border-ink/60 hover:bg-paper-light',
-        ghost: 'text-ink-soft hover:bg-ink/5',
-        link: 'text-cinnabar underline-offset-4 hover:underline',
+          'border border-border-gold bg-bg/60 text-gold hover:border-gold hover:bg-gold/10',
+        ghost: 'text-muted hover:bg-gold/10 hover:text-gold',
+        link: 'text-gold underline-offset-4 hover:underline',
       },
       size: {
         default: 'h-11 px-5 text-base',

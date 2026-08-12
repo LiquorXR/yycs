@@ -8,7 +8,7 @@ function Label({
   return (
     <label
       className={cn(
-        'mb-1.5 block text-sm font-medium text-ink-soft',
+        'mb-1.5 block text-sm font-medium text-fg-secondary',
         className,
       )}
       {...props}
