@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { getOrder, getOrderReport, type OrderReport } from '@/api/orders'
 import { formatPrice } from '@/lib/format'
 
@@ -223,6 +223,15 @@ function WuxingRadar({
 
 /* ---------------- 企微活码 + 大师亲批 ---------------- */
 
+const BOOK_SLOTS = [
+  '今天 15:00 - 16:00 (剩余 2 名额)',
+  '今天 20:00 - 21:00 (剩余 1 名额)',
+  '明天 10:00 - 11:00 (约满可预定)',
+]
+
+const CONSULT_TOPICS = ['正缘结婚最佳年份', '婚后买房置业财运', '双方长辈关系调控']
+const DEFAULT_CONSULT_TOPICS = ['正缘结婚最佳年份', '婚后买房置业财运']
+
 function MasterConsult({
   wecom,
   orderNo,
@@ -230,6 +239,31 @@ function MasterConsult({
   wecom: NonNullable<OrderReport['wecom']>
   orderNo: string
 }) {
+  const [bookingOpen, setBookingOpen] = useState(false)
+  const [slot, setSlot] = useState(BOOK_SLOTS[0])
+  const [topics, setTopics] = useState<string[]>(DEFAULT_CONSULT_TOPICS)
+
+  /* Escape 关闭预约弹窗 */
+  useEffect(() => {
+    if (!bookingOpen) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setBookingOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [bookingOpen])
+
+  const toggleTopic = (tag: string) => {
+    setTopics((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
+    )
+  }
+
+  const confirmBooking = () => {
+    setBookingOpen(false)
+    alert(`预约成功！已为您预约「${slot}」时段，玄天道长将尽快与您联系`)
+  }
+
   return (
     <section aria-label="大师一对一亲批">
       <div className="flex items-center gap-3 rounded-[16px] border border-border-gold bg-[#2a1711]/85 p-3.5">
@@ -247,9 +281,13 @@ function MasterConsult({
             {wecom.note ?? '30年周易合婚经验 · 专属化解符箓与择吉日'}
           </p>
         </div>
-        <a href="wecom://" aria-label="添加大师企业微信">
-          <span className="seal-mark cursor-pointer">加微信</span>
-        </a>
+        <button
+          type="button"
+          onClick={() => setBookingOpen(true)}
+          aria-label="预约大师亲批"
+        >
+          <span className="seal-mark cursor-pointer">预约亲批</span>
+        </button>
       </div>
 
       <div className="mt-3 rounded-[16px] border border-border-gold bg-surface-card p-4 text-center">
@@ -270,6 +308,108 @@ function MasterConsult({
       </div>
 
       <p className="mt-3 text-center text-xs text-muted">报告编号：{orderNo}</p>
+
+      {/* 预约亲批弹窗 */}
+      {bookingOpen ? (
+        <div
+          className="modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-label="预约玄天道长亲批"
+        >
+          <div className="modal-guofeng">
+            <div className="modal-header">
+              <span
+                aria-hidden="true"
+                className="grid size-8 shrink-0 place-items-center rounded-full border border-gold bg-accent font-kai text-base text-gold-light"
+              >
+                道
+              </span>
+              <h3 className="modal-title">玄天道长 · 1V1 姻缘优先亲批</h3>
+              <button
+                type="button"
+                className="modal-close"
+                aria-label="关闭"
+                onClick={() => setBookingOpen(false)}
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                  aria-hidden="true"
+                >
+                  <path d="M18 6 6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* 大师介绍卡 */}
+            <div className="mb-3 flex items-center gap-3 rounded-[14px] border border-border-gold bg-[#2a1711]/85 p-3.5">
+              <span
+                aria-hidden="true"
+                className="grid size-12 shrink-0 place-items-center rounded-full border-2 border-gold bg-accent font-kai text-xl text-gold-light shadow-[0_0_12px_rgba(217,56,41,0.4)]"
+              >
+                道
+              </span>
+              <div className="min-w-0">
+                <h4 className="font-kai text-[15px] text-gold-light">
+                  玄天道长 (研几三十载)
+                </h4>
+                <p className="mt-0.5 text-xs leading-relaxed text-fg-secondary">
+                  已为 50,000+ 对新人进行八字合婚与择吉日
+                </p>
+              </div>
+            </div>
+
+            {/* 预约时段 */}
+            <label htmlFor="book-slot" className="mb-1 block text-xs text-fg-secondary">
+              预约时段
+            </label>
+            <select
+              id="book-slot"
+              className="input-guofeng mb-3"
+              value={slot}
+              onChange={(e) => setSlot(e.target.value)}
+            >
+              {BOOK_SLOTS.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+
+            {/* 核心咨询问题 */}
+            <p className="mb-1.5 text-xs font-medium text-gold-light">
+              核心咨询问题 (可多选)
+            </p>
+            <div className="mb-4 flex flex-wrap gap-2">
+              {CONSULT_TOPICS.map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => toggleTopic(tag)}
+                  aria-pressed={topics.includes(tag)}
+                  className={`tag-chip ${topics.includes(tag) ? 'active' : ''}`}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              className="btn-guofeng-gold"
+              onClick={confirmBooking}
+            >
+              确认预约玄天道长亲批
+            </button>
+          </div>
+        </div>
+      ) : null}
     </section>
   )
 }
@@ -277,12 +417,14 @@ function MasterConsult({
 /* ---------------- 页面 ---------------- */
 
 function ReportPage() {
+  const navigate = useNavigate()
   const { orderNo = '' } = useParams()
   const [report, setReport] = useState<OrderReport | null>(null)
   const [amount, setAmount] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [seconds, setSeconds] = useState(COUNTDOWN_SECONDS)
+  const [payModalOpen, setPayModalOpen] = useState(false)
   const inFlightRef = useRef(false)
   const loadedRef = useRef(false)
 
@@ -356,6 +498,16 @@ function ReportPage() {
     }, 1000)
     return () => clearInterval(timer)
   }, [])
+
+  /* Escape 关闭支付弹窗 */
+  useEffect(() => {
+    if (!payModalOpen) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setPayModalOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [payModalOpen])
 
   const unlocked = report ? isUnlocked(report) : false
   const reportTitle = report?.report.title
@@ -648,11 +800,13 @@ function ReportPage() {
                       {countdown}
                     </span>
                   </div>
-                  <Link to={`/pay/${orderNo}`} className="w-full">
-                    <button type="button" className="btn-guofeng-ghost">
-                      查看完整解锁权益
-                    </button>
-                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setPayModalOpen(true)}
+                    className="btn-guofeng-ghost"
+                  >
+                    查看完整解锁权益
+                  </button>
                 </div>
               </>
             )}
@@ -670,17 +824,128 @@ function ReportPage() {
       {/* 底部固定解锁栏（真实订单价格） */}
       {report && !unlocked ? (
         <div className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-border-gold bg-bg/95 px-4 pt-2.5 pb-5 backdrop-blur-md">
-          <Link to={`/pay/${orderNo}`} className="block">
-            <button type="button" className="btn-guofeng-primary">
-              <span>
-                解锁全套姻缘批书 + 大师亲批 (
-                {formatPrice(amount ?? 9900)})
-              </span>
-            </button>
-          </Link>
+          <button
+            type="button"
+            onClick={() => setPayModalOpen(true)}
+            className="btn-guofeng-primary"
+          >
+            <span>
+              解锁全套姻缘批书 + 大师亲批 (
+              {formatPrice(amount ?? 9900)})
+            </span>
+          </button>
           <div className="mt-1 flex justify-between px-1 text-[11px] text-muted">
             <span>原价 ¥198 · 已有 28.4 万人解锁</span>
             <span>不支持退款承诺·测算加密</span>
+          </div>
+        </div>
+      ) : null}
+
+      {/* 支付弹窗 */}
+      {payModalOpen ? (
+        <div
+          className="modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-label="确认支付解锁天书"
+        >
+          <div className="modal-guofeng">
+            <div className="modal-header">
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="var(--color-gold)"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M3.5 7a2.5 2.5 0 0 1 2.5-2.5h14.5V19H6A2.5 2.5 0 0 0 3.5 21.5V7z" />
+                <path d="M3.5 7a2.5 2.5 0 0 1 2.5-2.5h14.5V19H6A2.5 2.5 0 0 0 3.5 21.5V7z" opacity="0.45" transform="translate(1 1)" />
+                <path d="M3.5 7a2.5 2.5 0 0 1 2.5-2.5h14.5V19H6A2.5 2.5 0 0 0 3.5 21.5V7z" opacity="0.22" transform="translate(2 2)" />
+              </svg>
+              <h3 className="modal-title">八字合婚天书 · 深度详批</h3>
+              <button
+                type="button"
+                className="modal-close"
+                aria-label="关闭"
+                onClick={() => setPayModalOpen(false)}
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                  aria-hidden="true"
+                >
+                  <path d="M18 6 6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* 测算对象 */}
+            <p className="mb-3 text-sm text-fg-secondary">
+              测算对象：
+              <span className="font-bold text-gold-light">李大为 & 林静雅</span>
+            </p>
+
+            {/* 四重权益框 */}
+            <div className="mb-3 rounded-[14px] border border-border-gold bg-[#100806]/85 p-3.5">
+              <p className="mb-2 text-[13px] font-medium text-gold-light">
+                ✨ 解锁即享四重天书核心权益：
+              </p>
+              <ul className="space-y-1.5 text-xs leading-relaxed text-fg-secondary">
+                <li>1. 男女八字五行冲克与大运合化全析</li>
+                <li>2. 未来 10 年正缘危机与转折年份预警</li>
+                <li>3. 婚后财运旺衰与置业买房最佳时机</li>
+                <li>4. 专属化解锦囊与玄天道长 1V1 优先接通</li>
+              </ul>
+            </div>
+
+            {/* 特惠现价行 */}
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-xs text-fg-secondary">
+                特惠现价（限时剩余 3 席）
+              </span>
+              <span className="flex items-baseline gap-1.5">
+                <span className="text-xs text-muted line-through">¥198.00</span>
+                <span className="font-mono text-2xl font-bold text-accent-hover">
+                  ¥28.00
+                </span>
+              </span>
+            </div>
+
+            {/* 支付方式 */}
+            <div className="mb-4 grid grid-cols-2 gap-2">
+              <div className="flex items-center justify-center gap-1.5 rounded-[12px] border border-gold bg-gold/15 py-2.5 text-[13px] font-medium text-gold-light">
+                <span aria-hidden="true">🟢</span>
+                微信支付
+              </div>
+              <div className="flex items-center justify-center gap-1.5 rounded-[12px] border border-border bg-[#100806]/60 py-2.5 text-[13px] text-muted opacity-60">
+                <span aria-hidden="true">🔵</span>
+                支付宝
+                <span className="text-[10px]">暂未开通</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="btn-guofeng-primary"
+              onClick={() => {
+                setPayModalOpen(false)
+                navigate(`/pay/${orderNo}`)
+              }}
+            >
+              确认支付 ¥28.00 开启天书
+            </button>
+            <p className="mt-2.5 text-center text-[11px] text-muted">
+              🔒 256 位安全加密传输 · 解锁后永久随时查阅
+            </p>
           </div>
         </div>
       ) : null}
