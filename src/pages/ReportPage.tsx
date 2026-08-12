@@ -40,16 +40,16 @@ function WecomSection({ wecom }: { wecom: NonNullable<OrderReport['wecom']> }) {
   return (
     <section className="mt-8" aria-label="添加企业微信">
       <div className="flex items-center gap-2">
-        <Huiwen className="h-2 w-8 text-gold/50" />
-        <h2 className="font-kai text-lg font-bold text-gold-grad">人工深度测算</h2>
+        <Huiwen className="h-2 w-8 text-ink/30" />
+        <h2 className="font-serif text-lg font-bold text-ink">人工深度测算</h2>
       </div>
 
-      <Card className="mt-3 overflow-hidden border-gold/15">
-        <div className="flex flex-col items-center border-b border-gold/15 bg-gradient-to-b from-gold/8 to-transparent px-5 py-6 text-center">
+      <Card className="mt-3 overflow-hidden border-ink/10">
+        <div className="flex flex-col items-center border-b border-ink/10 bg-paper-deep/50 px-5 py-6 text-center">
           <img
             src={wecom.qrcodeUrl}
             alt="企业微信活码二维码"
-            className="size-44 rounded-lg border border-gold/30 bg-white object-contain shadow-gold"
+            className="size-44 rounded-lg border border-ink/15 bg-white object-contain shadow-card"
             loading="lazy"
           />
           <a href="wecom://" className="mt-5 w-full max-w-[280px]">
@@ -57,11 +57,11 @@ function WecomSection({ wecom }: { wecom: NonNullable<OrderReport['wecom']> }) {
               添加到企业微信
             </Button>
           </a>
-          <p className="mt-2 text-xs text-mist/70">
+          <p className="mt-2 font-serif text-xs text-ink-faint">
             未唤起企业微信？请长按上方二维码识别添加
           </p>
         </div>
-        <p className="px-5 py-4 text-sm leading-relaxed text-mist">
+        <p className="px-5 py-4 font-serif text-sm leading-relaxed text-ink-soft">
           {wecom.note ??
             '支付成功后，专属命理师将通过企业微信与您联系，结合您的生辰信息进行一对一深度测算与答疑。'}
         </p>
@@ -129,26 +129,26 @@ function ReportPage() {
   const lockedNote = report?.report.lockedNote ?? '完整版需付费解锁'
 
   return (
-    <main className="min-h-screen pb-20 text-ivory">
+    <main className="min-h-screen pb-20 text-ink">
       <PageHeader title="姻缘报告" backTo="/" />
 
       <div className="px-5 pt-6">
         {/* 加载态 */}
         {loading ? (
           <div className="animate-pulse space-y-4" aria-label="报告加载中">
-            <div className="h-6 w-3/5 rounded bg-gold/20" />
-            <div className="h-72 rounded-2xl bg-white/8" />
-            <div className="h-3 w-2/5 rounded bg-white/10" />
+            <div className="h-6 w-3/5 rounded bg-ink/15" />
+            <div className="h-72 rounded-2xl bg-ink/8" />
+            <div className="h-3 w-2/5 rounded bg-ink/10" />
           </div>
         ) : error ? (
           <div className="flex flex-col items-center px-6 py-14 text-center">
-            <span className="flex size-16 items-center justify-center rounded-full border border-cinnabar/50 bg-cinnabar/15 text-cinnabar-bright">
+            <span className="flex size-16 items-center justify-center rounded-full bg-ink text-paper-light shadow-ink">
               <LockIcon className="size-8" />
             </span>
-            <p className="mt-4 font-kai text-lg font-bold text-gold-cream" role="alert">
+            <p className="mt-4 font-serif text-lg font-bold text-ink" role="alert">
               {error}
             </p>
-            <p className="mt-2 text-sm text-mist">
+            <p className="mt-2 font-serif text-sm text-ink-soft">
               报告可能尚未支付解锁，或订单不存在
             </p>
             <Link to={`/pay/${orderNo}`} className="mt-6 w-full max-w-[280px]">
@@ -167,8 +167,8 @@ function ReportPage() {
             {/* 报告标题 */}
             <section aria-label="报告标题">
               <div className="flex items-center gap-2">
-                <Huiwen className="h-2 w-8 text-gold/50" />
-                <h2 className="font-kai text-lg font-bold text-gold-grad">
+                <Huiwen className="h-2 w-8 text-ink/30" />
+                <h2 className="font-serif text-lg font-bold text-ink">
                   {reportTitle ?? '合婚测算报告'}
                 </h2>
                 <Badge variant={unlocked ? 'gold' : 'outline'}>
@@ -179,7 +179,7 @@ function ReportPage() {
 
             {/* 报告内容区 */}
             <section className="mt-3" aria-label="报告内容">
-              <Card className="overflow-hidden border-gold/15">
+              <Card className="overflow-hidden border-ink/10">
                 <div className="relative">
                   <iframe
                     src={report.report.contentUrl}
@@ -189,14 +189,14 @@ function ReportPage() {
                     className={`h-[420px] w-full border-0 bg-white ${unlocked ? '' : 'blur-[6px]'}`}
                   />
                   {!unlocked ? (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-night/60 px-6 text-center backdrop-blur-[2px]">
-                      <span className="flex size-14 items-center justify-center rounded-full bg-cinnabar text-ivory shadow-cinnabar">
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-paper/55 px-6 text-center backdrop-blur-[2px]">
+                      <span className="flex size-14 items-center justify-center rounded-full bg-ink text-paper-light shadow-ink">
                         <LockIcon className="size-7" />
                       </span>
-                      <p className="mt-3 font-kai text-base font-bold text-gold-cream">
+                      <p className="mt-3 font-serif text-base font-bold text-ink">
                         {lockedNote}
                       </p>
-                      <p className="mt-1 text-xs leading-relaxed text-mist">
+                      <p className="mt-1 font-serif text-xs leading-relaxed text-ink-soft">
                         解锁后可查看完整合婚报告与
                         <br />
                         专属缘分建议
@@ -215,7 +215,7 @@ function ReportPage() {
             {/* 企微活码区（未生成时隐藏） */}
             {report.wecom ? <WecomSection wecom={report.wecom} /> : null}
 
-            <p className="mt-6 text-center text-xs text-fog">
+            <p className="mt-6 text-center font-serif text-xs text-ink-faint">
               报告编号：{report.orderNo}
             </p>
           </>

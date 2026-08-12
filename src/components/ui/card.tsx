@@ -5,7 +5,7 @@ function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn(
-        'rounded-2xl border border-gold/15 bg-white/3 shadow-card backdrop-blur-sm',
+        'paper-card rounded-2xl backdrop-blur-sm',
         className,
       )}
       {...props}
@@ -26,7 +26,7 @@ function CardTitle({
 }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h3
-      className={cn('font-kai text-lg font-bold text-gold-cream', className)}
+      className={cn('font-serif text-lg font-bold text-ink', className)}
       {...props}
     />
   )
@@ -37,7 +37,7 @@ function CardDescription({
   ...props
 }: React.HTMLAttributes<HTMLParagraphElement>) {
   return (
-    <p className={cn('text-sm leading-relaxed text-mist', className)} {...props} />
+    <p className={cn('text-sm leading-relaxed text-ink-soft', className)} {...props} />
   )
 }
 

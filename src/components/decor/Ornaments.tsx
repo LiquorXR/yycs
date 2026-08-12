@@ -1,11 +1,11 @@
 import { cn } from '@/lib/utils'
 
-/** 双喜「囍」装饰字符（楷体金字） */
+/** 双喜「囍」装饰字符（楷体，随调用处着色） */
 export function DoubleHappiness({ className }: { className?: string }) {
   return (
     <span
       aria-hidden="true"
-      className={cn('font-kai text-gold-grad leading-none select-none', className)}
+      className={cn('font-kai leading-none select-none', className)}
     >
       囍
     </span>

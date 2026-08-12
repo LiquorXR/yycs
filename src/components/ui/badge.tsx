@@ -7,9 +7,9 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: 'bg-gold/10 text-gold-cream',
-        gold: 'bg-gradient-to-r from-gold-bright to-gold text-night',
-        outline: 'border border-gold/40 text-gold-cream',
+        default: 'bg-cinnabar/10 text-cinnabar',
+        gold: 'border border-cinnabar/40 bg-cinnabar text-paper-light',
+        outline: 'border border-ink/25 text-ink-soft',
       },
     },
     defaultVariants: {
