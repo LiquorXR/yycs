@@ -3,17 +3,17 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-all duration-200 outline-none select-none active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-paper',
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-all duration-200 outline-none select-none active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-night',
   {
     variants: {
       variant: {
         default:
-          'bg-gradient-to-b from-cinnabar to-crimson text-paper shadow-cinnabar hover:from-cinnabar-dark hover:to-crimson',
-        gold: 'bg-gradient-to-b from-gold-bright via-gold to-gold-dark text-crimson shadow-gold hover:from-gold hover:to-gold-dark',
+          'bg-gradient-to-b from-gold-bright via-gold to-gold-dark text-night shadow-gold hover:from-gold hover:to-gold-dark',
+        gold: 'border border-gold-bright/60 bg-gradient-to-b from-gold-bright via-gold to-gold-dark text-night shadow-glow hover:from-gold hover:to-gold-dark',
         outline:
-          'border border-gold/70 bg-gold-pale/60 text-crimson hover:bg-gold-pale',
-        ghost: 'text-cinnabar hover:bg-cinnabar/8',
-        link: 'text-cinnabar underline-offset-4 hover:underline',
+          'border border-gold/50 bg-white/5 text-gold-cream hover:border-gold hover:bg-gold/10',
+        ghost: 'text-gold-cream hover:bg-white/5',
+        link: 'text-gold-cream underline-offset-4 hover:underline',
       },
       size: {
         default: 'h-11 px-5 text-base',

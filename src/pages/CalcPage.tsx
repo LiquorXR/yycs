@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, type SelectOption } from '@/components/ui/select'
 import { Huiwen } from '@/components/decor/Huiwen'
-import { DoubleHappiness } from '@/components/decor/Ornaments'
+import PageHeader from '@/components/PageHeader'
 import { createProfile, newIdempotencyKey, type CreateProfileResult } from '@/api/profiles'
 
 const HOURS: SelectOption[] = [
@@ -66,10 +66,10 @@ function PersonSection({
   return (
     <Card className="p-5">
       <div className="flex items-center gap-2">
-        <span className="flex size-6 items-center justify-center rounded-full bg-gradient-to-b from-cinnabar to-crimson font-kai text-xs font-bold text-paper">
+        <span className="flex size-7 items-center justify-center rounded-full border border-gold/50 bg-gradient-to-b from-gold-bright to-gold-dark font-kai text-sm font-bold text-night shadow-glow">
           {label}
         </span>
-        <h2 className="font-kai text-lg font-bold text-crimson">
+        <h2 className="font-kai text-lg font-bold text-gold-cream">
           {label === '甲' ? '甲方' : '乙方'}生辰
         </h2>
       </div>
@@ -89,7 +89,7 @@ function PersonSection({
             onChange={(e) => onChange({ name: e.target.value })}
           />
           {nameError ? (
-            <p className="mt-1.5 text-xs text-cinnabar" role="alert">
+            <p className="mt-1.5 text-xs text-cinnabar-bright" role="alert">
               {nameError}
             </p>
           ) : null}
@@ -107,7 +107,7 @@ function PersonSection({
             onChange={(e) => onChange({ birth: e.target.value })}
           />
           {birthError ? (
-            <p className="mt-1.5 text-xs text-cinnabar" role="alert">
+            <p className="mt-1.5 text-xs text-cinnabar-bright" role="alert">
               {birthError}
             </p>
           ) : null}
@@ -153,33 +153,33 @@ function PreviewReport({ result }: { result: CreateProfileResult }) {
   return (
     <section className="mt-10 scroll-mt-20" aria-label="预览报告">
       <div className="flex items-center gap-2">
-        <Huiwen className="h-2 w-10 text-gold/80" />
-        <h2 className="font-kai text-xl font-bold text-crimson">测算结果</h2>
-        <Huiwen className="h-2 w-10 text-gold/80" />
+        <Huiwen className="h-2 w-10 text-gold/50" />
+        <h2 className="font-kai text-xl font-bold text-gold-grad">测算结果</h2>
+        <Huiwen className="h-2 w-10 text-gold/50" />
       </div>
 
-      <Card className="mt-4 overflow-hidden border-gold/40">
+      <Card className="mt-4 overflow-hidden border-gold/20">
         <CardContent className="p-0">
-          <div className="border-b border-gold/25 bg-gradient-to-r from-gold-pale to-gold-pale/40 px-5 py-4">
-            <p className="text-xs tracking-[0.3em] text-gold-dark">
+          <div className="border-b border-gold/15 bg-gradient-to-b from-gold/12 to-transparent px-5 py-4">
+            <p className="text-xs tracking-[0.3em] text-gold/80">
               合婚测算 · 预览报告
             </p>
-            <h3 className="mt-1 font-kai text-lg font-bold text-crimson">
+            <h3 className="mt-1 font-kai text-lg font-bold text-gold-cream">
               {previewReport.title}
             </h3>
-            <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-ink/70">
+            <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-mist">
               <div className="flex items-center gap-1.5">
                 契合指数：
-                <span className="font-bold text-cinnabar">★★★★☆</span>
+                <span className="font-bold text-gold">★★★★☆</span>
               </div>
               <div className="flex items-center gap-1.5">
-                五行互补：<span className="font-bold text-cinnabar">4 / 5 项</span>
+                五行互补：<span className="font-bold text-gold">4 / 5 项</span>
               </div>
               <div className="flex items-center gap-1.5">
-                上等婚配：<span className="font-bold text-cinnabar">中等偏上</span>
+                上等婚配：<span className="font-bold text-gold">中等偏上</span>
               </div>
               <div className="flex items-center gap-1.5">
-                正缘时机：<span className="font-bold text-cinnabar">今明两年</span>
+                正缘时机：<span className="font-bold text-gold">今明两年</span>
               </div>
             </div>
           </div>
@@ -190,20 +190,20 @@ function PreviewReport({ result }: { result: CreateProfileResult }) {
               {MASK_LINES.map((w, i) => (
                 <div
                   key={i}
-                  className={`h-2.5 rounded-sm ${i % 3 === 0 ? 'bg-gold/50' : 'bg-ink/15'}`}
+                  className={`h-2.5 rounded-sm ${i % 3 === 0 ? 'bg-gold/25' : 'bg-white/10'}`}
                   style={{ width: `${w * 100}%` }}
                 />
               ))}
             </div>
 
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-paper/45 px-6 text-center">
-              <span className="flex size-14 items-center justify-center rounded-full bg-crimson text-paper shadow-cinnabar">
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-night/60 px-6 text-center backdrop-blur-[1px]">
+              <span className="flex size-14 items-center justify-center rounded-full bg-cinnabar text-ivory shadow-cinnabar">
                 <LockIcon className="size-7" />
               </span>
-              <p className="mt-3 font-kai text-base font-bold text-crimson">
+              <p className="mt-3 font-kai text-base font-bold text-gold-cream">
                 {previewReport.lockedNote ?? '完整版需付费解锁'}
               </p>
-              <p className="mt-1 text-xs leading-relaxed text-ink/55">
+              <p className="mt-1 text-xs leading-relaxed text-mist">
                 解锁后可查看完整合婚报告与
                 <br />
                 专属缘分建议
@@ -211,7 +211,7 @@ function PreviewReport({ result }: { result: CreateProfileResult }) {
             </div>
           </div>
 
-          <p className="border-t border-gold/25 px-5 pt-3 pb-4 text-center text-xs text-ink/45">
+          <p className="border-t border-gold/15 px-5 pt-3 pb-4 text-center text-xs text-fog">
             报告编号：{profileId}
           </p>
         </CardContent>
@@ -283,50 +283,21 @@ function CalcPage() {
   }
 
   return (
-    <main className="min-h-screen bg-paper pb-28 text-ink">
-      {/* 顶栏 */}
-      <header className="sticky top-0 z-20 border-b border-gold/25 bg-paper/90 backdrop-blur">
-        <div className="pt-safe flex items-center justify-between px-5 py-3">
-          <Link
-            to="/"
-            aria-label="返回首页"
-            className="flex size-9 items-center justify-center rounded-full text-cinnabar transition-colors hover:bg-cinnabar/8"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              className="size-5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-          </Link>
-          <div className="flex items-center gap-1.5">
-            <DoubleHappiness className="text-lg" />
-            <span className="font-kai text-lg font-bold tracking-[0.25em] text-crimson">
-              姻缘测算
-            </span>
-          </div>
-          <span className="w-9" aria-hidden="true" />
-        </div>
-      </header>
+    <main className="min-h-screen pb-28 text-ivory">
+      <PageHeader title="姻缘测算" backTo="/" />
 
       <div className="px-5">
         {/* 表单头部说明 */}
         <section className="pt-6 pb-5 text-center">
-          <h1 className="font-kai text-[1.6rem] font-bold text-crimson">
+          <h1 className="font-kai text-[1.6rem] font-bold text-gold-grad">
             生辰合婚 · 缘分测算
           </h1>
-          <p className="mt-2 text-sm leading-relaxed text-ink/60">
+          <p className="mt-2 text-sm leading-relaxed text-mist">
             填写双方生辰信息，免费生成专属合婚预览报告
           </p>
 
           {/* 公历/农历切换 */}
-          <div className="mx-auto mt-5 flex w-fit rounded-full border border-gold/40 bg-white p-1 shadow-card">
+          <div className="mx-auto mt-5 flex w-fit rounded-full border border-gold/20 bg-coal p-1 shadow-card">
             {(['公历', '农历'] as const).map((c) => (
               <button
                 key={c}
@@ -335,8 +306,8 @@ function CalcPage() {
                 aria-pressed={calendar === c}
                 className={`rounded-full px-5 py-1.5 text-sm transition-all ${
                   calendar === c
-                    ? 'bg-gradient-to-r from-cinnabar to-crimson font-medium text-paper shadow-cinnabar'
-                    : 'text-ink/60'
+                    ? 'bg-gradient-to-r from-gold-bright via-gold to-gold-dark font-medium text-night shadow-gold'
+                    : 'text-mist'
                 }`}
               >
                 {c}
@@ -372,7 +343,7 @@ function CalcPage() {
 
           {submitError ? (
             <p
-              className="rounded-lg border border-cinnabar/30 bg-cinnabar/5 px-4 py-3 text-sm text-cinnabar"
+              className="rounded-lg border border-cinnabar-bright/30 bg-cinnabar/15 px-4 py-3 text-sm text-cinnabar-bright"
               role="alert"
             >
               {submitError}
@@ -420,13 +391,13 @@ function CalcPage() {
 
       {/* 底部固定 CTA */}
       {result ? (
-        <div className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-gold/30 bg-white/95 backdrop-blur">
+        <div className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-gold/15 bg-coal/90 backdrop-blur-md">
           <div className="flex items-center justify-between gap-4 px-5 py-3">
             <div>
-              <p className="text-xs text-ink/55">解锁完整版</p>
-              <p className="font-kai text-xl font-bold text-crimson">
+              <p className="text-xs text-mist">解锁完整版</p>
+              <p className="font-kai text-xl font-bold text-gold-grad">
                 ¥99
-                <span className="ml-1 text-xs font-normal text-ink/45">
+                <span className="ml-1 text-xs font-normal text-mist">
                   一次解锁 · 永久查看
                 </span>
               </p>

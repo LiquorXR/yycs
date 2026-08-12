@@ -20,11 +20,11 @@ function Select({ className, options, placeholder, ...props }: SelectProps) {
     <div className="relative">
       <select
         className={cn(
-          'h-11 w-full cursor-pointer appearance-none rounded-lg border border-gold/40 bg-white px-3.5 text-base text-ink shadow-sm outline-none transition-colors',
+          'h-11 w-full cursor-pointer appearance-none rounded-lg border border-gold/20 bg-coal px-3.5 text-base text-ivory shadow-sm outline-none transition-colors [color-scheme:dark]',
           'pr-10',
-          'focus:border-cinnabar focus:ring-2 focus:ring-cinnabar/15',
+          'focus:border-gold focus:ring-2 focus:ring-gold/20',
           'disabled:cursor-not-allowed disabled:opacity-50',
-          'aria-[invalid=true]:border-cinnabar',
+          'aria-[invalid=true]:border-cinnabar-bright',
           className,
         )}
         {...props}
@@ -43,7 +43,7 @@ function Select({ className, options, placeholder, ...props }: SelectProps) {
       <svg
         aria-hidden="true"
         viewBox="0 0 16 16"
-        className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-gold-dark"
+        className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-gold"
         fill="none"
         stroke="currentColor"
         strokeWidth="1.5"

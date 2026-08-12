@@ -36,15 +36,15 @@ function SectionHeading({
 }) {
   return (
     <header className="flex flex-col items-center text-center">
-      <span className="text-xs font-medium tracking-[0.35em] text-gold-dark uppercase">
+      <span className="text-xs font-medium tracking-[0.35em] text-gold/75 uppercase">
         {eyebrow}
       </span>
-      <h2 className="mt-2 font-kai text-[1.75rem] leading-snug font-bold text-crimson">
+      <h2 className="mt-2 font-kai text-[1.75rem] leading-snug font-bold text-gold-grad">
         {title}
       </h2>
-      <Huiwen className="mt-3 w-36 text-gold/80" />
+      <Huiwen className="mt-3 w-36 text-gold/45" />
       {sub ? (
-        <p className="mt-3 max-w-[300px] text-sm leading-relaxed text-ink/60">
+        <p className="mt-3 max-w-[300px] text-sm leading-relaxed text-mist">
           {sub}
         </p>
       ) : null}
@@ -56,7 +56,7 @@ function Seal({ char }: { char: string }) {
   return (
     <span
       aria-hidden="true"
-      className="flex size-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-b from-gold-bright to-gold-dark font-kai text-xl text-white shadow-gold"
+      className="flex size-12 shrink-0 items-center justify-center rounded-full border border-gold/40 bg-gradient-to-b from-gold-bright to-gold-dark font-kai text-xl text-night shadow-glow"
     >
       {char}
     </span>
@@ -109,69 +109,74 @@ const STATS = [
 
 function LandingPage() {
   return (
-    <main className="min-h-screen bg-paper text-ink">
-      {/* 第 1 屏：首屏 Hero */}
-      <section className="relative flex min-h-[100dvh] flex-col overflow-hidden bg-gradient-to-b from-crimson via-cinnabar to-crimson text-paper">
-        {/* 装饰祥云 */}
+    <main className="min-h-screen text-ivory">
+      {/* 第 1 屏：首屏 Hero（深色夜空） */}
+      <section className="relative flex min-h-[100dvh] flex-col overflow-hidden">
+        {/* 尘雾微光：鎏金顶光 + 胭脂暖光 */}
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+          <div className="absolute -top-40 left-1/2 h-96 w-[36rem] max-w-full -translate-x-1/2 rounded-full bg-gold/10 blur-[110px]" />
+          <div className="absolute top-1/3 -right-24 size-72 rounded-full bg-cinnabar/12 blur-[100px]" />
+          <div className="absolute bottom-10 -left-28 size-72 rounded-full bg-gold/6 blur-[100px]" />
+        </div>
+        {/* 装饰祥云（深色配色版本） */}
         <Xiangyun
           filled
-          className="absolute -top-4 -left-14 w-44 text-gold-bright/25"
+          className="absolute -top-4 -left-14 w-44 text-gold/15"
         />
-        <Xiangyun className="absolute top-1/4 -right-12 w-36 rotate-6 text-paper/20" />
-        <Xiangyun
-          filled
-          className="absolute -bottom-10 -left-16 w-48 text-paper/8"
-        />
+        <Xiangyun className="absolute top-1/4 -right-12 w-36 rotate-6 text-gold-cream/15" />
+        <Xiangyun filled className="absolute -bottom-10 -left-16 w-48 text-gold/10" />
 
         <header className="pt-safe relative z-10">
           <div className="flex items-center justify-center gap-2.5 px-6 pt-4 pb-2">
-            <Huiwen className="h-2 w-12 text-gold/80" />
+            <Huiwen className="h-2 w-12 text-gold/70" />
             <span className="font-kai text-lg font-bold tracking-[0.35em] text-gold-grad">
               振凡命理
             </span>
-            <Huiwen className="h-2 w-12 text-gold/80" />
+            <Huiwen className="h-2 w-12 text-gold/70" />
           </div>
         </header>
 
         <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-7 text-center">
-          <DoubleHappiness className="mb-5 text-4xl" />
-          <h1 className="font-kai text-[2.9rem] leading-[1.18] font-bold">
-            <span className="text-gold-grad">天生一对</span>
-            <br />
-            <span className="text-gold-grad">缘定三生</span>
-          </h1>
-          <p className="mt-5 text-base font-medium tracking-[0.45em] text-paper/95">
-            八字合婚 · 缘分测算
-          </p>
-
-          <div className="mt-7 flex items-center gap-2.5 text-gold-bright/90">
-            <Huiwen className="h-2 w-14" />
-            <StarSeal className="size-2.5" />
-            <Huiwen className="h-2 w-14" />
-          </div>
-
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-xs text-paper/80">
-            {['免费出报告', '无需注册', '30 秒出结果'].map((t) => (
-              <span key={t} className="flex items-center gap-1.5">
-                <StarSeal className="size-2 text-gold-bright" />
-                {t}
-              </span>
-            ))}
-          </div>
-
-          <div className="mt-10 w-full max-w-[300px]">
-            <Link to="/calc" className="block">
-              <Button
-                variant="gold"
-                size="xl"
-                className="w-full rounded-full border border-gold-bright/60 text-lg font-bold"
-              >
-                免费测算
-              </Button>
-            </Link>
-            <p className="mt-3 text-center text-xs text-paper/70">
-              已有 12,800+ 位用户完成缘分测算
+          <div className="animate-fade-up">
+            <DoubleHappiness className="mb-5 text-4xl" />
+            <h1 className="font-kai text-[2.9rem] leading-[1.18] font-bold">
+              <span className="text-gold-grad">天生一对</span>
+              <br />
+              <span className="text-gold-grad">缘定三生</span>
+            </h1>
+            <p className="mt-5 text-base font-medium tracking-[0.45em] text-gold-cream/95">
+              八字合婚 · 缘分测算
             </p>
+
+            <div className="mt-7 flex items-center gap-2.5 text-gold/85">
+              <Huiwen className="h-2 w-14" />
+              <StarSeal className="size-2.5" />
+              <Huiwen className="h-2 w-14" />
+            </div>
+
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-xs text-mist">
+              {['免费出报告', '无需注册', '30 秒出结果'].map((t) => (
+                <span key={t} className="flex items-center gap-1.5">
+                  <StarSeal className="size-2 text-gold" />
+                  {t}
+                </span>
+              ))}
+            </div>
+
+            <div className="mt-10 w-full max-w-[300px]">
+              <Link to="/calc" className="block">
+                <Button
+                  variant="gold"
+                  size="xl"
+                  className="w-full rounded-full text-lg font-bold"
+                >
+                  免费测算
+                </Button>
+              </Link>
+              <p className="mt-3 text-center text-xs text-mist/80">
+                已有 12,800+ 位用户完成缘分测算
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -188,10 +193,10 @@ function LandingPage() {
             <Card key={f.seal} className="flex items-start gap-4 p-4">
               <Seal char={f.seal} />
               <div className="flex-1">
-                <h3 className="font-kai text-lg font-bold text-crimson">
+                <h3 className="font-kai text-lg font-bold text-gold-cream">
                   {f.title}
                 </h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-ink/65">
+                <p className="mt-1.5 text-sm leading-relaxed text-mist">
                   {f.desc}
                 </p>
               </div>
@@ -211,7 +216,7 @@ function LandingPage() {
       </section>
 
       {/* 第 3 屏：信任背书 */}
-      <section className="bg-gold-pale/40 px-5 pt-12 pb-14">
+      <section className="border-y border-gold/10 bg-coal/40 px-5 pt-12 pb-14">
         <SectionHeading
           eyebrow="用户真实反馈"
           title="千人实测 · 好评如潮"
@@ -222,23 +227,23 @@ function LandingPage() {
             <Card key={t.name} className="p-5">
               <div className="flex items-center justify-between">
                 <StarRow />
-                <span className="rounded-full bg-cinnabar/10 px-2 py-0.5 text-xs text-crimson">
+                <span className="rounded-full bg-cinnabar/20 px-2 py-0.5 text-xs text-cinnabar-bright">
                   {t.tag}
                 </span>
               </div>
-              <p className="mt-3 text-sm leading-relaxed text-ink/80">
+              <p className="mt-3 text-sm leading-relaxed text-ivory/85">
                 “{t.text}”
               </p>
-              <p className="mt-3 text-xs text-ink/45">— {t.name}</p>
+              <p className="mt-3 text-xs text-mist/70">— {t.name}</p>
             </Card>
           ))}
         </div>
 
         {/* 隐私承诺 */}
-        <Card className="mt-6 flex items-center gap-4 border-cinnabar/20 p-5">
+        <Card className="mt-6 flex items-center gap-4 border-gold/20 p-5">
           <span
             aria-hidden="true"
-            className="flex size-12 shrink-0 items-center justify-center rounded-full bg-cinnabar text-paper"
+            className="flex size-12 shrink-0 items-center justify-center rounded-full border border-cinnabar/50 bg-cinnabar/15 text-cinnabar-bright"
           >
             <svg
               viewBox="0 0 24 24"
@@ -254,10 +259,10 @@ function LandingPage() {
             </svg>
           </span>
           <div>
-            <h3 className="font-kai text-base font-bold text-crimson">
+            <h3 className="font-kai text-base font-bold text-gold-cream">
               隐私承诺 · 生辰信息加密存储
             </h3>
-            <p className="mt-1 text-sm leading-relaxed text-ink/60">
+            <p className="mt-1 text-sm leading-relaxed text-mist">
               你的生辰信息采用 AES-GCM 加密存储，仅用于本次测算，绝不泄露、不出售。
             </p>
           </div>
@@ -268,27 +273,28 @@ function LandingPage() {
           {STATS.map((s) => (
             <div
               key={s.label}
-              className="rounded-xl border border-gold/25 bg-white/80 py-4 text-center shadow-card"
+              className="rounded-xl border border-gold/15 bg-white/3 py-4 text-center shadow-card"
             >
-              <p className="font-kai text-lg font-bold text-cinnabar">
-                {s.num}
-              </p>
-              <p className="mt-1 text-xs text-ink/55">{s.label}</p>
+              <p className="font-kai text-lg font-bold text-gold-grad">{s.num}</p>
+              <p className="mt-1 text-xs text-mist">{s.label}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* 第 4 屏：底部 CTA */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-crimson via-cinnabar to-crimson px-5 pt-12 pb-10 text-paper">
-        <Xiangyun filled className="absolute -top-8 -right-16 w-44 text-gold-bright/20" />
-        <Xiangyun className="absolute -bottom-12 -left-14 w-40 text-paper/12" />
+      <section className="relative overflow-hidden px-5 pt-12 pb-10">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+          <div className="absolute -bottom-32 left-1/2 h-72 w-[34rem] max-w-full -translate-x-1/2 rounded-full bg-gold/10 blur-[100px]" />
+        </div>
+        <Xiangyun filled className="absolute -top-8 -right-16 w-44 text-gold/12" />
+        <Xiangyun className="absolute -bottom-12 -left-14 w-40 text-gold-cream/12" />
         <div className="relative z-10 flex flex-col items-center text-center">
           <DoubleHappiness className="text-3xl" />
           <h2 className="mt-3 font-kai text-[1.9rem] leading-snug font-bold text-gold-grad">
             前世今缘 · 一试便知
           </h2>
-          <p className="mt-3 max-w-[280px] text-sm leading-relaxed text-paper/80">
+          <p className="mt-3 max-w-[280px] text-sm leading-relaxed text-mist">
             填写双方生辰信息，立即生成专属合婚预览报告
           </p>
           <div className="mt-8 w-full max-w-[300px]">
@@ -296,7 +302,7 @@ function LandingPage() {
               <Button
                 variant="gold"
                 size="xl"
-                className="w-full rounded-full border border-gold-bright/60 text-lg font-bold"
+                className="w-full rounded-full text-lg font-bold"
               >
                 免费测算
               </Button>
@@ -307,11 +313,11 @@ function LandingPage() {
 
       {/* 页脚 */}
       <footer className="pb-safe px-5 pt-8 pb-6 text-center">
-        <Huiwen className="mx-auto w-40 text-gold/50" />
-        <p className="mt-4 text-xs leading-relaxed text-ink/45">
+        <Huiwen className="mx-auto w-40 text-gold/40" />
+        <p className="mt-4 text-xs leading-relaxed text-mist/60">
           本页面内容由算法生成，仅供娱乐参考，不构成任何专业建议。
         </p>
-        <p className="mt-2 text-xs text-ink/45">
+        <p className="mt-2 text-xs text-mist/60">
           © 2026 振凡命理 · 快手磁力智投 H5
         </p>
       </footer>

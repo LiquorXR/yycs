@@ -1,33 +1,46 @@
 @import "tailwindcss";
 
 /* ------------------------------------------------------------------ *
- * 振凡命理 · 国潮红金 设计令牌
- * 主红 #C8102E / 深红 #8E0E2E / 古金 #C9A063 / 亮金 #D4AF37
- * 浅金 #F5E6C8 / 宣纸底 #FBF6EC / 墨色 #2B2B2B
+ * 振凡命理 · 深色鎏金 设计令牌
+ * 暖黑夜底 #0d0b0a / 煤玉卡底 #17130f / 鎏金 #d4af37 / 暗金 #a8822f
+ * 浅金 #e8d9b5（正文高亮）/ 雾灰 #9c9180（次级文字）/ 深胭脂 #b0122f
+ * 金线 rgba(212,175,55,0.15)；卡片玻璃质感 bg-white/3 + 金边 + 柔和金色投影
  * ------------------------------------------------------------------ */
 
 @theme {
-  /* 色彩 */
-  --color-cinnabar: #c8102e; /* 主红：按钮、强调、渐变主色 */
-  --color-cinnabar-dark: #a10d26; /* 主红 hover / active */
-  --color-crimson: #8e0e2e; /* 深红：渐变底、深色区文字 */
-  --color-gold: #c9a063; /* 古金：标题渐变、描边、装饰 */
-  --color-gold-dark: #a97f3e; /* 古金加深（浅底上文字用） */
-  --color-gold-bright: #d4af37; /* 亮金：标题渐变亮端 */
-  --color-gold-pale: #f5e6c8; /* 浅金：卡片底、分隔 */
-  --color-paper: #fbf6ec; /* 宣纸底：页面主底色 */
-  --color-ink: #2b2b2b; /* 墨色：正文 */
+  /* 底色 */
+  --color-night: #0d0b0a; /* 页面主底（暖黑） */
+  --color-coal: #17130f; /* 卡片底 */
+  --color-coal-2: #1f1a13; /* 抬升/悬停卡底 */
+
+  /* 鎏金 */
+  --color-gold: #d4af37; /* 鎏金：标题渐变/按钮/描边 */
+  --color-gold-bright: #e9cd7a; /* 渐变亮端 */
+  --color-gold-dark: #a8822f; /* 暗金：次级强调 */
+  --color-gold-cream: #e8d9b5; /* 浅金：正文高亮 */
+
+  /* 文字 */
+  --color-ivory: #f2ecdf; /* 主文字（暖白） */
+  --color-mist: #9c9180; /* 次级文字 */
+  --color-fog: #6b6355; /* 弱化文字 */
+
+  /* 深胭脂 */
+  --color-cinnabar: #b0122f; /* CTA/警示实色点缀（填充物用） */
+  --color-cinnabar-bright: #ef5d75; /* 深底上的错误/警示文字（对比度达标） */
 
   /* 字体 */
-  --font-kai: "STKaiti", "KaiTi", "楷体", "Songti SC", "SimSun", serif;
+  --font-kai:
+    "STKaiti", "KaiTi", "楷体", "华文楷体", "Songti SC", "SimSun", serif;
+  --font-calligraphy: "STKaiti", "KaiTi", "楷体", "华文楷体", serif;
   --font-sans:
     -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB",
     "Microsoft YaHei", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 
   /* 阴影 */
-  --shadow-card: 0 4px 16px rgb(200 16 46 / 0.06);
-  --shadow-gold: 0 6px 18px rgb(201 160 99 / 0.35);
-  --shadow-cinnabar: 0 8px 20px rgb(200 16 46 / 0.35);
+  --shadow-card: 0 12px 32px rgb(0 0 0 / 0.42), 0 2px 10px rgb(212 175 55 / 0.05);
+  --shadow-gold: 0 10px 26px rgb(212 175 55 / 0.28);
+  --shadow-glow: 0 0 28px rgb(212 175 55 / 0.16); /* 柔和金色辉光 */
+  --shadow-cinnabar: 0 8px 22px rgb(176 18 47 / 0.35);
 
   /* 动效（克制，兼容快手 WebView） */
   --animate-float: float 6s ease-in-out infinite;
@@ -57,7 +70,7 @@
 
 @layer base {
   :root {
-    color-scheme: light;
+    color-scheme: dark;
     font-synthesis: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
@@ -69,18 +82,59 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  /* 暖黑夜空：顶部鎏金尘雾 + 平铺星点 + 暖黑渐变（纯 CSS 静态，无动效） */
   body {
     margin: 0;
     min-height: 100dvh;
-    background-color: var(--color-paper);
-    color: var(--color-ink);
+    background-color: var(--color-night);
+    background-image:
+      radial-gradient(
+        1100px 520px at 50% -8%,
+        rgb(212 175 55 / 0.07),
+        transparent 62%
+      ),
+      radial-gradient(900px 460px at 6% 14%, rgb(232 217 181 / 0.045), transparent 60%),
+      radial-gradient(1px 1px at 18px 28px, rgb(232 217 181 / 0.75), transparent 100%),
+      radial-gradient(1px 1px at 58px 12px, rgb(232 217 181 / 0.5), transparent 100%),
+      radial-gradient(2px 2px at 112px 44px, rgb(232 217 181 / 0.6), transparent 100%),
+      radial-gradient(1px 1px at 152px 20px, rgb(232 217 181 / 0.45), transparent 100%),
+      radial-gradient(1.5px 1.5px at 90px 60px, rgb(232 217 181 / 0.32), transparent 100%),
+      radial-gradient(1px 1px at 170px 62px, rgb(232 217 181 / 0.5), transparent 100%),
+      radial-gradient(1px 1px at 32px 82px, rgb(212 175 55 / 0.4), transparent 100%),
+      radial-gradient(1.5px 1.5px at 130px 92px, rgb(212 175 55 / 0.3), transparent 100%),
+      linear-gradient(180deg, #0a0807 0%, var(--color-night) 45%, #151009 100%);
+    background-size:
+      100% 100%,
+      100% 100%,
+      200px 200px,
+      200px 200px,
+      200px 200px,
+      200px 200px,
+      200px 200px,
+      200px 200px,
+      200px 200px,
+      200px 200px,
+      100% 100%;
+    background-repeat:
+      no-repeat,
+      no-repeat,
+      repeat,
+      repeat,
+      repeat,
+      repeat,
+      repeat,
+      repeat,
+      repeat,
+      repeat,
+      no-repeat;
+    color: var(--color-ivory);
     font-family: var(--font-sans);
     overscroll-behavior-y: none;
   }
 
   ::selection {
-    background-color: rgb(200 16 46 / 0.18);
-    color: var(--color-crimson);
+    background-color: rgb(212 175 55 / 0.28);
+    color: var(--color-gold-cream);
   }
 
   input,
@@ -101,10 +155,25 @@
 
 /* 金色渐变文字（标题用） */
 @utility text-gold-grad {
-  background-image: linear-gradient(180deg, #e3c072 0%, var(--color-gold-bright) 38%, var(--color-gold) 72%, #a97f3e 100%);
+  background-image: linear-gradient(
+    180deg,
+    #efd78d 0%,
+    var(--color-gold-bright) 34%,
+    var(--color-gold) 68%,
+    var(--color-gold-dark) 100%
+  );
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+
+/* 玻璃质感卡片（金边 + 柔和金色投影） */
+@utility glass-card {
+  background-color: rgb(255 255 255 / 0.03);
+  border: 1px solid rgb(212 175 55 / 0.15);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 /* 隐藏滚动条（横向滚动的卡片行） */

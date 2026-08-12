@@ -13,10 +13,10 @@ import { formatPrice, maskName, formatYearMonth } from '@/lib/format'
 function SkeletonCard() {
   return (
     <Card className="animate-pulse p-5" aria-hidden="true">
-      <div className="h-4 w-2/5 rounded bg-gold/40" />
-      <div className="mt-4 h-3 w-4/5 rounded bg-ink/10" />
-      <div className="mt-2 h-3 w-3/5 rounded bg-ink/10" />
-      <div className="mt-4 h-10 w-full rounded-lg bg-ink/10" />
+      <div className="h-4 w-2/5 rounded bg-gold/20" />
+      <div className="mt-4 h-3 w-4/5 rounded bg-white/10" />
+      <div className="mt-2 h-3 w-3/5 rounded bg-white/10" />
+      <div className="mt-4 h-10 w-full rounded-lg bg-white/10" />
     </Card>
   )
 }
@@ -24,14 +24,14 @@ function SkeletonCard() {
 /** 无 profileId 参数：引导回测算页 */
 function MissingProfile() {
   return (
-    <main className="flex min-h-screen flex-col bg-paper text-ink">
+    <main className="flex min-h-screen flex-col text-ivory">
       <PageHeader title="确认订单" backTo="/" />
       <div className="flex flex-1 flex-col items-center justify-center px-8 pb-20 text-center">
-        <DoubleHappiness className="text-4xl opacity-70" />
-        <h1 className="mt-4 font-kai text-xl font-bold text-crimson">
+        <DoubleHappiness className="text-4xl text-gold/60" />
+        <h1 className="mt-4 font-kai text-xl font-bold text-gold-cream">
           未获取到测算信息
         </h1>
-        <p className="mt-2 max-w-[260px] text-sm leading-relaxed text-ink/60">
+        <p className="mt-2 max-w-[260px] text-sm leading-relaxed text-mist">
           请先完成生辰信息测算，再回到此页确认订单。
         </p>
         <Link to="/calc" className="mt-8 w-full max-w-[260px]">
@@ -148,46 +148,46 @@ function OrderPage() {
   ]
 
   return (
-    <main className="min-h-screen bg-paper pb-28 text-ink">
+    <main className="min-h-screen pb-28 text-ivory">
       <PageHeader title="确认订单" backTo="/calc" />
 
       <div className="px-5 pt-6">
         {/* 测算信息摘要 */}
         <section aria-label="测算信息摘要">
           <div className="flex items-center gap-2">
-            <Huiwen className="h-2 w-8 text-gold/80" />
-            <h2 className="font-kai text-lg font-bold text-crimson">测算信息</h2>
+            <Huiwen className="h-2 w-8 text-gold/50" />
+            <h2 className="font-kai text-lg font-bold text-gold-grad">测算信息</h2>
           </div>
 
-          <Card className="mt-3 border-gold/40">
+          <Card className="mt-3 border-gold/15">
             <CardContent className="p-5">
               {loading ? (
                 <div className="space-y-2.5" aria-label="加载中">
-                  <div className="h-3.5 w-3/4 animate-pulse rounded bg-ink/10" />
-                  <div className="h-3 w-1/2 animate-pulse rounded bg-ink/10" />
+                  <div className="h-3.5 w-3/4 animate-pulse rounded bg-white/10" />
+                  <div className="h-3 w-1/2 animate-pulse rounded bg-white/10" />
                 </div>
               ) : previewError ? (
-                <p className="text-sm text-cinnabar" role="alert">
+                <p className="text-sm text-cinnabar-bright" role="alert">
                   {previewError}
                 </p>
               ) : (
                 <>
-                  <h3 className="font-kai text-base font-bold text-crimson">
+                  <h3 className="font-kai text-base font-bold text-gold-cream">
                     {preview?.previewReport.title ?? '合婚测算报告'}
                   </h3>
-                  <div className="mt-3 space-y-1.5 text-sm text-ink/70">
+                  <div className="mt-3 space-y-1.5 text-sm text-ivory/85">
                     {summaryRows.some((r) => r.value) ? (
                       summaryRows.map(
                         (r) =>
                           r.value && (
                             <p key={r.label} className="flex gap-2">
-                              <span className="shrink-0 text-ink/45">{r.label}</span>
+                              <span className="shrink-0 text-fog">{r.label}</span>
                               <span>{r.value}</span>
                             </p>
                           ),
                       )
                     ) : (
-                      <p className="text-ink/55">
+                      <p className="text-mist">
                         信息已加密保护，仅展示脱敏摘要
                       </p>
                     )}
@@ -201,8 +201,8 @@ function OrderPage() {
         {/* 产品选择 */}
         <section className="mt-8" aria-label="选择服务套餐">
           <div className="flex items-center gap-2">
-            <Huiwen className="h-2 w-8 text-gold/80" />
-            <h2 className="font-kai text-lg font-bold text-crimson">服务套餐</h2>
+            <Huiwen className="h-2 w-8 text-gold/50" />
+            <h2 className="font-kai text-lg font-bold text-gold-grad">服务套餐</h2>
           </div>
 
           <div className="mt-3 space-y-3">
@@ -212,11 +212,11 @@ function OrderPage() {
                 <SkeletonCard />
               </>
             ) : productsError ? (
-              <p className="rounded-lg border border-cinnabar/30 bg-cinnabar/5 px-4 py-3 text-sm text-cinnabar" role="alert">
+              <p className="rounded-lg border border-cinnabar-bright/30 bg-cinnabar/15 px-4 py-3 text-sm text-cinnabar-bright" role="alert">
                 {productsError}
               </p>
             ) : products.length === 0 ? (
-              <p className="rounded-lg border border-gold/40 bg-gold-pale/40 px-4 py-5 text-center text-sm text-ink/55">
+              <p className="rounded-lg border border-gold/15 bg-white/3 px-4 py-5 text-center text-sm text-mist">
                 暂无付费服务套餐，敬请期待
               </p>
             ) : (
@@ -230,31 +230,31 @@ function OrderPage() {
                     disabled={disabled}
                     aria-pressed={active}
                     onClick={() => setSelected(p)}
-                    className={`w-full rounded-xl border text-left transition-all ${
+                    className={`w-full rounded-2xl border text-left transition-all ${
                       active
-                        ? 'border-cinnabar bg-gradient-to-b from-cinnabar/5 to-gold-pale/40 shadow-card'
-                        : 'border-gold/30 bg-white/90 shadow-card hover:border-gold/60'
+                        ? 'border-gold bg-gold/5 shadow-glow'
+                        : 'border-gold/15 bg-white/3 shadow-card hover:border-gold/35'
                     } ${disabled ? 'opacity-50' : ''}`}
                   >
                     <div className="flex items-center justify-between p-4">
                       <div className="flex items-center gap-3">
                         <span
                           className={`flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
-                            active ? 'border-cinnabar bg-cinnabar' : 'border-gold/50'
+                            active ? 'border-gold bg-gold' : 'border-gold/40'
                           }`}
                           aria-hidden="true"
                         >
                           {active ? (
-                            <svg viewBox="0 0 24 24" className="size-3 text-paper" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                            <svg viewBox="0 0 24 24" className="size-3 text-night" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
                               <path d="M5 12l4.5 4.5L19 7" />
                             </svg>
                           ) : null}
                         </span>
-                        <span className="font-kai text-base font-bold text-crimson">
+                        <span className="font-kai text-base font-bold text-gold-cream">
                           {p.name}
                         </span>
                       </div>
-                      <span className="font-kai text-xl font-bold text-cinnabar">
+                      <span className="font-kai text-xl font-bold text-gold-grad">
                         {formatPrice(p.price)}
                       </span>
                     </div>
@@ -267,7 +267,7 @@ function OrderPage() {
 
         {submitError ? (
           <p
-            className="mt-6 rounded-lg border border-cinnabar/30 bg-cinnabar/5 px-4 py-3 text-sm text-cinnabar"
+            className="mt-6 rounded-lg border border-cinnabar-bright/30 bg-cinnabar/15 px-4 py-3 text-sm text-cinnabar-bright"
             role="alert"
           >
             {submitError}
@@ -276,13 +276,13 @@ function OrderPage() {
       </div>
 
       {/* 底部固定提交栏 */}
-      <div className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-gold/30 bg-white/95 backdrop-blur">
+      <div className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-gold/15 bg-coal/90 backdrop-blur-md">
         <div className="flex items-center justify-between gap-4 px-5 py-3">
           <div>
-            <p className="text-xs text-ink/55">合计金额</p>
-            <p className="font-kai text-xl font-bold text-crimson">
+            <p className="text-xs text-mist">合计金额</p>
+            <p className="font-kai text-xl font-bold text-gold-grad">
               {selected ? formatPrice(selected.price) : '¥0.00'}
-              <span className="ml-1 text-xs font-normal text-ink/45">
+              <span className="ml-1 text-xs font-normal text-mist">
                 一次解锁 · 永久查看
               </span>
             </p>
