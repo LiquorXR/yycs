@@ -18,6 +18,7 @@
 | 版本 | 日期 | 变更说明 | 作者 |
 |---|---|---|---|
 | v1.0.0 | 2026-08-11 | 初版：模板落地，按本项目填充通用约定、错误码体系与全部接口 |  |
+| v1.0.1 | 2026-08-12 | 补充接口实现状态标注（A 阶段已实现 / B 阶段未实现 / 预留）；创建订单请求参数补充 amount（防改价） |  |
 
 ---
 
@@ -351,6 +352,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | 接口名称 | 创建订单 |
 | 接口地址 | `POST /api/orders` |
 | 鉴权要求 | 公开（免鉴权） |
+| 实现状态 | **A 阶段已实现** |
 | 版本 | v1 |
 
 #### 请求参数
@@ -363,6 +365,7 @@ Body（JSON）：
 | productId | int | 是 | 产品 ID（金额以服务端产品表为准，杜绝前端改价） |
 | paymentMethod | string | 否 | `auto`（默认，服务端路由）/ `h5` / `native` |
 | adParams | object | 否 | 磁力投放归因：`{ad_id, creative_id, campaign_id, ...}` |
+| amount | int | 否 | 防改价校验用：携带时须与产品表价格一致，否则返回 12001；不携带则以后端产品表为准 |
 
 请求头：`Idempotency-Key` 必填（服务端 24 小时内同键返回首次结果）。
 
@@ -489,6 +492,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | 接口名称 | 获取报告（含企微活码） |
 | 接口地址 | `GET /api/orders/{orderNo}/report` |
 | 鉴权要求 | 公开（免鉴权），服务端强制校验订单支付状态与 profile 归属 |
+| 实现状态 | **B 阶段未实现**（前端报告页已接入该接口，后端待实现） |
 | 版本 | v1 |
 
 #### 响应示例（付费已解锁）
@@ -557,6 +561,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | 接口名称 | 交付状态/企微添加状态 |
 | 接口地址 | `GET /api/orders/{orderNo}/delivery` |
 | 鉴权要求 | 公开（免鉴权） |
+| 实现状态 | **B 阶段未实现** |
 | 版本 | v1 |
 
 #### 响应示例
@@ -590,6 +595,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | 接口名称 | 微信支付结果回调 |
 | 接口地址 | `POST /api/pay/notify` |
 | 鉴权要求 | 无（微信平台证书/公钥验签） |
+| 实现状态 | **B 阶段未实现**（支付模块） |
 | 版本 | v1 |
 | 协议 | **例外**：不遵循统一包装，返回 `{"code":"SUCCESS"}` / `{"code":"FAIL"}` |
 
@@ -617,6 +623,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | 接口名称 | 退款结果回调 |
 | 接口地址 | `POST /api/refund/notify` |
 | 鉴权要求 | 无（微信平台证书验签） |
+| 实现状态 | **预留**（本期退款为人工审核后发起，回调逻辑预留） |
 | 版本 | v1 |
 | 协议 | **例外**：不遵循统一包装，返回 `SUCCESS`/`FAIL` |
 
@@ -631,6 +638,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | 接口名称 | 企业微信事件回调 |
 | 接口地址 | `POST /api/wecom/notify`（GET 用于 URL 验证） |
 | 鉴权要求 | 无（msg_signature + Token + EncodingAESKey 验签） |
+| 实现状态 | **B 阶段未实现**（企业微信服务模块） |
 | 版本 | v1 |
 | 协议 | **例外**：GET 校验返回 `echostr`；POST 事件处理成功返回 `success` |
 
