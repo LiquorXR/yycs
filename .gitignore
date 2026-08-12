@@ -11,6 +11,7 @@ Desktop.ini
 __pycache__/
 *.pyc
 .env
+*.db
 
 # Rules
 AGENTS.md

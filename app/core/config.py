@@ -30,5 +30,9 @@ class Settings(BaseSettings):
         "http://127.0.0.1:5173",
     ]
 
+    # 生辰数据加密密钥（AES-256-GCM，base64 编码 32 字节）
+    # 生成方式：openssl rand -base64 32；未配置时 dev 生成临时密钥、prod 启动报错
+    BIRTH_DATA_KEY: str | None = None
+
 
 settings = Settings()
