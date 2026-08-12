@@ -15,7 +15,7 @@ const HOURS = [
   { value: '酉', label: '酉时 (17:00 - 18:59)' },
   { value: '戌', label: '戌时 (19:00 - 20:59)' },
   { value: '亥', label: '亥时 (21:00 - 22:59)' },
-  { value: '', label: '吉时 (时辰不详 · 系统推算)' },
+  { value: '吉时', label: '时辰不详 (系统推算)' },
 ]
 
 const FOCUS_TAGS = ['八字五行匹配', '正缘结婚年限', '婚后财运旺衰', '性格相克化解', '子女缘分推演']
@@ -27,6 +27,9 @@ const LOADING_STEPS = [
   '计算正缘结婚转折年份与婚后财运...',
   '生成月老密签与化解锦囊...',
 ]
+
+/** 推演超时阈值：30s 未完成则展示重试容器 */
+const SUBMIT_TIMEOUT_MS = 30000
 
 /** 预览结果持久化：提交成功后跳 /order，返回本页时仍展示预览卡 */
 const RESULT_KEY = 'calc-last-result'
@@ -77,10 +80,14 @@ function CalcLoading({
   maleName,
   femaleName,
   progress,
+  timedOut,
+  onRetry,
 }: {
   maleName: string
   femaleName: string
   progress: number
+  timedOut: boolean
+  onRetry: () => void
 }) {
   const doneCount = progress >= 100 ? 4 : Math.floor(progress / 25)
 
@@ -194,12 +201,30 @@ function CalcLoading({
               style={{ width: `${progress}%` }}
             />
           </div>
-          <span
-            className="mt-1.5 block text-right font-mono text-xs text-gold"
-            aria-live="polite"
-          >
-            {progress}%
-          </span>
+          <div className="mt-1.5 flex items-center justify-between gap-2">
+            <span className="text-[11px] text-muted">
+              网络安全连接中 · 请勿关闭页面
+            </span>
+            <span className="font-mono text-xs text-gold" aria-live="polite">
+              {progress}%
+            </span>
+          </div>
+          {timedOut ? (
+            <div className="mt-3 rounded-[10px] border border-accent/25 bg-accent/10 px-3 py-3 text-center">
+              <p className="text-xs leading-relaxed" style={{ color: '#ff7262' }}>
+                推演耗时稍长，已为您保留排盘数据
+              </p>
+              <div className="mt-2.5 flex justify-center">
+                <button
+                  type="button"
+                  onClick={onRetry}
+                  className="btn-guofeng-ghost !min-h-[36px] !w-auto !px-5 !text-[13px]"
+                >
+                  重新发起推演
+                </button>
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>
@@ -430,7 +455,9 @@ function CalcPage() {
   const [result, setResult] = useState<StoredResult | null>(null)
   const [showLoading, setShowLoading] = useState(false)
   const [progress, setProgress] = useState(0)
+  const [timedOut, setTimedOut] = useState(false)
   const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const calendar = isLunar ? '农历' : '公历'
 
@@ -447,10 +474,11 @@ function CalcPage() {
     }
   }, [])
 
-  /* 卸载时清理进度定时器 */
+  /* 卸载时清理进度定时器与超时定时器 */
   useEffect(
     () => () => {
       if (progressTimerRef.current) clearInterval(progressTimerRef.current)
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
     },
     [],
   )
@@ -469,6 +497,63 @@ function CalcPage() {
     setFocusTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
     )
+  }
+
+  const startSubmit = async () => {
+    setSubmitError(null)
+    setShowLoading(true)
+    setProgress(0)
+    setTimedOut(false)
+
+    if (progressTimerRef.current) clearInterval(progressTimerRef.current)
+    const timer = setInterval(() => {
+      setProgress((p) => Math.min(p + 2, 100))
+    }, 50)
+    progressTimerRef.current = timer
+
+    if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    timeoutRef.current = setTimeout(() => {
+      setTimedOut(true)
+    }, SUBMIT_TIMEOUT_MS)
+
+    try {
+      const [res] = await Promise.all([
+        createProfile(
+          {
+            nameA: personA.name.trim(),
+            birthA: personA.birth,
+            birthHourA: personA.birthHour || undefined,
+            nameB: personB.name.trim(),
+            birthB: personB.birth,
+            birthHourB: personB.birthHour || undefined,
+            isLunar,
+          },
+          newIdempotencyKey(),
+        ),
+        delay(2600),
+      ])
+      if (progressTimerRef.current) clearInterval(progressTimerRef.current)
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+      setTimedOut(false)
+      setProgress(100)
+      const stored: StoredResult = {
+        profileId: res.profileId,
+        title: res.previewReport.title,
+        lockedNote: res.previewReport.lockedNote,
+      }
+      sessionStorage.setItem(RESULT_KEY, JSON.stringify(stored))
+      setResult(stored)
+      await delay(500)
+      navigate(`/order?profileId=${res.profileId}`)
+    } catch (err) {
+      if (progressTimerRef.current) clearInterval(progressTimerRef.current)
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+      setTimedOut(false)
+      setShowLoading(false)
+      setSubmitError(
+        err instanceof Error && err.message ? err.message : '提交失败，请稍后重试',
+      )
+    }
   }
 
   const handleSubmit = async () => {
@@ -495,49 +580,12 @@ function CalcPage() {
       return
     }
 
-    setSubmitError(null)
-    setShowLoading(true)
-    setProgress(0)
+    await startSubmit()
+  }
 
-    const timer = setInterval(() => {
-      setProgress((p) => Math.min(p + 2, 100))
-    }, 50)
-    progressTimerRef.current = timer
-
-    try {
-      const [res] = await Promise.all([
-        createProfile(
-          {
-            nameA: personA.name.trim(),
-            birthA: personA.birth,
-            birthHourA: personA.birthHour || undefined,
-            nameB: personB.name.trim(),
-            birthB: personB.birth,
-            birthHourB: personB.birthHour || undefined,
-            isLunar,
-          },
-          newIdempotencyKey(),
-        ),
-        delay(2600),
-      ])
-      if (progressTimerRef.current) clearInterval(progressTimerRef.current)
-      setProgress(100)
-      const stored: StoredResult = {
-        profileId: res.profileId,
-        title: res.previewReport.title,
-        lockedNote: res.previewReport.lockedNote,
-      }
-      sessionStorage.setItem(RESULT_KEY, JSON.stringify(stored))
-      setResult(stored)
-      await delay(500)
-      navigate(`/order?profileId=${res.profileId}`)
-    } catch (err) {
-      if (progressTimerRef.current) clearInterval(progressTimerRef.current)
-      setShowLoading(false)
-      setSubmitError(
-        err instanceof Error && err.message ? err.message : '提交失败，请稍后重试',
-      )
-    }
+  const handleRetry = () => {
+    if (showLoading) return
+    void startSubmit()
   }
 
   return (
@@ -680,6 +728,8 @@ function CalcPage() {
           maleName={personA.name.trim() || '男方'}
           femaleName={personB.name.trim() || '女方'}
           progress={progress}
+          timedOut={timedOut}
+          onRetry={handleRetry}
         />
       ) : null}
     </main>

@@ -482,6 +482,82 @@
     font-weight: 600;
   }
 
+  /* ---------- 国风弹窗 ---------- */
+
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    background: rgb(0 0 0 / 0.7);
+    backdrop-filter: blur(4px);
+    padding: 16px;
+  }
+
+  .modal-guofeng {
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
+    background: linear-gradient(to bottom, #2b1711 0%, #160b08 100%);
+    border: 1px solid var(--color-border-gold);
+    border-radius: 16px;
+    padding: 20px 18px;
+    box-shadow: var(--shadow-card);
+    animation: fade-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .modal-guofeng::before {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    border: 1px solid rgb(226 180 95 / 0.14);
+    border-radius: 12px;
+    pointer-events: none;
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .modal-title {
+    flex: 1;
+    font-family: var(--font-kai);
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--color-gold-light);
+  }
+
+  .modal-close {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    border: 1px solid var(--color-border-gold);
+    border-radius: 999px;
+    background: rgb(16 8 6 / 0.6);
+    color: var(--color-muted);
+    cursor: pointer;
+    transition:
+      color 0.15s ease,
+      border-color 0.15s ease,
+      transform 0.15s ease;
+  }
+
+  .modal-close:hover {
+    color: var(--color-gold-light);
+    border-color: var(--color-gold);
+    transform: scale(1.05);
+  }
+
   /* ---------- 质感印记：宣纸颗粒 + 水墨云气 ---------- */
 
   .fx-paper {
