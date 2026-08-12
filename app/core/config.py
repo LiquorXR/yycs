@@ -15,6 +15,8 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
+        # monorepo 场景 .env 可能混入前端 VITE_* 变量，未声明字段一律忽略
+        extra="ignore",
     )
 
     APP_NAME: str = "振凡命理"
