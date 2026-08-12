@@ -458,6 +458,7 @@ function CalcPage() {
   const [timedOut, setTimedOut] = useState(false)
   const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const abortRef = useRef<AbortController | null>(null)
 
   const calendar = isLunar ? '农历' : '公历'
 
@@ -474,11 +475,12 @@ function CalcPage() {
     }
   }, [])
 
-  /* 卸载时清理进度定时器与超时定时器 */
+  /* 卸载时清理进度定时器、超时定时器与进行中的请求 */
   useEffect(
     () => () => {
       if (progressTimerRef.current) clearInterval(progressTimerRef.current)
       if (timeoutRef.current) clearTimeout(timeoutRef.current)
+      if (abortRef.current) abortRef.current.abort()
     },
     [],
   )
@@ -505,6 +507,11 @@ function CalcPage() {
     setProgress(0)
     setTimedOut(false)
 
+    /* 中止上一次挂起的请求，避免并发提交 */
+    if (abortRef.current) abortRef.current.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+
     if (progressTimerRef.current) clearInterval(progressTimerRef.current)
     const timer = setInterval(() => {
       setProgress((p) => Math.min(p + 2, 100))
@@ -529,6 +536,7 @@ function CalcPage() {
             isLunar,
           },
           newIdempotencyKey(),
+          { signal: controller.signal },
         ),
         delay(2600),
       ])
@@ -546,6 +554,8 @@ function CalcPage() {
       await delay(500)
       navigate(`/order?profileId=${res.profileId}`)
     } catch (err) {
+      /* 被「重新发起推演」中止的旧请求：静默忽略，新请求已接管 */
+      if ((err as { code?: string } | null)?.code === 'ERR_CANCELED') return
       if (progressTimerRef.current) clearInterval(progressTimerRef.current)
       if (timeoutRef.current) clearTimeout(timeoutRef.current)
       setTimedOut(false)
@@ -584,7 +594,6 @@ function CalcPage() {
   }
 
   const handleRetry = () => {
-    if (showLoading) return
     void startSubmit()
   }
 

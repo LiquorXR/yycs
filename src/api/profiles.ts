@@ -57,11 +57,12 @@ export function newIdempotencyKey(): string {
 export async function createProfile(
   payload: CreateProfileRequest,
   idempotencyKey: string,
+  options?: { signal?: AbortSignal },
 ): Promise<CreateProfileResult> {
   const { data } = await http.post<ApiEnvelope<CreateProfileResult>>(
     '/profiles',
     payload,
-    { headers: { 'Idempotency-Key': idempotencyKey } },
+    { headers: { 'Idempotency-Key': idempotencyKey }, signal: options?.signal },
   )
   if (data.code !== 0) {
     throw new Error(data.message || '提交失败，请稍后重试')
