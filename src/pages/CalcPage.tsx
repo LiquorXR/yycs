@@ -534,6 +534,7 @@ function CalcPage() {
             birthB: personB.birth,
             birthHourB: personB.birthHour || undefined,
             isLunar,
+            focusTags,
           },
           newIdempotencyKey(),
           { signal: controller.signal },
