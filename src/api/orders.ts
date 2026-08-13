@@ -31,9 +31,15 @@ export interface OrderReport {
   state: string
   report: {
     title: string
-    contentUrl: string
+    score?: number
+    rank?: string
+    scoreNote?: string
+    analysis?: { label: string; text: string }
+    karma?: Array<{ title: string; body: string }>
+    lockedPreview: Array<{ title: string; body: string }>
     locked?: boolean
     lockedNote?: string
+    contentUrl?: string
   }
   wecom: {
     addWay?: string

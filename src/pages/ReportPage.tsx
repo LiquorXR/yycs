@@ -12,54 +12,6 @@ const POLL_INTERVAL = 5000
 /** 倒计时总秒数：14:59 */
 const COUNTDOWN_SECONDS = 899
 
-/** 报告正文样例数据（后端暂不提供可视化数据） */
-const SAMPLE = {
-  pillars: [
-    {
-      label: '男主四柱',
-      element: '水旺',
-      values: ['丙子', '丙申', '壬午', '庚子'],
-    },
-    {
-      label: '女主四柱',
-      element: '木旺',
-      values: ['戊寅', '癸亥', '乙卯', '己卯'],
-    },
-  ],
-  score: 92,
-  rank: '【天作之合 · 上等婚配】',
-  scoreNote: '两命阴阳相感，五行互补相生，多为前世相守、今生再续之吉婚',
-  radar: {
-    axes: ['木', '火', '土', '金', '水'],
-    male: [52, 62, 44, 82, 92],
-    female: [94, 48, 60, 42, 68],
-  },
-  analysis: {
-    label: '命理总评',
-    text: '男命日干属水，生于申月得金水相滋，局中水旺；女命日元为木，生于亥月得水木滋养，局中木旺。男水得女木以泄秀，女木得男水以滋荣，五行气场极为和谐，婚后利于互相带财与事业互扶。',
-  },
-  karma: [
-    {
-      title: '前世缘分 · 宿世因果',
-      body: '二人前世曾有同舟共济之情，今生相逢于青年之时，初见即有宿昔熟络之感，情丝暗系。',
-    },
-    {
-      title: '相处之道 · 性格互补',
-      body: '男方性格沉稳内敛，兼具长远谋划；女方心思细腻，富有同理心。两者相处虽偶有言语微瑕，但大局互助互信。',
-    },
-  ],
-  lockedPreview: [
-    {
-      title: '未来3年情感磨合与化解危机节点 (2026-2028)',
-      body: '推演将在2027年农历八月出现太岁冲克，需注意房屋置业与长辈意见分歧，解化锦囊为...',
-    },
-    {
-      title: '婚后家庭财库与旺夫/旺妻指数预测',
-      body: '双方结合后财帛宫逢天乙贵人照临，预计结婚后第2年家宅资产可实现显著提升...',
-    },
-  ],
-}
-
 function isUnlocked(report: OrderReport): boolean {
   return UNLOCKED_STATES.includes(report.state) || report.report.locked === false
 }
@@ -91,133 +43,6 @@ function Corners() {
       <span aria-hidden="true" className="corner corner-bl" />
       <span aria-hidden="true" className="corner corner-br" />
     </>
-  )
-}
-
-/* ---------------- 五行生克契合雷达图（数据驱动生成） ---------------- */
-
-function WuxingRadar({
-  axes,
-  male,
-  female,
-}: {
-  axes: string[]
-  male: number[]
-  female: number[]
-}) {
-  const cx = 110
-  const cy = 96
-  const R = 66
-  const angle = (i: number) => -Math.PI / 2 + (Math.PI * 2 * i) / axes.length
-  const pt = (r: number, i: number) => [
-    cx + r * Math.cos(angle(i)),
-    cy + r * Math.sin(angle(i)),
-  ]
-  const toPoints = (data: number[]) =>
-    data
-      .map((v, i) => pt((R * v) / 100, i).map((n) => n.toFixed(1)).join(','))
-      .join(' ')
-
-  return (
-    <svg
-      width="220"
-      height="200"
-      viewBox="0 0 220 200"
-      role="img"
-      aria-label={`五行生克契合雷达图：男主水旺、女主木旺，${axes.join('')}五维对比`}
-      className="mx-auto"
-    >
-      {/* 背景网格环 20/40/60/80/100 */}
-      {[20, 40, 60, 80, 100].map((pct) => (
-        <polygon
-          key={pct}
-          points={axes
-            .map((_, i) =>
-              pt((R * pct) / 100, i).map((n) => n.toFixed(1)).join(','),
-            )
-            .join(' ')}
-          fill="none"
-          stroke={pct === 100 ? 'rgba(226,180,95,0.32)' : 'rgba(226,180,95,0.14)'}
-          strokeWidth={pct === 100 ? 1.5 : 1}
-          strokeDasharray={pct === 100 ? undefined : '3 4'}
-        />
-      ))}
-
-      {/* 轴射线与刻度标签 */}
-      {axes.map((label, i) => {
-        const p = pt(R, i)
-        const tp = pt(R + 17, i)
-        return (
-          <g key={label}>
-            <line
-              x1={cx}
-              y1={cy}
-              x2={p[0].toFixed(1)}
-              y2={p[1].toFixed(1)}
-              stroke="rgba(226,180,95,0.16)"
-              strokeWidth="1"
-            />
-            <text
-              x={tp[0].toFixed(1)}
-              y={(tp[1] + 4).toFixed(1)}
-              fill="#e2b45f"
-              fontSize="12"
-              textAnchor="middle"
-              fontWeight="bold"
-              style={{ fontFamily: 'var(--font-kai)' }}
-            >
-              {label}
-            </text>
-          </g>
-        )
-      })}
-
-      {/* 数据多边形 */}
-      <polygon
-        points={toPoints(male)}
-        fill="rgba(100,181,246,0.30)"
-        stroke="#64b5f6"
-        strokeWidth="2"
-      />
-      <polygon
-        points={toPoints(female)}
-        fill="rgba(255,128,171,0.30)"
-        stroke="#ff80ab"
-        strokeWidth="2"
-      />
-
-      {/* 顶点数值标注 */}
-      {male.map((v, i) => {
-        const p = pt((R * v) / 100, i)
-        return (
-          <text
-            key={`m-${i}`}
-            x={p[0].toFixed(1)}
-            y={(p[1] - 5).toFixed(1)}
-            fill="#64b5f6"
-            fontSize="9"
-            textAnchor="middle"
-          >
-            {v}
-          </text>
-        )
-      })}
-      {female.map((v, i) => {
-        const p = pt((R * v) / 100, i)
-        return (
-          <text
-            key={`f-${i}`}
-            x={p[0].toFixed(1)}
-            y={(p[1] + 12).toFixed(1)}
-            fill="#ff80ab"
-            fontSize="9"
-            textAnchor="middle"
-          >
-            {v}
-          </text>
-        )
-      })}
-    </svg>
   )
 }
 
@@ -568,164 +393,124 @@ function ReportPage() {
             </div>
           </section>
 
-          {/* 匹配总分英雄卡 */}
-          <section
-            className="relative rounded-[16px] border border-border-gold bg-[radial-gradient(circle_at_50%_30%,rgba(217,56,41,0.25)_0%,rgba(30,17,13,0.9)_80%)] px-4 py-5 text-center"
-            aria-label="匹配总分"
-          >
-            <div className="relative mx-auto mb-2.5 flex size-[120px] flex-col items-center justify-center">
-              <svg
-                className="absolute inset-0 size-[120px] -rotate-90"
-                viewBox="0 0 120 120"
-                aria-hidden="true"
+          {/* 已解锁：总分 / 命理总评 / 因果章节 */}
+          {unlocked ? (
+            <>
+              {/* 匹配总分英雄卡 */}
+              <section
+                className="relative rounded-[16px] border border-border-gold bg-[radial-gradient(circle_at_50%_30%,rgba(217,56,41,0.25)_0%,rgba(30,17,13,0.9)_80%)] px-4 py-5 text-center"
+                aria-label="匹配总分"
               >
-                <circle
-                  cx="60"
-                  cy="60"
-                  r="52"
-                  fill="none"
-                  stroke="rgba(226,180,95,0.2)"
-                  strokeWidth="8"
-                />
-                <circle
-                  cx="60"
-                  cy="60"
-                  r="52"
-                  fill="none"
-                  stroke="#e2b45f"
-                  strokeWidth="8"
-                  strokeDasharray="326"
-                  strokeDashoffset="26"
-                  strokeLinecap="round"
-                />
-              </svg>
-              <span
-                className="font-kai text-[38px] leading-none font-bold text-gold-light"
-                style={{ textShadow: '0 0 12px rgba(226,180,95,0.6)' }}
-              >
-                {SAMPLE.score}
-              </span>
-              <span className="mt-0.5 text-xs text-muted">契合指数</span>
-            </div>
-
-            <div className="mb-1 font-kai text-lg tracking-[0.08em] text-gold">
-              {SAMPLE.rank}
-            </div>
-            <p className="text-xs text-fg-secondary">{SAMPLE.scoreNote}</p>
-
-            {/* 八字四柱排盘对比 */}
-            <div className="mt-3 grid grid-cols-2 gap-2.5">
-              {SAMPLE.pillars.map((p) => (
-                <div
-                  key={p.label}
-                  className="rounded-[10px] border border-border bg-[#100806]/80 p-2.5 text-xs"
-                >
-                  <div className="mb-1.5 flex justify-between font-kai font-bold text-gold">
-                    <span>{p.label}</span>
-                    <span className="text-[10px] font-normal text-muted">
-                      {p.element}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-4 gap-1 text-center font-kai">
-                    {p.values.map((v, i) => (
-                      <div
-                        key={i}
-                        className="rounded border border-gold/15 bg-[#2a1711]/60 px-0.5 py-1"
-                      >
-                        <div className="mb-0.5 text-[10px] text-muted">
-                          {['年', '月', '日', '时'][i]}
-                        </div>
-                        <div className="text-[13px] font-semibold text-fg">{v}</div>
-                      </div>
-                    ))}
-                  </div>
+                <div className="relative mx-auto mb-2.5 flex size-[120px] flex-col items-center justify-center">
+                  <svg
+                    className="absolute inset-0 size-[120px] -rotate-90"
+                    viewBox="0 0 120 120"
+                    aria-hidden="true"
+                  >
+                    <circle
+                      cx="60"
+                      cy="60"
+                      r="52"
+                      fill="none"
+                      stroke="rgba(226,180,95,0.2)"
+                      strokeWidth="8"
+                    />
+                    <circle
+                      cx="60"
+                      cy="60"
+                      r="52"
+                      fill="none"
+                      stroke="#e2b45f"
+                      strokeWidth="8"
+                      strokeDasharray="326"
+                      strokeDashoffset="26"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <span
+                    className="font-kai text-[38px] leading-none font-bold text-gold-light"
+                    style={{ textShadow: '0 0 12px rgba(226,180,95,0.6)' }}
+                  >
+                    {report.report.score ?? 0}
+                  </span>
+                  <span className="mt-0.5 text-xs text-muted">契合指数</span>
                 </div>
-              ))}
-            </div>
-          </section>
 
-          {/* 五行生克契合雷达图 */}
-          <section
-            className="rounded-[16px] border border-border-gold bg-surface-card p-4 shadow-card"
-            aria-label="五行生克分布雷达图"
-          >
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="flex items-center gap-1.5 font-kai text-base text-gold-light">
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="var(--color-gold)"
-                  strokeWidth="2"
-                  aria-hidden="true"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M12 2a10 10 0 0 1 0 20 10 10 0 0 1 0-20z" />
-                  <path d="M12 6v6l4 2" />
-                </svg>
-                五行生克分布雷达图
-              </h3>
-              <span className="seal-mark">五行互补</span>
-            </div>
-
-            <WuxingRadar
-              axes={SAMPLE.radar.axes}
-              male={SAMPLE.radar.male}
-              female={SAMPLE.radar.female}
-            />
-
-            <div className="mt-1.5 flex justify-center gap-5">
-              <span className="inline-flex items-center gap-1.5 text-xs text-fg-secondary">
-                <i className="size-3 rounded-sm border border-gold/30 bg-blue/55" />
-                男主 (水旺)
-              </span>
-              <span className="inline-flex items-center gap-1.5 text-xs text-fg-secondary">
-                <i className="size-3 rounded-sm border border-gold/30 bg-pink/55" />
-                女主 (木旺)
-              </span>
-            </div>
-
-            <p className="mt-2.5 rounded-lg border-l-[3px] border-gold bg-[#100806]/60 p-2.5 text-[13px] leading-relaxed text-fg-secondary">
-              <strong>{SAMPLE.analysis.label}：</strong>
-              {SAMPLE.analysis.text}
-            </p>
-          </section>
-
-          {/* 三世因果与姻缘批语 */}
-          <section className="card-guofeng" aria-label="三世因果与姻缘批语">
-            <Corners />
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="flex items-center gap-1.5 font-kai text-base text-gold-light">
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="var(--color-gold)"
-                  strokeWidth="2"
-                  aria-hidden="true"
-                >
-                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                </svg>
-                三世因果与姻缘批语
-              </h3>
-            </div>
-
-            {SAMPLE.karma.map((k) => (
-              <div
-                key={k.title}
-                className="mb-2.5 rounded-[10px] border border-border bg-surface/60 p-3 last:mb-0"
-              >
-                <h4 className="mb-1 flex items-center gap-1.5 font-kai text-sm text-gold">
-                  {k.title}
-                </h4>
-                <p className="text-[13px] leading-relaxed text-fg-secondary">
-                  {k.body}
+                <div className="mb-1 font-kai text-lg tracking-[0.08em] text-gold">
+                  {report.report.rank ?? ''}
+                </div>
+                <p className="text-xs text-fg-secondary">
+                  {report.report.scoreNote ?? ''}
                 </p>
-              </div>
-            ))}
-          </section>
+              </section>
+
+              {/* 命理总评 */}
+              {report.report.analysis ? (
+                <section className="card-guofeng" aria-label="命理总评">
+                  <Corners />
+                  <div className="mb-3 flex items-center justify-between">
+                    <h3 className="flex items-center gap-1.5 font-kai text-base text-gold-light">
+                      <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="var(--color-gold)"
+                        strokeWidth="2"
+                        aria-hidden="true"
+                      >
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M12 2a10 10 0 0 1 0 20 10 10 0 0 1 0-20z" />
+                        <path d="M12 6v6l4 2" />
+                      </svg>
+                      {report.report.analysis.label}
+                    </h3>
+                    <span className="seal-mark">天机批注</span>
+                  </div>
+                  <p className="rounded-lg border-l-[3px] border-gold bg-[#100806]/60 p-2.5 text-[13px] leading-relaxed text-fg-secondary">
+                    {report.report.analysis.text}
+                  </p>
+                </section>
+              ) : null}
+
+              {/* 三世因果与姻缘批语 */}
+              {report.report.karma && report.report.karma.length ? (
+                <section className="card-guofeng" aria-label="三世因果与姻缘批语">
+                  <Corners />
+                  <div className="mb-3 flex items-center justify-between">
+                    <h3 className="flex items-center gap-1.5 font-kai text-base text-gold-light">
+                      <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="var(--color-gold)"
+                        strokeWidth="2"
+                        aria-hidden="true"
+                      >
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                      </svg>
+                      三世因果与姻缘批语
+                    </h3>
+                  </div>
+
+                  {report.report.karma.map((k) => (
+                    <div
+                      key={k.title}
+                      className="mb-2.5 rounded-[10px] border border-border bg-surface/60 p-3 last:mb-0"
+                    >
+                      <h4 className="mb-1 flex items-center gap-1.5 font-kai text-sm text-gold">
+                        {k.title}
+                      </h4>
+                      <p className="text-[13px] leading-relaxed text-fg-secondary">
+                        {k.body}
+                      </p>
+                    </div>
+                  ))}
+                </section>
+              ) : null}
+            </>
+          ) : null}
 
           {/* 深度付费解锁区域 */}
           <section
@@ -752,7 +537,7 @@ function ReportPage() {
             </div>
 
             {unlocked ? (
-              SAMPLE.lockedPreview.map((k) => (
+              report.report.lockedPreview.map((k) => (
                 <div
                   key={k.title}
                   className="mb-2.5 rounded-[10px] border border-border bg-surface/60 p-3 last:mb-0"
@@ -770,7 +555,7 @@ function ReportPage() {
                   className="pointer-events-none opacity-60"
                   style={{ filter: 'blur(4px)' }}
                 >
-                  {SAMPLE.lockedPreview.map((k) => (
+                  {report.report.lockedPreview.map((k) => (
                     <div
                       key={k.title}
                       className="mb-2.5 rounded-[10px] border border-border bg-surface/60 p-3 last:mb-0"
@@ -789,10 +574,10 @@ function ReportPage() {
                     <LockIcon className="size-6" />
                   </span>
                   <h4 className="mb-1 font-kai text-[17px] text-gold-light">
-                    解锁《双人深度婚姻天书报告》
+                    完整版需付费解锁《双人深度婚姻天书报告》
                   </h4>
                   <p className="mb-2.5 text-xs text-fg-secondary">
-                    包含未来3年运势转折、婚后财运、避坑锦囊与大师一对一亲批
+                    解锁后包含未来3年运势转折、婚后财运、避坑锦囊与大师一对一亲批
                   </p>
                   <div className="mb-3 rounded-full border border-accent bg-accent/20 px-2.5 py-0.5 font-mono text-xs text-gold-light">
                     限时特惠名额倒计时{' '}

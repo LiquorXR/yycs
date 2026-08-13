@@ -8,6 +8,7 @@ export interface CreateProfileRequest {
   birthB: string
   birthHourB?: string
   isLunar?: boolean
+  focusTags?: string[]
 }
 
 export interface PreviewReport {
