@@ -13,8 +13,10 @@ from app.core.errors import BizError, ErrorCode
 from app.core.response import ok_response
 from app.db.session import get_db
 from app.models.profile import Profile
+from app.models.report import Report
 from app.services.divination import generate_factors, generate_preview_report, validate_profile_input
 from app.services.idempotency import IDEM_SCOPE_PROFILE, get_idempotent_response, store_idempotent_response
+from app.services.report import generate_report
 from app.services.seq import next_profile_id
 
 router = APIRouter(tags=["profiles"])
@@ -30,6 +32,7 @@ class ProfileCreateRequest(BaseModel):
     birthB: str
     birthHourB: str | None = None
     isLunar: bool = False
+    focusTags: list[str] | None = None
 
 
 def _preview_view(preview: dict) -> dict:
@@ -69,6 +72,7 @@ def create_profile(
         payload.isLunar,
     )
     preview = generate_preview_report(profile_id, factors)
+    report_contract = generate_report(factors, payload.focusTags)
 
     profile = Profile(
         id=profile_id,
@@ -83,6 +87,14 @@ def create_profile(
         preview_report=json.dumps(preview, ensure_ascii=False),
     )
     db.add(profile)
+    db.add(
+        Report(
+            profile_id=profile_id,
+            order_no=None,
+            state="locked",
+            full_report=json.dumps(report_contract, ensure_ascii=False),
+        )
+    )
     db.commit()
 
     data = {"profileId": profile_id, "previewReport": _preview_view(preview)}

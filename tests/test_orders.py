@@ -119,3 +119,102 @@ def test_close_order_not_found_10004(client):
     resp = client.post("/api/orders/S20991231001/close")
     assert resp.status_code == 404
     assert resp.json()["code"] == 10004
+
+
+def test_get_order_report_locked(client):
+    pid = _profile_id(client)
+    order_no = _create_order(client, pid, key="report-locked").json()["data"]["orderNo"]
+    resp = client.get(f"/api/orders/{order_no}/report")
+    assert resp.status_code == 200
+    data = resp.json()["data"]
+    assert data["orderNo"] == order_no
+    assert data["state"] == "CREATED"
+    report = data["report"]
+    assert report["locked"] is True
+    assert report["title"]
+    assert len(report["lockedPreview"]) == 2
+    assert all(k["title"] and k["body"] for k in report["lockedPreview"])
+    assert data["wecom"] is None
+
+
+def test_get_order_report_not_found_10004(client):
+    resp = client.get("/api/orders/S20991231001/report")
+    assert resp.status_code == 404
+    assert resp.json()["code"] == 10004
+
+
+def test_mock_pay_success_unlock_full_report(client):
+    pid = _profile_id(client)
+    order_no = _create_order(client, pid, key="mock-unlock").json()["data"]["orderNo"]
+
+    locked = client.get(f"/api/orders/{order_no}/report").json()["data"]
+    assert locked["report"]["locked"] is True
+
+    resp = client.post(f"/api/orders/{order_no}/pay-success-mock")
+    assert resp.status_code == 200
+    data = resp.json()["data"]
+    assert data["orderNo"] == order_no
+    assert data["state"] == "UNLOCKED"
+
+    detail = client.get(f"/api/orders/{order_no}").json()["data"]
+    assert detail["state"] == "UNLOCKED"
+    assert detail["paidAt"]
+
+    unlocked = client.get(f"/api/orders/{order_no}/report").json()["data"]
+    assert unlocked["state"] == "UNLOCKED"
+    report = unlocked["report"]
+    assert report["locked"] is False
+    for key in ("title", "score", "rank", "scoreNote", "analysis", "karma", "lockedPreview"):
+        assert key in report
+    assert isinstance(report["score"], int) and 0 <= report["score"] <= 100
+    assert report["analysis"]["label"] == "命理总评"
+    assert len(report["karma"]) == 2
+    assert len(report["lockedPreview"]) == 2
+    # 未配置 WECOM_QRCODE_URL → wecom 为 null
+    assert unlocked["wecom"] is None
+
+
+def test_mock_pay_success_not_found_10004(client):
+    resp = client.post("/api/orders/S20991231001/pay-success-mock")
+    assert resp.status_code == 404
+    assert resp.json()["code"] == 10004
+
+
+def test_mock_pay_success_already_unlocked_12002(client):
+    pid = _profile_id(client)
+    order_no = _create_order(client, pid, key="mock-twice").json()["data"]["orderNo"]
+    assert client.post(f"/api/orders/{order_no}/pay-success-mock").status_code == 200
+    resp = client.post(f"/api/orders/{order_no}/pay-success-mock")
+    assert resp.status_code == 409
+    assert resp.json()["code"] == 12002
+
+
+def test_report_wecom_qrcode_when_configured(client, monkeypatch):
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "WECOM_QRCODE_URL", "https://qywx.example.com/qr")
+    pid = _profile_id(client)
+    order_no = _create_order(client, pid, key="mock-wecom").json()["data"]["orderNo"]
+    client.post(f"/api/orders/{order_no}/pay-success-mock")
+    data = client.get(f"/api/orders/{order_no}/report").json()["data"]
+    assert data["wecom"]["qrcodeUrl"] == "https://qywx.example.com/qr"
+    assert data["wecom"]["note"]
+
+
+def test_pay_success_mock_disabled_in_prod(monkeypatch):
+    import importlib
+
+    import app.routers.orders as orders_mod
+    from app.core.config import settings
+
+    # prod 环境：mock 路由不注册
+    monkeypatch.setattr(settings, "APP_ENV", "prod")
+    importlib.reload(orders_mod)
+    paths = [r.path for r in orders_mod.router.routes]
+    assert not any(p.endswith("/pay-success-mock") for p in paths)
+
+    # 恢复 dev，避免影响其它用例
+    monkeypatch.setattr(settings, "APP_ENV", "dev")
+    importlib.reload(orders_mod)
+    paths = [r.path for r in orders_mod.router.routes]
+    assert any(p.endswith("/pay-success-mock") for p in paths)

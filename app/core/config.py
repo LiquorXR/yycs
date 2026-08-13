@@ -36,5 +36,8 @@ class Settings(BaseSettings):
     # 生成方式：openssl rand -base64 32；未配置时 dev 生成临时密钥、prod 启动报错
     BIRTH_DATA_KEY: str | None = None
 
+    # 企微「联系我」活码二维码 URL；未配置时已解锁报告 wecom 字段返回 null
+    WECOM_QRCODE_URL: str | None = None
+
 
 settings = Settings()
