@@ -534,7 +534,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | 实现状态 | **A 阶段已实现**（简版报告） |
 | 版本 | v1 |
 
-> 说明：本期系统仅生成**简版报告**（含评分/排名/评分说明/核心分析/化解建议等章节，无四柱与雷达图）；**完整报告由支付后添加客服企业微信，人工交付**。订单未解锁时返回锁定态（含 2 条锁定预览）；已解锁（PAID 及以上状态）时返回简版全量契约并附带企微加好友信息。
+> 说明：本期系统仅生成**简版报告**（含评分/排名/评分说明/核心分析/化解建议等章节，无四柱与雷达图）；**完整报告由支付后添加客服企业微信，人工交付**。订单未解锁时返回锁定态（含 2 条锁定预览）；已解锁（UNLOCKED/DELIVERED/ADDED_WECOM 状态）时返回简版全量契约并附带企微加好友信息。
 
 #### 响应示例（付费已解锁）
 
@@ -544,7 +544,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
   "message": "success",
   "data": {
     "orderNo": "S20260809001",
-    "state": "PAID",
+    "state": "UNLOCKED",
     "report": {
       "title": "紫微缘分配对报告",
       "score": 86,
@@ -583,16 +583,11 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
     "state": "CREATED",
     "report": {
       "title": "紫微缘分配对报告",
-      "score": 0,
-      "rank": "",
-      "scoreNote": "",
       "locked": true,
       "lockedPreview": [
         { "title": "核心分析", "body": "解锁后展示双方五行互补与性格相克的全貌。" },
         { "title": "化解建议", "body": "解锁后获取化解相克的专属锦囊。" }
-      ],
-      "analysis": null,
-      "karma": null
+      ]
     },
     "wecom": null
   }
@@ -603,17 +598,17 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
-| data.state | string | 订单状态（解锁判定依据：PAID 及以上为已解锁） |
-| data.report | object | 简版报告内容；未解锁时核心字段为空（locked=true） |
+| data.state | string | 订单状态（解锁判定依据：UNLOCKED/DELIVERED/ADDED_WECOM；PAID 为已支付未解锁） |
+| data.report | object | 简版报告内容；未解锁时仅含 title/locked/lockedPreview（locked=true） |
 | data.report.title | string | 报告标题 |
-| data.report.score | int | 综合评分（0~100；未解锁恒为 0） |
-| data.report.rank | string | 缘分等级（如 `上上等`；未解锁为空串） |
-| data.report.scoreNote | string | 评分说明（未解锁为空串） |
+| data.report.score | int | 综合评分（0~100；未解锁时缺省，前端按 0 兜底） |
+| data.report.rank | string | 缘分等级（如 `上上等`；未解锁时缺省，前端按空串兜底） |
+| data.report.scoreNote | string | 评分说明（未解锁时缺省，前端按空串兜底） |
 | data.report.locked | boolean | 是否锁定（true 未解锁 / false 已解锁） |
-| data.report.analysis | object \| null | 核心分析 `{label, text}`；未解锁为 null |
+| data.report.analysis | object \| null | 核心分析 `{label, text}`；仅已解锁返回 |
 | data.report.analysis.label | string | 分析章节标题 |
 | data.report.analysis.text | string | 分析正文 |
-| data.report.karma | array \| null | 化解建议列表 `[{title, body}]`（2 条）；未解锁为 null |
+| data.report.karma | array \| null | 化解建议列表 `[{title, body}]`（2 条）；仅已解锁返回 |
 | data.report.lockedPreview | array | 锁定预览 `[{title, body}]`（2 条），解锁前后均返回 |
 | data.wecom | object \| null | 企微加好友信息；未解锁为 null；已解锁且未配置 `WECOM_QRCODE_URL` 时亦为 null |
 | data.wecom.qrcodeUrl | string | 企微二维码 URL。当前为配置占位 URL（环境变量 `WECOM_QRCODE_URL`）；企微真活码（state=订单号归因）后续接入后填充 |
@@ -737,7 +732,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | 实现状态 | **仅开发环境可用**（APP_ENV=dev 时注册路由；生产返回 404） |
 | 版本 | v1 |
 
-> 说明：仅用于本地联调打通「解锁 → 获取报告」链路。支付模块与企微外部接口未就绪，开发/联调环境通过本接口模拟支付成功，将订单置为已支付并解锁简版报告。生产环境路由不注册，请求一律返回 404；正式支付走 §2.10 微信支付回调。
+> 说明：仅用于本地联调打通「解锁 → 获取报告」链路。支付模块与企微外部接口未就绪，开发/联调环境通过本接口模拟支付成功，将订单置为已支付并解锁简版报告。生产环境（APP_ENV=prod）路由不注册，请求返回 HTTP 404（FastAPI 默认响应，无统一业务包装）；正式支付走 §2.10 微信支付回调。
 
 #### 请求示例
 
@@ -762,7 +757,7 @@ POST /api/orders/S20260809001/pay-success-mock
 
 | HTTP 状态码 | 业务 code | message | 说明 |
 |---|---|---|---|
-| 404 | 10004 | 资源不存在 | 订单不存在（或非 dev 环境未注册路由） |
+| 404 | 10004 | 资源不存在 | 订单不存在（dev 环境） |
 | 500 | 50000 | 服务器内部错误 | 联系管理员 |
 
 ---
