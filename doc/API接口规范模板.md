@@ -18,6 +18,8 @@
 | 版本 | 日期 | 变更说明 | 作者 |
 |---|---|---|---|
 | v1.0.0 | 2026-08-11 | 初版：模板落地，按本项目填充通用约定、错误码体系与全部接口 |  |
+| v1.0.1 | 2026-08-12 | 补充接口实现状态标注（A 阶段已实现 / B 阶段未实现 / 预留）；创建订单请求参数补充 amount（防改价） |  |
+| v1.0.2 | 2026-08-13 | 与代码实现核对同步：补齐全部已实现接口状态标注、订单详情字段、创建订单 A 阶段返回形态（payType 等为 null）、关单响应；修正生产 Base URL（同域反代）与限流实现状态说明 |  |
 
 ---
 
@@ -29,7 +31,7 @@
 |---|---|
 | 开发环境（dev） | `http://127.0.0.1:8000/api`（后端本地）；前端 Vite dev server 代理转发 `/api` |
 | 测试环境（staging） | `https://staging.<域名>/api` |
-| 生产环境（prod） | `https://api.<域名>` |
+| 生产环境（prod） | `https://<域名>/api`（同域部署：nginx 托管静态 + 反代 /api） |
 
 > 约定：所有接口路径统一以 `/api` 开头（或网关统一剥离）。
 > 注：`<域名>` 为 ICP 备案后实际域名（办理中），域名就绪后替换。
@@ -140,6 +142,7 @@ Authorization: Bearer <token>
 
 - 默认限流：每 IP+UA 组合 60 次/分钟；下单类接口（`POST /api/orders`）限制 10 次/分钟；数值按风控策略可调。
 - 触发限流返回 HTTP `429 Too Many Requests`，响应头携带 `Retry-After`，业务 code `10006`。
+- **实现状态：规划中（本期未实现）**——错误码 `10006` 与 429 映射已预留（errors.py），限流中间件待风控策略落地。
 
 ---
 
@@ -156,6 +159,7 @@ Authorization: Bearer <token>
 | 接口名称 | 产品列表 |
 | 接口地址 | `GET /api/products` |
 | 鉴权要求 | 公开（免鉴权） |
+| 实现状态 | **A 阶段已实现** |
 | 版本 | v1 |
 
 #### 请求参数
@@ -211,6 +215,7 @@ Query 参数：
 | 接口名称 | 产品详情 |
 | 接口地址 | `GET /api/products/{id}` |
 | 鉴权要求 | 公开（免鉴权） |
+| 实现状态 | **A 阶段已实现** |
 | 版本 | v1 |
 
 #### 响应示例
@@ -246,6 +251,7 @@ Query 参数：
 | 接口名称 | 提交测算信息（生成预览报告） |
 | 接口地址 | `POST /api/profiles` |
 | 鉴权要求 | 公开（免鉴权） |
+| 实现状态 | **A 阶段已实现** |
 | 版本 | v1 |
 
 #### 请求参数
@@ -261,6 +267,8 @@ Body（JSON）：
 | birthB | string | 是 | 乙方出生日期，`YYYY-MM-DD` |
 | birthHourB | string | 否 | 乙方出生时辰（可空） |
 | isLunar | boolean | 否 | 出生日期是否农历（默认 false，服务端换算） |
+
+> 请求头：`Idempotency-Key` 可选（服务端 24 小时内同键返回首次结果；未携带则不幂等去重）。与创建订单（§2.5 强制必填）不同，本接口不强制。
 
 #### 请求示例
 
@@ -288,7 +296,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
   "data": {
     "profileId": "P2026080900123",
     "previewReport": {
-      "title": "紫微缘分配对报告（预览）",
+      "title": "属相猪配牛·姻缘测算预览",
       "contentUrl": "/static/reports/P2026080900123_preview.html",
       "locked": true,
       "lockedNote": "完整版需付费解锁"
@@ -315,6 +323,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | 接口名称 | 重新获取预览报告 |
 | 接口地址 | `GET /api/profiles/{profileId}/preview` |
 | 鉴权要求 | 公开（免鉴权） |
+| 实现状态 | **A 阶段已实现** |
 | 版本 | v1 |
 
 #### 响应示例
@@ -326,7 +335,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
   "data": {
     "profileId": "P2026080900123",
     "previewReport": {
-      "title": "紫微缘分配对报告（预览）",
+      "title": "属相猪配牛·姻缘测算预览",
       "contentUrl": "/static/reports/P2026080900123_preview.html",
       "locked": true,
       "lockedNote": "完整版需付费解锁"
@@ -351,6 +360,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | 接口名称 | 创建订单 |
 | 接口地址 | `POST /api/orders` |
 | 鉴权要求 | 公开（免鉴权） |
+| 实现状态 | **A 阶段已实现** |
 | 版本 | v1 |
 
 #### 请求参数
@@ -363,6 +373,7 @@ Body（JSON）：
 | productId | int | 是 | 产品 ID（金额以服务端产品表为准，杜绝前端改价） |
 | paymentMethod | string | 否 | `auto`（默认，服务端路由）/ `h5` / `native` |
 | adParams | object | 否 | 磁力投放归因：`{ad_id, creative_id, campaign_id, ...}` |
+| amount | int | 否 | 防改价校验用：携带时须与产品表价格一致，否则返回 12001；不携带则以后端产品表为准 |
 
 请求头：`Idempotency-Key` 必填（服务端 24 小时内同键返回首次结果）。
 
@@ -390,11 +401,14 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
   "data": {
     "orderNo": "S20260809001",
     "amount": 9900,
-    "payType": "h5",
-    "payUrl": "https://wx.tenpay.com/cgi-bin/mmpayweb/bin/checkmweb..."
+    "payType": null,
+    "payUrl": null,
+    "codeUrl": null
   }
 }
 ```
+
+> A 阶段（支付模块未落地）：`payType/payUrl/codeUrl` 恒为 `null`；B 阶段统一下单后填充（见响应字段说明）。
 
 #### 响应字段说明
 
@@ -402,19 +416,19 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 |---|---|---|
 | data.orderNo | string | 内部订单号 |
 | data.amount | int | 实际应付金额（分） |
-| data.payType | string | `h5`（拉起微信）/ `native`（扫码） |
-| data.payUrl | string | H5 支付跳转 URL（payType=h5 时） |
-| data.codeUrl | string | 扫码支付二维码内容（payType=native 时） |
+| data.payType | string \| null | A 阶段恒为 `null`；B 阶段为 `h5`（拉起微信）/ `native`（扫码） |
+| data.payUrl | string \| null | H5 支付跳转 URL（B 阶段 payType=h5 时）；A 阶段为 null |
+| data.codeUrl | string \| null | 扫码支付二维码内容（B 阶段 payType=native 时）；A 阶段为 null |
 
 #### 错误响应
 
 | HTTP 状态码 | 业务 code | message | 说明 |
 |---|---|---|---|
+| 400 | 10001 | 参数校验失败 | `Idempotency-Key` 缺失或 `paymentMethod` 非法（需为 auto/h5/native） |
 | 400 | 12001 | 金额校验失败 | 防改价：下单金额与产品表不一致 |
 | 404 | 10004 | 资源不存在 | profileId 不存在 |
 | 404 | 13001 | 产品不存在或已下架 | 产品下架 |
-| 422 | 14001 | 测算信息无效 | 生辰信息校验失败 |
-| 429 | 10006 | 请求过于频繁 | 触发限流 |
+| 429 | 10006 | 请求过于频繁 | 触发限流（规划中，本期未实现） |
 | 500 | 50000 | 服务器内部错误 | 联系管理员 |
 
 ### 2.6 订单详情
@@ -426,6 +440,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | 接口名称 | 订单详情/状态 |
 | 接口地址 | `GET /api/orders/{orderNo}` |
 | 鉴权要求 | 公开（免鉴权） |
+| 实现状态 | **A 阶段已实现** |
 | 版本 | v1 |
 
 #### 响应示例
@@ -437,11 +452,16 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
   "data": {
     "orderNo": "S20260809001",
     "profileId": "P2026080900123",
+    "productId": 1,
+    "outTradeNo": "S20260809001",
     "amount": 9900,
-    "state": "PAID",
-    "payType": "h5",
+    "state": "CREATED",
+    "payType": "auto",
+    "openid": "",
+    "adParams": null,
+    "failReason": null,
     "createdAt": "2026-08-09T04:12:00Z",
-    "paidAt": "2026-08-09T04:15:33Z"
+    "paidAt": null
   }
 }
 ```
@@ -450,8 +470,13 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
+| data.productId | int | 产品 ID |
+| data.outTradeNo | string | 微信商户订单号（A 阶段 = orderNo） |
 | data.state | string | 状态机：CREATED/PAID/UNLOCKED/DELIVERED/ADDED_WECOM/CLOSED/REFUNDING/REFUNDED |
-| data.payType | string | h5 / native / jsapi（预留） |
+| data.payType | string | 创建订单时传入的支付方式：auto / h5 / native |
+| data.openid | string | 微信 openid（A 阶段为空串） |
+| data.adParams | object \| null | 磁力投放归因参数（原样返回，未传为 null） |
+| data.failReason | string \| null | 失败原因（正常为 null） |
 
 #### 错误响应
 
@@ -469,7 +494,21 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | 接口名称 | 关单（超时/取消） |
 | 接口地址 | `POST /api/orders/{orderNo}/close` |
 | 鉴权要求 | 公开（免鉴权） |
+| 实现状态 | **A 阶段已实现** |
 | 版本 | v1 |
+
+#### 响应示例
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "orderNo": "S20260809001",
+    "state": "CLOSED"
+  }
+}
+```
 
 #### 错误响应
 
@@ -489,6 +528,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | 接口名称 | 获取报告（含企微活码） |
 | 接口地址 | `GET /api/orders/{orderNo}/report` |
 | 鉴权要求 | 公开（免鉴权），服务端强制校验订单支付状态与 profile 归属 |
+| 实现状态 | **B 阶段未实现**（前端报告页已接入该接口，后端待实现） |
 | 版本 | v1 |
 
 #### 响应示例（付费已解锁）
@@ -557,6 +597,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | 接口名称 | 交付状态/企微添加状态 |
 | 接口地址 | `GET /api/orders/{orderNo}/delivery` |
 | 鉴权要求 | 公开（免鉴权） |
+| 实现状态 | **B 阶段未实现** |
 | 版本 | v1 |
 
 #### 响应示例
@@ -590,6 +631,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | 接口名称 | 微信支付结果回调 |
 | 接口地址 | `POST /api/pay/notify` |
 | 鉴权要求 | 无（微信平台证书/公钥验签） |
+| 实现状态 | **B 阶段未实现**（支付模块） |
 | 版本 | v1 |
 | 协议 | **例外**：不遵循统一包装，返回 `{"code":"SUCCESS"}` / `{"code":"FAIL"}` |
 
@@ -617,6 +659,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | 接口名称 | 退款结果回调 |
 | 接口地址 | `POST /api/refund/notify` |
 | 鉴权要求 | 无（微信平台证书验签） |
+| 实现状态 | **预留**（本期退款为人工审核后发起，回调逻辑预留） |
 | 版本 | v1 |
 | 协议 | **例外**：不遵循统一包装，返回 `SUCCESS`/`FAIL` |
 
@@ -631,6 +674,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | 接口名称 | 企业微信事件回调 |
 | 接口地址 | `POST /api/wecom/notify`（GET 用于 URL 验证） |
 | 鉴权要求 | 无（msg_signature + Token + EncodingAESKey 验签） |
+| 实现状态 | **B 阶段未实现**（企业微信服务模块） |
 | 版本 | v1 |
 | 协议 | **例外**：GET 校验返回 `echostr`；POST 事件处理成功返回 `success` |
 
@@ -648,7 +692,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 
 ### 3.1 URL 命名
 
-- 资源使用复数名词，kebab-case（短横线分隔）：`/api/user-profiles`。
+- 资源使用复数名词，kebab-case（短横线分隔）：`/api/user-profiles`；本项目现有路径沿用既有命名（如 `/api/profiles`、路径参数 camelCase `{orderNo}`），新接口按本规范命名。
 - 嵌套资源用路径层级表达：`/api/users/{userId}/orders`。
 - 动词仅用于动作类接口：`POST /api/auth/login`、`POST /api/orders/{orderId}/cancel`。
 
