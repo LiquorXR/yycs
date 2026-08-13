@@ -1,29 +1,22 @@
 name: zhenfan
 
 services:
-  # 一次性构建：前端产物落到宿主 ./dist，由主机 nginx 托管（TLS/反代在项目外配置）
+  # 一次性构建：容器运行时执行 npm run build，产物经 bind mount 落宿主 ./dist，由主机 nginx 托管
   frontend-build:
     build:
       context: .
       dockerfile: Dockerfile.frontend
+    command: ["npm", "run", "build"]
     volumes:
       - ./dist:/app/dist
     restart: "no"
 
-  # 一次性迁移：建表（alembic upgrade head）+ 幂等种子商品（prod 不走 dev 自动建表/种子）
+  # 一次性迁移+种子：prod 不走 dev 自动建表/种子，由 init_prod.py 完成
   migrate:
     build:
       context: .
       dockerfile: Dockerfile.backend
-    command: >
-      sh -c "alembic upgrade head &&
-             python -c \"
-               from app.db.session import SessionLocal
-               from app.services.seed import seed_products
-               db = SessionLocal()
-               seed_products(db)
-               db.close()
-             \""
+    command: ["python", "scripts/init_prod.py"]
     env_file: .env
     volumes:
       - app_data:/data
