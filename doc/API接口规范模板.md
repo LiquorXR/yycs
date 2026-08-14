@@ -7,7 +7,7 @@
 | 项目 | 内容 |
 |---|---|
 | 项目名称 | 振凡命理 |
-| 文档版本 | v1.0.0 |
+| 文档版本 | v1.0.3 |
 | 编写人 |  |
 | 编写日期 | 2026-08-11 |
 | 审核人 |  |
@@ -20,6 +20,7 @@
 | v1.0.0 | 2026-08-11 | 初版：模板落地，按本项目填充通用约定、错误码体系与全部接口 |  |
 | v1.0.1 | 2026-08-12 | 补充接口实现状态标注（A 阶段已实现 / B 阶段未实现 / 预留）；创建订单请求参数补充 amount（防改价） |  |
 | v1.0.2 | 2026-08-13 | 与代码实现核对同步：补齐全部已实现接口状态标注、订单详情字段、创建订单 A 阶段返回形态（payType 等为 null）、关单响应；修正生产 Base URL（同域反代）与限流实现状态说明 |  |
+| v1.0.3 | 2026-08-13 | 同步简版报告契约与 focusTags：提交测算信息新增 focusTags（定制报告章节）；获取报告标记为 A 阶段已实现（简版契约：score/rank/scoreNote/analysis/karma/lockedPreview，含解锁/未解锁两态与 wecom 占位说明）；新增 dev 模拟解锁接口 pay-success-mock（仅 APP_ENV=dev 注册，生产 404） |  |
 
 ---
 
@@ -267,6 +268,7 @@ Body（JSON）：
 | birthB | string | 是 | 乙方出生日期，`YYYY-MM-DD` |
 | birthHourB | string | 否 | 乙方出生时辰（可空） |
 | isLunar | boolean | 否 | 出生日期是否农历（默认 false，服务端换算） |
+| focusTags | string[] | 否 | 关注点标签数组，用于定制报告章节，取值：`八字五行匹配`/`正缘结婚年限`/`婚后财运旺衰`/`性格相克化解`/`子女缘分推演`；不传则按默认章节生成 |
 
 > 请求头：`Idempotency-Key` 可选（服务端 24 小时内同键返回首次结果；未携带则不幂等去重）。与创建订单（§2.5 强制必填）不同，本接口不强制。
 
@@ -283,7 +285,8 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
   "birthHourA": "子",
   "nameB": "李四",
   "birthB": "1997-02-03",
-  "isLunar": false
+  "isLunar": false,
+  "focusTags": ["正缘结婚年限", "婚后财运旺衰"]
 }
 ```
 
@@ -528,8 +531,10 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | 接口名称 | 获取报告（含企微活码） |
 | 接口地址 | `GET /api/orders/{orderNo}/report` |
 | 鉴权要求 | 公开（免鉴权），服务端强制校验订单支付状态与 profile 归属 |
-| 实现状态 | **B 阶段未实现**（前端报告页已接入该接口，后端待实现） |
+| 实现状态 | **A 阶段已实现**（简版报告） |
 | 版本 | v1 |
+
+> 说明：本期系统仅生成**简版报告**（含评分/排名/评分说明/核心分析/化解建议等章节，无四柱与雷达图）；**完整报告由支付后添加客服企业微信，人工交付**。订单未解锁时返回锁定态（含 2 条锁定预览）；已解锁（UNLOCKED/DELIVERED/ADDED_WECOM 状态）时返回简版全量契约并附带企微加好友信息。
 
 #### 响应示例（付费已解锁）
 
@@ -539,13 +544,29 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
   "message": "success",
   "data": {
     "orderNo": "S20260809001",
-    "state": "DELIVERED",
-    "report": { "title": "紫微缘分配对报告", "contentUrl": "/static/reports/S20260809001.html" },
+    "state": "UNLOCKED",
+    "report": {
+      "title": "紫微缘分配对报告",
+      "score": 86,
+      "rank": "上上等",
+      "scoreNote": "八字五行匹配度高，正缘气息相合",
+      "locked": false,
+      "analysis": {
+        "label": "综合评析",
+        "text": "双方五行互补，性格互为印证，建议按化解方案相处。"
+      },
+      "karma": [
+        { "title": "化解建议", "body": "建议在卧室东南方摆放绿植，调和木火之气。" },
+        { "title": "相处锦囊", "body": "遇分歧时先约定冷静 10 分钟再沟通，可显著减少争执。" }
+      ],
+      "lockedPreview": [
+        { "title": "完整版包含", "body": "四柱排盘、雷达图与大师逐段批注，由人工交付。" },
+        { "title": "解锁方式", "body": "支付后添加客服企业微信获取完整报告。" }
+      ]
+    },
     "wecom": {
-      "addWay": "contact_way",
-      "qrcodeUrl": "https://qywx...",
-      "state": "S20260809001",
-      "note": "已生成专属客服码,扫码添加后由人工为您深度测算"
+      "qrcodeUrl": "https://qywx.../contact",
+      "note": "添加客服企业微信，由人工为您深度测算并交付完整报告"
     }
   }
 }
@@ -561,9 +582,12 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
     "orderNo": "S20260809001",
     "state": "CREATED",
     "report": {
-      "title": "紫微缘分配对报告（预览）",
-      "contentUrl": "/static/reports/P2026080900123_preview.html",
-      "locked": true
+      "title": "紫微缘分配对报告",
+      "locked": true,
+      "lockedPreview": [
+        { "title": "核心分析", "body": "解锁后展示双方五行互补与性格相克的全貌。" },
+        { "title": "化解建议", "body": "解锁后获取化解相克的专属锦囊。" }
+      ]
     },
     "wecom": null
   }
@@ -574,11 +598,21 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
-| data.report | object | 报告内容；未解锁时为预览掩码（locked=true） |
-| data.report.contentUrl | string | 报告内容 URL（脱敏展示） |
-| data.wecom | object \| null | 企微「联系我」活码；未解锁/未生成为 null |
-| data.wecom.qrcodeUrl | string | 活码二维码 URL |
-| data.wecom.state | string | 活码 state（=订单号，用于加好友归因） |
+| data.state | string | 订单状态（解锁判定依据：UNLOCKED/DELIVERED/ADDED_WECOM；PAID 为已支付未解锁） |
+| data.report | object | 简版报告内容；未解锁时仅含 title/locked/lockedPreview（locked=true） |
+| data.report.title | string | 报告标题 |
+| data.report.score | int | 综合评分（0~100；未解锁时缺省，前端按 0 兜底） |
+| data.report.rank | string | 缘分等级（如 `上上等`；未解锁时缺省，前端按空串兜底） |
+| data.report.scoreNote | string | 评分说明（未解锁时缺省，前端按空串兜底） |
+| data.report.locked | boolean | 是否锁定（true 未解锁 / false 已解锁） |
+| data.report.analysis | object \| null | 核心分析 `{label, text}`；仅已解锁返回 |
+| data.report.analysis.label | string | 分析章节标题 |
+| data.report.analysis.text | string | 分析正文 |
+| data.report.karma | array \| null | 化解建议列表 `[{title, body}]`（2 条）；仅已解锁返回 |
+| data.report.lockedPreview | array | 锁定预览 `[{title, body}]`（2 条），解锁前后均返回 |
+| data.wecom | object \| null | 企微加好友信息；未解锁为 null；已解锁且未配置 `WECOM_QRCODE_URL` 时亦为 null |
+| data.wecom.qrcodeUrl | string | 企微二维码 URL。当前为配置占位 URL（环境变量 `WECOM_QRCODE_URL`）；企微真活码（state=订单号归因）后续接入后填充 |
+| data.wecom.note | string | 加好友提示语 |
 
 #### 错误响应
 
@@ -685,6 +719,46 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 3. 归因：`state` 字段匹配 `WECOM_CONTACTS.state` → 更新订单外部联系人记录
 4. 幂等：同 `external_userid` 重复事件不重复写
 5. 处理失败返回非 `success`，企微将重推（最长 3 天）
+
+### 2.13 模拟支付成功（dev 联调专用）
+
+#### 基本信息
+
+| 项目 | 内容 |
+|---|---|
+| 接口名称 | 模拟支付成功（解锁报告） |
+| 接口地址 | `POST /api/orders/{orderNo}/pay-success-mock` |
+| 鉴权要求 | 公开（免鉴权） |
+| 实现状态 | **仅开发环境可用**（APP_ENV=dev 时注册路由；生产返回 404） |
+| 版本 | v1 |
+
+> 说明：仅用于本地联调打通「解锁 → 获取报告」链路。支付模块与企微外部接口未就绪，开发/联调环境通过本接口模拟支付成功，将订单置为已支付并解锁简版报告。生产环境（APP_ENV=prod）路由不注册，请求返回 HTTP 404（FastAPI 默认响应，无统一业务包装）；正式支付走 §2.10 微信支付回调。
+
+#### 请求示例
+
+```
+POST /api/orders/S20260809001/pay-success-mock
+```
+
+#### 响应示例
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "orderNo": "S20260809001",
+    "state": "PAID"
+  }
+}
+```
+
+#### 错误响应
+
+| HTTP 状态码 | 业务 code | message | 说明 |
+|---|---|---|---|
+| 404 | 10004 | 资源不存在 | 订单不存在（dev 环境） |
+| 500 | 50000 | 服务器内部错误 | 联系管理员 |
 
 ---
 
