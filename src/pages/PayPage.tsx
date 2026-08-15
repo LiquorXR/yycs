@@ -46,7 +46,7 @@ function NativeQrArea({ codeUrl }: { codeUrl: string }) {
       <p className="mt-1 text-xs text-muted">
         长按识别失败？请复制下方链接在微信中打开
       </p>
-      <p className="mt-2 w-full max-w-[300px] rounded-lg border border-border-gold bg-surface/60 px-3 py-2 text-xs text-fg-secondary break-all select-all">
+      <p className="mt-2 w-full max-w-[300px] rounded-lg border border-border-gold bg-[#2e0808]/60 px-3 py-2 text-xs text-fg-secondary break-all select-all">
         {codeUrl}
       </p>
     </div>
@@ -57,7 +57,7 @@ function NativeQrArea({ codeUrl }: { codeUrl: string }) {
 function PayChannelEmpty() {
   return (
     <div className="flex flex-col items-center px-6 py-12 text-center">
-      <span className="grid size-16 place-items-center rounded-full border border-border-gold bg-surface/60 text-muted">
+      <span className="grid size-16 place-items-center rounded-full border border-border-gold bg-[#2e0808]/60 text-muted">
         <svg viewBox="0 0 24 24" className="size-8" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <rect x="3" y="6" width="18" height="13" rx="2.5" />
           <path d="M3 10h18M7 15h4" />
@@ -136,7 +136,7 @@ function PayPage() {
       <div className="px-5 pt-6">
         {/* 订单金额卡 */}
         <Card className="overflow-hidden">
-          <div className="relative border-b border-border bg-gradient-to-b from-[#2a1711]/60 to-transparent px-5 py-6 text-center">
+          <div className="relative border-b border-border bg-gradient-to-b from-[#5a0f0f]/60 to-transparent px-5 py-6 text-center">
             <p className="text-xs tracking-[0.25em] text-muted">应付金额</p>
             <p className="mt-1 font-kai text-[2.2rem] leading-none font-bold text-gold">
               {order ? formatPrice(order.amount) : '¥0.00'}
@@ -164,7 +164,7 @@ function PayPage() {
                 </div>
               ) : error ? (
                 <div className="flex flex-col items-center py-6 text-center">
-                  <p className="text-sm text-accent-hover" role="alert">
+                  <p className="text-sm text-red-light" role="alert">
                     {error}
                   </p>
                   <Button variant="outline" className="mt-4" onClick={() => void fetchOrder()}>
@@ -173,7 +173,7 @@ function PayPage() {
                 </div>
               ) : isPaid ? (
                 <div className="flex flex-col items-center py-6 text-center">
-                  <span className="grid size-16 place-items-center rounded-full bg-gradient-to-b from-gold to-gold-dark text-[#2b110a] shadow-gold">
+                  <span className="grid size-16 place-items-center rounded-full bg-gradient-to-b from-gold to-gold-dark text-[#591010] shadow-gold">
                     <svg viewBox="0 0 24 24" className="size-8" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <path d="M5 12l4.5 4.5L19 7" />
                     </svg>

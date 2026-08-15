@@ -93,7 +93,7 @@ function CalcLoading({
 
   return (
     <div
-      className="fx-paper fx-cloud fade-in fixed inset-0 z-50 flex flex-col items-center overflow-y-auto bg-[radial-gradient(circle_at_50%_20%,#2b110a_0%,#170b08_55%,#0d0604_100%)] px-5 py-8 text-center"
+      className="fx-paper fx-cloud fade-in fixed inset-0 z-50 flex flex-col items-center overflow-y-auto bg-[radial-gradient(circle_at_50%_20%,#8a1a1a_0%,#5a0f0f_55%,#3a0a0a_100%)] px-5 py-8 text-center"
       role="status"
       aria-live="polite"
     >
@@ -109,7 +109,7 @@ function CalcLoading({
       {/* 双人命盘两极 + 红线 */}
       <div className="relative my-5 flex w-full items-center justify-around">
         <div className="relative z-10 flex flex-col items-center gap-1.5">
-          <span className="grid size-[58px] animate-pulse-glow-slow place-items-center rounded-full border-2 border-gold bg-[radial-gradient(circle,#361912_0%,#1c0b08_100%)] font-kai text-lg text-gold-light shadow-[0_0_16px_rgba(226,180,95,0.4)]">
+          <span className="grid size-[58px] animate-pulse-glow-slow place-items-center rounded-full border-2 border-gold bg-[radial-gradient(circle,#4a0e0e_0%,#2a0808_100%)] font-kai text-lg text-gold-light shadow-[0_0_16px_rgba(226,180,95,0.4)]">
             乾
           </span>
           <span className="max-w-[120px] truncate text-[13px] font-medium text-fg">
@@ -119,14 +119,14 @@ function CalcLoading({
 
         <div
           aria-hidden="true"
-          className="absolute top-[29px] right-[20%] left-[20%] z-0 h-0.5 bg-gradient-to-r from-accent via-pink to-accent shadow-[0_0_10px_var(--color-accent)]"
+          className="absolute top-[29px] right-[20%] left-[20%] z-0 h-0.5 bg-gradient-to-r from-gold via-gold-light to-gold shadow-[0_0_10px_var(--color-gold)]"
         />
-        <span className="absolute top-1/2 left-1/2 z-10 grid size-6 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-gold-light bg-accent text-[11px] text-white shadow-[0_0_12px_var(--color-accent)]">
+        <span className="absolute top-1/2 left-1/2 z-10 grid size-6 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-gold-light bg-gold text-[11px] text-[#591010] shadow-[0_0_12px_var(--color-gold)]">
           缘
         </span>
 
         <div className="relative z-10 flex flex-col items-center gap-1.5">
-          <span className="grid size-[58px] animate-pulse-glow-slow place-items-center rounded-full border-2 border-gold bg-[radial-gradient(circle,#361912_0%,#1c0b08_100%)] font-kai text-lg text-gold-light shadow-[0_0_16px_rgba(226,180,95,0.4)]">
+          <span className="grid size-[58px] animate-pulse-glow-slow place-items-center rounded-full border-2 border-gold bg-[radial-gradient(circle,#4a0e0e_0%,#2a0808_100%)] font-kai text-lg text-gold-light shadow-[0_0_16px_rgba(226,180,95,0.4)]">
             坤
           </span>
           <span className="max-w-[120px] truncate text-[13px] font-medium text-fg">
@@ -143,7 +143,7 @@ function CalcLoading({
         />
         <div
           aria-hidden="true"
-          className="absolute size-[130px] animate-reverse-fast rounded-full border-[1.5px] border-accent shadow-[0_0_15px_rgba(217,56,41,0.4)]"
+          className="absolute size-[130px] animate-reverse-fast rounded-full border-[1.5px] border-gold shadow-[0_0_15px_rgba(226,180,95,0.4)]"
         />
         <div
           className="relative size-[70px] animate-taiji rounded-full border-2 border-gold shadow-[0_0_20px_rgba(226,180,95,0.5)]"
@@ -161,7 +161,7 @@ function CalcLoading({
       </div>
 
       {/* 实时演算状态日志 */}
-      <div className="w-full rounded-[16px] border border-border-gold bg-surface/85 p-4 text-left">
+      <div className="w-full rounded-[16px] border border-border-gold bg-[#3a0a0a]/70 p-4 text-left">
         {LOADING_STEPS.map((text, i) => {
           const done = i < doneCount
           const active = !done && i === doneCount
@@ -170,7 +170,7 @@ function CalcLoading({
               key={text}
               className={`mb-2 flex items-center gap-2.5 text-[13px] transition-colors duration-300 ${
                 done
-                  ? 'text-jade'
+                  ? 'text-jade-light'
                   : active
                     ? 'font-medium text-gold-light'
                     : 'text-muted'
@@ -190,14 +190,14 @@ function CalcLoading({
 
         <div className="mt-2.5">
           <div
-            className="h-1.5 overflow-hidden rounded-full border border-border bg-[#4a271c]/60"
+            className="h-1.5 overflow-hidden rounded-full border border-border bg-[#5a1414]/60"
             role="progressbar"
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={progress}
           >
             <div
-              className="h-full rounded-full bg-gradient-to-r from-accent to-gold shadow-[0_0_10px_var(--color-gold)] transition-[width] duration-100"
+              className="h-full rounded-full bg-gradient-to-r from-gold-dark via-gold to-gold-light shadow-[0_0_10px_var(--color-gold)] transition-[width] duration-100"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -210,8 +210,8 @@ function CalcLoading({
             </span>
           </div>
           {timedOut ? (
-            <div className="mt-3 rounded-[10px] border border-accent/25 bg-accent/10 px-3 py-3 text-center">
-              <p className="text-xs leading-relaxed" style={{ color: '#ff7262' }}>
+            <div className="mt-3 rounded-[10px] border border-red/25 bg-red/10 px-3 py-3 text-center">
+              <p className="text-xs leading-relaxed text-red-light">
                 推演耗时稍长，已为您保留排盘数据
               </p>
               <div className="mt-2.5 flex justify-center">
@@ -266,7 +266,7 @@ function PersonSection({
           {isMale ? '乾造（男方信息）' : '坤造（女方信息）'}
         </div>
         <div
-          className="flex rounded-full border border-border bg-[#100806]/80 p-0.5 text-[11px]"
+          className="flex rounded-full border border-border bg-[#3a0a0a]/55 p-0.5 text-[11px]"
           role="group"
           aria-label="历法切换"
         >
@@ -291,20 +291,23 @@ function PersonSection({
             className="mb-1 block text-xs text-fg-secondary"
           >
             {isMale ? '男方姓名/昵称' : '女方姓名/昵称'}
+            <span className="text-red-light" aria-hidden="true"> *</span>
           </label>
           <input
             id={`${gender}-name`}
             type="text"
-            className="input-guofeng"
+            className={`input-guofeng ${nameError ? 'input-error' : ''}`}
             value={name}
             maxLength={20}
             placeholder={`请输入${isMale ? '男方' : '女方'}姓名`}
             aria-invalid={Boolean(nameError)}
+            aria-required="true"
+            required
             autoComplete="off"
             onChange={(e) => onChange({ name: e.target.value })}
           />
           {nameError ? (
-            <p className="mt-1.5 text-xs text-accent" role="alert">
+            <p className="field-error-msg" role="alert">
               {nameError}
             </p>
           ) : null}
@@ -317,17 +320,20 @@ function PersonSection({
               className="mb-1 block text-xs text-fg-secondary"
             >
               出生日期{calendar === '农历' ? '（农历）' : ''}
+              <span className="text-red-light" aria-hidden="true"> *</span>
             </label>
             <input
               id={`${gender}-date`}
               type="date"
-              className="input-guofeng"
+              className={`input-guofeng ${birthError ? 'input-error' : ''}`}
               value={birth}
               aria-invalid={Boolean(birthError)}
+              aria-required="true"
+              required
               onChange={(e) => onChange({ birth: e.target.value })}
             />
             {birthError ? (
-              <p className="mt-1.5 text-xs text-accent" role="alert">
+              <p className="field-error-msg" role="alert">
                 {birthError}
               </p>
             ) : null}
@@ -384,7 +390,7 @@ function PreviewReport({ result }: { result: StoredResult }) {
   return (
     <section className="mt-4" aria-label="预览报告">
       <div className="overflow-hidden rounded-[16px] border border-border-gold bg-surface-card shadow-card">
-        <div className="border-b border-border bg-gradient-to-b from-[#2a1711]/60 to-transparent px-5 py-4">
+        <div className="border-b border-border bg-gradient-to-b from-[#5a0f0f]/60 to-transparent px-5 py-4">
           <p className="text-xs tracking-[0.3em] text-muted">合婚测算 · 预览报告</p>
           <h3 className="mt-1 font-kai text-lg font-bold text-gold-light">
             {result.title}
@@ -420,7 +426,7 @@ function PreviewReport({ result }: { result: StoredResult }) {
           </div>
 
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-bg/60 px-6 text-center backdrop-blur-[1px]">
-            <span className="flex size-14 items-center justify-center rounded-full bg-gradient-to-b from-gold to-gold-dark text-[#2b110a] shadow-[0_0_20px_rgba(226,180,95,0.6)]">
+            <span className="flex size-14 items-center justify-center rounded-full bg-gradient-to-b from-gold to-gold-dark text-[#591010] shadow-[0_0_20px_rgba(226,180,95,0.6)]">
               <LockIcon className="size-7" />
             </span>
             <p className="mt-3 font-kai text-base font-bold text-gold-light">
@@ -681,7 +687,7 @@ function CalcPage() {
 
         {submitError ? (
           <p
-            className="rounded-lg border border-accent/25 bg-accent/10 px-4 py-3 text-sm text-accent-hover"
+            className="rounded-lg border border-red/25 bg-red/10 px-4 py-3 text-sm text-red-light"
             role="alert"
           >
             {submitError}
@@ -710,7 +716,7 @@ function CalcPage() {
 
       {/* 底部固定解锁栏（返回本页且有预览结果时） */}
       {result ? (
-        <div className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-border-gold bg-bg/95 backdrop-blur-md">
+        <div className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-border-gold bg-[#2e0808]/96 backdrop-blur-md">
           <div className="flex items-center justify-between gap-4 px-5 py-3">
             <div>
               <p className="text-xs text-muted">解锁完整版</p>

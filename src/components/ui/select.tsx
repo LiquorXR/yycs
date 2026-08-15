@@ -20,11 +20,10 @@ function Select({ className, options, placeholder, ...props }: SelectProps) {
     <div className="relative">
       <select
         className={cn(
-          'h-11 w-full cursor-pointer appearance-none rounded-[10px] border border-border-gold bg-[#140a08]/80 px-3.5 text-base text-fg shadow-sm outline-none transition-colors',
+          'h-11 w-full cursor-pointer appearance-none rounded-[10px] border border-border-gold bg-[#2e0808]/60 px-3.5 text-base text-fg shadow-sm outline-none transition-colors',
           'pr-10',
           'focus:border-gold focus:ring-2 focus:ring-gold/20',
           'disabled:cursor-not-allowed disabled:opacity-50',
-          'aria-[invalid=true]:border-accent',
           className,
         )}
         {...props}

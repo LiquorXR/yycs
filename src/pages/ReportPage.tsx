@@ -91,10 +91,10 @@ function MasterConsult({
 
   return (
     <section aria-label="大师一对一亲批">
-      <div className="flex items-center gap-3 rounded-[16px] border border-border-gold bg-[#2a1711]/85 p-3.5">
+      <div className="flex items-center gap-3 rounded-[16px] border border-border-gold bg-[#6e1313]/80 p-3.5">
         <span
           aria-hidden="true"
-          className="grid size-12 shrink-0 place-items-center rounded-full border-2 border-gold bg-[radial-gradient(circle,#2b110a_0%,#100806_100%)] font-kai text-xl text-gold-light"
+          className="grid size-12 shrink-0 place-items-center rounded-full border-2 border-gold bg-[radial-gradient(circle,#4a0e0e_0%,#2a0808_100%)] font-kai text-xl text-gold-light"
         >
           道
         </span>
@@ -137,7 +137,7 @@ function MasterConsult({
       {/* 预约亲批弹窗 */}
       {bookingOpen ? (
         <div
-          className="modal-backdrop"
+          className="modal-backdrop open"
           role="dialog"
           aria-modal="true"
           aria-label="预约玄天道长亲批"
@@ -146,7 +146,7 @@ function MasterConsult({
             <div className="modal-header">
               <span
                 aria-hidden="true"
-                className="grid size-8 shrink-0 place-items-center rounded-full border border-gold bg-accent font-kai text-base text-gold-light"
+                className="grid size-8 shrink-0 place-items-center rounded-full border border-gold bg-red font-kai text-base text-white"
               >
                 道
               </span>
@@ -173,10 +173,10 @@ function MasterConsult({
             </div>
 
             {/* 大师介绍卡 */}
-            <div className="mb-3 flex items-center gap-3 rounded-[14px] border border-border-gold bg-[#2a1711]/85 p-3.5">
+            <div className="mb-3 flex items-center gap-3 rounded-[14px] border border-border-gold bg-[#3a0a0a]/60 p-3.5">
               <span
                 aria-hidden="true"
-                className="grid size-12 shrink-0 place-items-center rounded-full border-2 border-gold bg-accent font-kai text-xl text-gold-light shadow-[0_0_12px_rgba(217,56,41,0.4)]"
+                className="grid size-12 shrink-0 place-items-center rounded-full border-2 border-gold bg-red font-kai text-xl text-white shadow-[0_0_12px_rgba(217,56,41,0.4)]"
               >
                 道
               </span>
@@ -350,7 +350,7 @@ function ReportPage() {
         </div>
       ) : error ? (
         <div className="flex flex-col items-center px-6 py-14 text-center">
-          <span className="grid size-16 place-items-center rounded-full bg-gradient-to-b from-gold to-gold-dark text-[#2b110a] shadow-[0_0_20px_rgba(226,180,95,0.6)]">
+          <span className="grid size-16 place-items-center rounded-full bg-gradient-to-b from-gold to-gold-dark text-[#591010] shadow-[0_0_20px_rgba(226,180,95,0.6)]">
             <LockIcon className="size-8" />
           </span>
           <p className="mt-4 font-kai text-lg font-bold text-gold-light" role="alert">
@@ -374,7 +374,7 @@ function ReportPage() {
         <div className="space-y-4">
           {/* 顶部黑底金边批书标题 */}
           <section
-            className="relative rounded-[16px] border border-border-gold bg-gradient-to-b from-[#2a1711]/90 to-[#1a0d09]/95 p-4 text-center shadow-gold"
+            className="relative rounded-[16px] border border-border-gold bg-gradient-to-b from-[#5a0e0e]/92 to-[#3a0a0a]/96 p-4 text-center shadow-gold"
             aria-label="报告标题"
           >
             <span className="seal-red absolute top-3 right-3">敕批</span>
@@ -385,10 +385,10 @@ function ReportPage() {
               {reportTitle ?? '八字合婚 · 姻缘命盘详批'}
             </h1>
             <div className="text-sm text-fg-secondary">
-              <span className="text-blue">乾造</span>
+              <span className="gender-chip gender-chip-male">乾造</span>
               <span className="mx-1">(男方)</span>
               <span className="mx-1.5 text-gold">♥</span>
-              <span className="text-pink">坤造</span>
+              <span className="gender-chip gender-chip-female">坤造</span>
               <span className="mx-1">(女方)</span>
             </div>
           </section>
@@ -398,7 +398,7 @@ function ReportPage() {
             <>
               {/* 匹配总分英雄卡 */}
               <section
-                className="relative rounded-[16px] border border-border-gold bg-[radial-gradient(circle_at_50%_30%,rgba(217,56,41,0.25)_0%,rgba(30,17,13,0.9)_80%)] px-4 py-5 text-center"
+                className="relative rounded-[16px] border border-border-gold bg-[radial-gradient(circle_at_50%_30%,rgba(226,180,95,0.12)_0%,rgba(110,19,19,0.9)_80%)] px-4 py-5 text-center"
                 aria-label="匹配总分"
               >
                 <div className="relative mx-auto mb-2.5 flex size-[120px] flex-col items-center justify-center">
@@ -467,7 +467,7 @@ function ReportPage() {
                     </h3>
                     <span className="seal-mark">天机批注</span>
                   </div>
-                  <p className="rounded-lg border-l-[3px] border-gold bg-[#100806]/60 p-2.5 text-[13px] leading-relaxed text-fg-secondary">
+                  <p className="rounded-lg border-l-[3px] border-gold bg-[#2e0808]/55 p-2.5 text-[13px] leading-relaxed text-fg-secondary">
                     {report.report.analysis.text}
                   </p>
                 </section>
@@ -497,7 +497,7 @@ function ReportPage() {
                   {report.report.karma.map((k) => (
                     <div
                       key={k.title}
-                      className="mb-2.5 rounded-[10px] border border-border bg-surface/60 p-3 last:mb-0"
+                      className="mb-2.5 rounded-[10px] border border-border bg-[#3a0a0a]/55 p-3 last:mb-0"
                     >
                       <h4 className="mb-1 flex items-center gap-1.5 font-kai text-sm text-gold">
                         {k.title}
@@ -514,7 +514,7 @@ function ReportPage() {
 
           {/* 深度付费解锁区域 */}
           <section
-            className="relative overflow-hidden rounded-[16px] border-[1.5px] border-border-gold bg-gradient-to-b from-[#2a1711]/95 to-[#140a08]/98 p-4 shadow-[0_8px_32px_rgba(0,0,0,0.6)]"
+            className="relative overflow-hidden rounded-[16px] border-[1.5px] border-border-gold bg-gradient-to-b from-[#5a0e0e]/95 to-[#2e0808]/98 p-4 shadow-[0_8px_32px_rgba(0,0,0,0.6)]"
             aria-label="高级婚姻运势深度推演"
           >
             <div className="mb-3 flex items-center justify-between">
@@ -540,7 +540,7 @@ function ReportPage() {
               report.report.lockedPreview.map((k) => (
                 <div
                   key={k.title}
-                  className="mb-2.5 rounded-[10px] border border-border bg-surface/60 p-3 last:mb-0"
+                  className="mb-2.5 rounded-[10px] border border-border bg-[#3a0a0a]/55 p-3 last:mb-0"
                 >
                   <h4 className="mb-1 font-kai text-sm text-gold">{k.title}</h4>
                   <p className="text-[13px] leading-relaxed text-fg-secondary">
@@ -558,7 +558,7 @@ function ReportPage() {
                   {report.report.lockedPreview.map((k) => (
                     <div
                       key={k.title}
-                      className="mb-2.5 rounded-[10px] border border-border bg-surface/60 p-3 last:mb-0"
+                      className="mb-2.5 rounded-[10px] border border-border bg-[#3a0a0a]/55 p-3 last:mb-0"
                     >
                       <h4 className="mb-1 font-kai text-sm text-gold">{k.title}</h4>
                       <p className="text-[13px] leading-relaxed text-fg-secondary">
@@ -569,8 +569,8 @@ function ReportPage() {
                 </div>
 
                 {/* 浮层解锁遮罩 */}
-                <div className="absolute inset-x-0 top-[60px] bottom-0 z-10 flex flex-col items-center justify-end bg-gradient-to-b from-[#1e110d]/40 to-[#100806]/98 px-4 py-5 backdrop-blur-[8px]">
-                  <span className="mb-2 grid size-11 place-items-center rounded-full bg-gradient-to-b from-gold to-gold-dark text-[#2b110a] shadow-[0_0_20px_rgba(226,180,95,0.6)]">
+                <div className="absolute inset-x-0 top-[60px] bottom-0 z-10 flex flex-col items-center justify-end bg-gradient-to-b from-[#6e1313]/35 to-[#2e0808]/98 px-4 py-5 backdrop-blur-[8px]">
+                  <span className="mb-2 grid size-11 place-items-center rounded-full bg-gradient-to-b from-gold to-gold-dark text-[#591010] shadow-[0_0_20px_rgba(226,180,95,0.6)]">
                     <LockIcon className="size-6" />
                   </span>
                   <h4 className="mb-1 font-kai text-[17px] text-gold-light">
@@ -579,7 +579,7 @@ function ReportPage() {
                   <p className="mb-2.5 text-xs text-fg-secondary">
                     解锁后包含未来3年运势转折、婚后财运、避坑锦囊与大师一对一亲批
                   </p>
-                  <div className="mb-3 rounded-full border border-accent bg-accent/20 px-2.5 py-0.5 font-mono text-xs text-gold-light">
+                  <div className="mb-3 rounded-full border border-gold bg-gold/16 px-2.5 py-0.5 font-mono text-xs text-gold-light">
                     限时特惠名额倒计时{' '}
                     <span role="timer" aria-live="off">
                       {countdown}
@@ -608,7 +608,7 @@ function ReportPage() {
 
       {/* 底部固定解锁栏（真实订单价格） */}
       {report && !unlocked ? (
-        <div className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-border-gold bg-bg/95 px-4 pt-2.5 pb-5 backdrop-blur-md">
+        <div className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-border-gold bg-[#2e0808]/96 px-4 pt-2.5 pb-5 backdrop-blur-md">
           <button
             type="button"
             onClick={() => setPayModalOpen(true)}
@@ -629,7 +629,7 @@ function ReportPage() {
       {/* 支付弹窗 */}
       {payModalOpen ? (
         <div
-          className="modal-backdrop"
+          className="modal-backdrop open"
           role="dialog"
           aria-modal="true"
           aria-label="确认支付解锁天书"
@@ -680,7 +680,7 @@ function ReportPage() {
             </p>
 
             {/* 四重权益框 */}
-            <div className="mb-3 rounded-[14px] border border-border-gold bg-[#100806]/85 p-3.5">
+            <div className="mb-3 rounded-[14px] border border-border-gold bg-[#3a0a0a]/60 p-3.5">
               <p className="mb-2 text-[13px] font-medium text-gold-light">
                 ✨ 解锁即享四重天书核心权益：
               </p>
@@ -699,23 +699,23 @@ function ReportPage() {
               </span>
               <span className="flex items-baseline gap-1.5">
                 <span className="text-xs text-muted line-through">¥198.00</span>
-                <span className="font-mono text-2xl font-bold text-accent-hover">
+                <span className="font-mono text-2xl font-bold text-gold">
                   ¥28.00
                 </span>
               </span>
             </div>
 
             {/* 支付方式 */}
-            <div className="mb-4 grid grid-cols-2 gap-2">
-              <div className="flex items-center justify-center gap-1.5 rounded-[12px] border border-gold bg-gold/15 py-2.5 text-[13px] font-medium text-gold-light">
+            <div className="pay-methods">
+              <span className="pay-option active">
                 <span aria-hidden="true">🟢</span>
                 微信支付
-              </div>
-              <div className="flex items-center justify-center gap-1.5 rounded-[12px] border border-border bg-[#100806]/60 py-2.5 text-[13px] text-muted opacity-60">
+              </span>
+              <span className="pay-option opacity-60">
                 <span aria-hidden="true">🔵</span>
                 支付宝
                 <span className="text-[10px]">暂未开通</span>
-              </div>
+              </span>
             </div>
 
             <button

@@ -6,7 +6,7 @@ import { Huiwen } from '@/components/decor/Huiwen'
  */
 function PageHeader({ title, backTo = '/' }: { title: string; backTo?: string }) {
   return (
-    <header className="sticky top-0 z-20 border-b border-border bg-[#0d0604]/90 backdrop-blur-md">
+    <header className="sticky top-0 z-20 border-b border-border bg-[#3a0a0a]/92 backdrop-blur-md">
       <div className="pt-safe flex items-center justify-between px-5 py-3">
         <Link
           to={backTo}

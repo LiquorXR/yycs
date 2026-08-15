@@ -8,10 +8,10 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          'border border-gold-light/70 bg-gradient-to-b from-accent-hover to-accent-dark text-white shadow-red hover:brightness-110',
-        gold: 'border border-gold-light/60 bg-gradient-to-b from-gold-light via-gold to-gold-dark text-[#2b110a] shadow-gold hover:brightness-105',
+          'border border-gold-light bg-gradient-to-b from-gold-light via-gold to-gold-dark text-[#591010] shadow-gold hover:brightness-110',
+        gold: 'border border-gold-light/60 bg-gradient-to-b from-gold-light via-gold to-gold-dark text-[#591010] shadow-gold hover:brightness-105',
         outline:
-          'border border-border-gold bg-bg/60 text-gold hover:border-gold hover:bg-gold/10',
+          'border border-border-gold bg-red/10 text-gold hover:border-gold hover:bg-gold/10',
         ghost: 'text-muted hover:bg-gold/10 hover:text-gold',
         link: 'text-gold underline-offset-4 hover:underline',
       },
