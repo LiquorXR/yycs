@@ -30,6 +30,6 @@ def upgrade() -> None:
 def downgrade() -> None:
     """Downgrade schema."""
     with op.batch_alter_table("profiles", recreate="always") as batch_op:
-        batch_op.alter_column("birth_hour_b", existing_type=sa.Text(), nullable=False)
+        batch_op.alter_column("birth_hour_b", existing_type=sa.Text(), nullable=True)
         batch_op.alter_column("birth_b", existing_type=sa.Text(), nullable=False)
         batch_op.alter_column("name_b", existing_type=sa.String(length=64), nullable=False)
