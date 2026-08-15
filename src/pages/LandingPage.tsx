@@ -3,6 +3,18 @@ import { Link } from 'react-router-dom'
 
 /* ---------------- 罗盘八卦交互动画 ---------------- */
 
+// 八卦三爻（自下而上；true=阳爻实线，false=阴爻断线），先天八卦方位（上北下南）
+const BAGUA: { angle: number; lines: [boolean, boolean, boolean] }[] = [
+  { angle: 0, lines: [false, false, false] }, // 坤 · 北
+  { angle: 45, lines: [true, false, false] }, // 震 · 东北
+  { angle: 90, lines: [true, false, true] }, // 离 · 东
+  { angle: 135, lines: [true, true, false] }, // 兑 · 东南
+  { angle: 180, lines: [true, true, true] }, // 乾 · 南
+  { angle: 225, lines: [false, true, true] }, // 巽 · 西南
+  { angle: 270, lines: [false, true, false] }, // 坎 · 西
+  { angle: 315, lines: [false, false, true] }, // 艮 · 西北
+]
+
 function Compass() {
   return (
     <div className="relative mx-auto mb-4 flex size-[220px] items-center justify-center">
@@ -56,14 +68,80 @@ function Compass() {
         />
       </svg>
 
-      {/* 中心：金边命盘 · 个人命盘 */}
-      <div className="relative flex size-[100px] flex-col items-center justify-center rounded-full border-2 border-gold bg-[radial-gradient(circle,#4a0e0e_0%,#2a0808_100%)] shadow-[0_0_25px_rgba(226,180,95,0.3)]">
-        <span className="text-[32px] leading-none" aria-hidden="true">
-          运
-        </span>
-        <span className="font-kai text-xs tracking-[0.1em] text-gold-light">
-          个人命盘
-        </span>
+      {/* 中心：太极八卦旋转徽章 */}
+      <div className="relative grid size-[130px] place-items-center">
+        {/* 八卦环：金线刻卦，逆时针缓转 */}
+        <svg
+          className="absolute size-[112px] animate-bagua"
+          viewBox="0 0 112 112"
+          aria-hidden="true"
+        >
+          <circle
+            cx="56"
+            cy="56"
+            r="47"
+            fill="none"
+            stroke="#e2b45f"
+            strokeWidth="1"
+            strokeDasharray="3 6"
+            opacity="0.9"
+          />
+          {BAGUA.map(({ angle, lines }) => {
+            const rad = (angle * Math.PI) / 180
+            const x = 56 + 34 * Math.sin(rad)
+            const y = 56 - 34 * Math.cos(rad)
+            const rows = [4, -3, -10]
+            return (
+              <g key={angle} transform={`translate(${x} ${y}) rotate(${angle})`}>
+                {lines.map((yang, i) =>
+                  yang ? (
+                    <line
+                      key={i}
+                      x1="-8"
+                      y1={rows[i]}
+                      x2="8"
+                      y2={rows[i]}
+                      stroke="#e2b45f"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                  ) : (
+                    <g key={i}>
+                      <line
+                        x1="-8"
+                        y1={rows[i]}
+                        x2="-1.5"
+                        y2={rows[i]}
+                        stroke="#e2b45f"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                      <line
+                        x1="1.5"
+                        y1={rows[i]}
+                        x2="8"
+                        y2={rows[i]}
+                        stroke="#e2b45f"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                    </g>
+                  ),
+                )}
+              </g>
+            )
+          })}
+        </svg>
+
+        {/* 太极：阴阳双鱼，顺时针快转 */}
+        <div
+          aria-hidden="true"
+          className="relative size-[52px] animate-taiji rounded-full border-2 border-gold shadow-[0_0_20px_rgba(226,180,95,0.5)]"
+          style={{ background: 'conic-gradient(#f8ebdb 0deg 180deg, #100806 180deg 360deg)' }}
+        >
+          <span className="absolute top-0 left-1/2 size-1/2 -translate-x-1/2 rounded-full bg-[#f8ebdb] shadow-[inset_0_0_0_4px_#100806]" />
+          <span className="absolute bottom-0 left-1/2 size-1/2 -translate-x-1/2 rounded-full bg-[#100806] shadow-[inset_0_0_0_4px_#f8ebdb]" />
+        </div>
       </div>
     </div>
   )
@@ -168,8 +246,8 @@ function LandingPage() {
         <span className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-border-gold bg-gold/12 px-3 py-1 text-[11px] tracking-[0.1em] text-gold">
           敕造命盘 · 单人测算
         </span>
-        <h1 className="text-gold-gradient mb-1.5 font-kai text-[28px] leading-[1.2] tracking-[0.05em]">
-          八字命盘 · 运势姻缘一测便知
+        <h1 className="text-gold-gradient mb-1.5 font-shufa text-[28px] font-bold leading-[1.2] tracking-[0.08em]">
+          八字命盘 · 运势姻缘
         </h1>
         <p className="mb-4 text-[13px] tracking-[0.02em] text-fg-secondary">
           测算个人五行喜忌 · 预测正缘桃花与运势转折

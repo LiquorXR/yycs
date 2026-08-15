@@ -1,5 +1,25 @@
 @import "tailwindcss";
 
+/* 项目内毛笔字体：马善政毛笔楷书（Ma Shan Zheng，SIL OFL-1.1，见 assets/fonts/OFL.txt）
+   已裁剪至首页主标题用字（八字命盘·运势姻缘），勿用于未裁剪字符（缺失时回退字体栈） */
+@font-face {
+  font-family: "Ma Shan Zheng";
+  src: url("./assets/fonts/mashanzheng-title.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+4E00-9FFF, U+3000-303F, U+FF00-FFEF;
+}
+
+@font-face {
+  font-family: "Ma Shan Zheng";
+  src: url("./assets/fonts/mashanzheng-punct.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+00B7;
+}
+
 /* ------------------------------------------------------------------ *
  * 国风玄学 · 中国红 × 鎏金设计令牌（Open Design 原型 35a2cc25 guofeng.css）
  * 深绛红底 #6e1313 / 鎏金 #e2b45f / 丹砂朱红 #d93829 / 宣纸米白 #f7efdc
@@ -38,6 +58,9 @@
   --font-kai:
     "Kaiti SC", "STKaiti", "Noto Serif SC", "Source Han Serif SC",
     "AR PL UKai CN", Georgia, serif; /* 展示字体 */
+  --font-shufa:
+    "Ma Shan Zheng", "华文行楷", "STXingkai", "华文新魏", "STXinwei", "楷体",
+    "Kaiti SC", "STKaiti", "Noto Serif SC", "Source Han Serif SC", serif; /* 毛笔书法 */
   --font-serif:
     "Noto Serif SC", "Source Han Serif SC", "Songti SC", "SimSun", serif;
   --font-sans:
@@ -58,6 +81,7 @@
   --animate-compass-fast: compass-rotate 12s linear infinite; /* 推演外环 */
   --animate-reverse-fast: reverse-rotate 8s linear infinite; /* 推演内环 */
   --animate-taiji: compass-rotate 4s linear infinite; /* 太极转盘 */
+  --animate-bagua: reverse-rotate 20s linear infinite; /* 首页八卦环 */
   --animate-pulse-glow: pulse-glow 1.5s ease-in-out infinite; /* 喜报红点 */
   --animate-pulse-glow-slow: pulse-glow 2s ease-in-out infinite; /* 命盘印章 */
 
@@ -298,28 +322,6 @@
       inset 0 0 4px rgb(255 255 255 / 0.4);
     transform: rotate(-5deg);
     text-shadow: 0 1px 2px rgb(0 0 0 / 0.5);
-  }
-
-  /* 命主性别小徽章 */
-  .gender-chip {
-    display: inline-block;
-    font-size: 10px;
-    font-weight: 600;
-    line-height: 1;
-    padding: 2px 6px;
-    border-radius: 4px;
-    margin-left: 4px;
-    vertical-align: 2px;
-  }
-
-  .gender-chip-male {
-    background: var(--color-blue);
-    color: #07233f;
-  }
-
-  .gender-chip-female {
-    background: var(--color-pink);
-    color: #3d0a1c;
   }
 
   /* ---------- 国风按钮 ---------- */

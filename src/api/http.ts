@@ -22,7 +22,7 @@ export function unwrapData<T>(env: ApiEnvelope<T>): T {
 
 const http = axios.create({
   baseURL,
-  timeout: 10000,
+  timeout: 35000,
 })
 
 http.interceptors.response.use(
