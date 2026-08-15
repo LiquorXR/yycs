@@ -1,4 +1,4 @@
-"""测算模块接口测试：校验失败 14001 / 成功创建 / preview 10004。"""
+"""测算模块接口测试：校验失败 14001 / 成功创建 / preview 10004 / 脱敏字段。"""
 
 from __future__ import annotations
 
@@ -15,40 +15,54 @@ def test_create_profile_success(client):
     preview = data["previewReport"]
     assert preview["locked"] is True
     assert preview["lockedNote"] == "完整版需付费解锁"
-    assert preview["title"]
+    assert preview["title"] == "张三 · 姻缘运势测算预览"
     assert preview["contentUrl"].endswith("_preview.html")
 
 
+def test_create_profile_without_birth_hour(client):
+    payload = dict(VALID_PROFILE, birthHour=None)
+    resp = client.post("/api/profiles", json=payload, headers={"Idempotency-Key": "k-nohour"})
+    assert resp.status_code == 200
+    assert resp.json()["code"] == 0
+
+
+def test_create_profile_with_focus_tags(client):
+    payload = dict(VALID_PROFILE, focusTags=["正缘桃花期", "婚后财运旺衰"])
+    resp = client.post("/api/profiles", json=payload, headers={"Idempotency-Key": "k-tags"})
+    assert resp.status_code == 200
+    assert resp.json()["code"] == 0
+
+
 def test_create_profile_name_too_short_14001(client):
-    payload = dict(VALID_PROFILE, nameA="张")
+    payload = dict(VALID_PROFILE, name="张")
     resp = client.post("/api/profiles", json=payload, headers={"Idempotency-Key": "k-short"})
     assert resp.status_code == 422
     assert resp.json()["code"] == 14001
 
 
 def test_create_profile_name_too_long_14001(client):
-    payload = dict(VALID_PROFILE, nameB="张" * 21)
+    payload = dict(VALID_PROFILE, name="张" * 21)
     resp = client.post("/api/profiles", json=payload, headers={"Idempotency-Key": "k-long"})
     assert resp.status_code == 422
     assert resp.json()["code"] == 14001
 
 
 def test_create_profile_invalid_date_14001(client):
-    payload = dict(VALID_PROFILE, birthA="1995-13-40")
+    payload = dict(VALID_PROFILE, birth="1995-13-40")
     resp = client.post("/api/profiles", json=payload, headers={"Idempotency-Key": "k-date"})
     assert resp.status_code == 422
     assert resp.json()["code"] == 14001
 
 
 def test_create_profile_date_in_future_14001(client):
-    payload = dict(VALID_PROFILE, birthB="2099-01-01")
+    payload = dict(VALID_PROFILE, birth="2099-01-01")
     resp = client.post("/api/profiles", json=payload, headers={"Idempotency-Key": "k-future"})
     assert resp.status_code == 422
     assert resp.json()["code"] == 14001
 
 
 def test_create_profile_bad_hour_14001(client):
-    payload = dict(VALID_PROFILE, birthHourA="亥丑")
+    payload = dict(VALID_PROFILE, birthHour="亥丑")
     resp = client.post("/api/profiles", json=payload, headers={"Idempotency-Key": "k-hour"})
     assert resp.status_code == 422
     assert resp.json()["code"] == 14001
@@ -74,9 +88,12 @@ def test_preview_returns_masked(client):
     assert resp.status_code == 200
     body = resp.json()
     assert body["code"] == 0
-    preview = body["data"]["previewReport"]
+    d = body["data"]
+    assert d["name"] == "张三"
+    assert d["birth"] == "1995-08-15"
+    preview = d["previewReport"]
     assert preview["locked"] is True
     assert preview["contentUrl"].endswith("_preview.html")
-    # 脱敏：响应不含生辰/密文
+    # 脱敏：响应不含密文
     raw = resp.text
-    assert "1995-08-15" not in raw
+    assert "gAAAA" not in raw

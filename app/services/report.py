@@ -1,9 +1,9 @@
-"""简版合婚报告服务：基于测算因子生成完整报告契约 JSON。
+"""简版单人运势报告服务：基于测算因子生成完整报告契约 JSON。
 
 评分维度：
-- 五行互补（满分 60）：年干五行生克，相生加分、相克减分、比和居中。
-- 生肖合婚（满分 30）：地支六合/三合/六冲/相刑/无特殊。
-- 日干时辰（满分 10）：双方出生时辰地支关系；时辰缺失取中值。
+- 日主五行能量（满分 60）：按出生年份天干五行定日主，时辰五行生克加减；时辰缺失取基准分。
+- 正缘姻缘指数（满分 30）：生肖支与时辰支六合/三合/无/刑/冲简化规则；时辰缺失取中值。
+- 时辰信息（满分 10）：时辰缺失取中值 5。
 
 对外输出完整报告契约（title/score/rank/scoreNote/analysis/karma/lockedPreview），
 供订单报告接口在解锁前后使用。算法函数化、可替换，后续可接入真实测算引擎。
@@ -15,6 +15,22 @@ from app.services.divination import HOURS, ZODIAC
 
 # 生肖 → 地支
 ZODIAC_BRANCH = dict(zip(ZODIAC, HOURS))
+
+# 地支五行（时辰五行映射）
+BRANCH_ELEMENT = {
+    "子": "水",
+    "亥": "水",
+    "寅": "木",
+    "卯": "木",
+    "巳": "火",
+    "午": "火",
+    "申": "金",
+    "酉": "金",
+    "丑": "土",
+    "辰": "土",
+    "未": "土",
+    "戌": "土",
+}
 
 # 地支六合
 _LIU_HE = {("子", "丑"), ("寅", "亥"), ("卯", "戌"), ("辰", "酉"), ("巳", "申"), ("午", "未")}
@@ -42,74 +58,57 @@ _XING = {
 _GENERATES = {"木": "火", "火": "土", "土": "金", "金": "水", "水": "木"}
 _OVERCOMES = {"木": "土", "土": "水", "水": "火", "火": "金", "金": "木"}
 
-# 生肖（地支）评分：满分 30
-_ZODIAC_SCORE = {"六合": 20, "三合": 10, "无": 5, "相刑": -10, "六冲": -15}
-# 时辰评分：满分 10（缺失取中值 5）
-_HOUR_SCORE = {"六合": 10, "三合": 8, "无": 6, "相刑": 4, "六冲": 3}
-# 五行评分：满分 60
-_ELEMENT_SCORE = {"相生": 60, "比和": 48, "相克": 26}
+# 日主五行能量（满分 60）：年干五行定基准分，时辰五行生克加减；缺失取基准分
+_ELEMENT_BASE = 30
+_ELEMENT_HOUR_BONUS = {"相生": 30, "比和": 18, "相克": 6}
+# 正缘姻缘指数（满分 30）：生肖支与时辰支关系；时辰缺失取中值
+_LOVE_SCORE = {"六合": 30, "三合": 26, "无": 22, "相刑": 18, "六冲": 14}
+_LOVE_MID = 20
+# 时辰信息（满分 10）：缺失取中值 5
+_HOUR_INFO = {"缺": 5, "有": 10}
 
 # rank 五档（threshold 递减）
 _RANK_BANDS = [
-    (90, "天作之合 · 上等婚配"),
-    (80, "琴瑟和鸣 · 上吉之配"),
-    (70, "中上之合 · 良缘可成"),
-    (60, "中平之配 · 磨合可圆"),
+    (90, "上等运势 · 正缘可期"),
+    (80, "中上运势 · 良缘可成"),
+    (70, "中平运势 · 磨合可圆"),
+    (60, "平稳运势 · 厚积薄发"),
     (0, "缘浅之合 · 宜加经营"),
 ]
 
-# 五行生克评语（按男女方向，男=nameA，女=nameB）
+# 日主强弱评语（时辰生克方向）
 _ELEMENT_NOTE = {
-    "A生B": "男{ea}生女{eb},{eb}得{ea}之生助,男以情滋养女方,两情相悦,互有补益。",
-    "B生A": "女{eb}生男{ea},{ea}得女之生助,女以柔滋养男方,家宅和顺,情深意笃。",
-    "比和": "男{ea}与女{eb}同气相求,性情投契,同声相应,相处融洽,少生龃龉。",
-    "A克B": "男{ea}克女{eb},男主刚而女主柔,需女方以柔化解,男方多些体恤,方保长久。",
-    "B克A": "女{eb}克男{ea},女中刚强,男需包容退让,以静制动,方可化解相克之势。",
+    "相生": "日主得时辰生助，气机充盈",
+    "比和": "日主与时辰同气，根基稳固",
+    "相克": "日主与时辰生克交错，气机稍欠",
 }
 
 # 分数段收尾评语
 _BAND_NOTE = {
-    90: "天作之合,百年好合,珠联璧合,实属上等良配。",
-    80: "琴瑟和鸣,婚配顺遂,相辅相成,可期白首。",
-    70: "良缘可成,虽有磨合,悉心经营,亦得圆满。",
-    60: "中平之配,多需沟通,同甘共苦,亦可白头。",
-    0: "缘浅之合,尤需经营,以心换心,方得长久。",
-}
-
-# 命理总评章节描述
-_ZODIAC_DESC = {
-    "六合": "生肖六合,天缘契合",
-    "三合": "生肖三合,气类相投",
-    "六冲": "生肖六冲,性情相激",
-    "相刑": "生肖相刑,时有抵牾",
-    "无": "生肖平和,缘分中正",
-}
-_ELEMENT_DESC = {"相生": "五行相生,互有补益", "比和": "五行比和,同气相应", "相克": "五行相克,宜柔克刚"}
-_HOUR_DESC = {
-    "六合": "双方时辰六合,锦上添花",
-    "三合": "双方时辰相合,助力姻缘",
-    "六冲": "双方时辰相冲,尚需调和",
-    "相刑": "双方时辰相刑,宜多体谅",
-    "缺": "时辰信息暂缺,仅供参考",
+    90: "上等运势，正缘可期，姻缘宫得时得地，宜主动把握，顺遂可期。",
+    80: "中上运势，良缘可成，多一份用心经营，姻缘自会水到渠成。",
+    70: "中平运势，磨合可圆，感情之事贵在坚持，悉心经营亦有圆满。",
+    60: "平稳运势，厚积薄发，先修自身，缘分自来，宜稳中求进。",
+    0: "缘浅之合，宜加经营，桃花虽淡，用心灌溉亦可绽放。",
 }
 
 # focus_tags 定制内容：(karma 章节下标, 追加句)
 _FOCUS_BODY = {
-    "八字五行匹配": (0, "命盘五行生克有致,互补之势明显,若作八字详批,契合度可再上层楼。"),
-    "正缘结婚年限": (1, "正缘气数渐旺,婚恋窗口期宜把握,红鸾星动之年缔结良缘,可化解流年波折。"),
-    "婚后财运旺衰": (1, "婚后财库看旺衰:凡五行相生者,财源顺遂,居家理财两相宜,逐年趋旺。"),
-    "性格相克化解": (1, "性格相克处,以柔济刚、以静制动,多一分包容少一分计较,自可化干戈为玉帛。"),
-    "子女缘分推演": (0, "子女宫气数中平偏旺,晚得贵子,血脉相承,家宅和乐可期。"),
+    "正缘桃花期": (0, "正缘桃花期已至，近年红鸾星动之机，宜多社交、善把握，良缘自现。"),
+    "婚后财运旺衰": (2, "婚后财库看旺衰：财星得地者家财渐丰，宜开源节流、稳健理财，财运逐年趋旺。"),
+    "性格解析": (1, "性格解析贵在知命：明自身长短，扬长避短，与人相处多几分通透，少几分执拗。"),
+    "事业运势": (2, "事业运势看官星：流年逢生扶则步步高升，宜专注深耕、待时而动，自有伯乐相携。"),
+    "避坑锦囊": (1, "避坑锦囊：口舌之争最易招损，情绪上头时宜三思后行，远离小人是非，方得安然。"),
 }
 
 DEFAULT_LOCKED_PREVIEW = [
     {
-        "title": "未来3年情感磨合与化解危机节点",
-        "body": "完整版将逐年推演未来三年情感走势,标注磨合期与危机节点,并给出化解之法。付费解锁后即可查看。",
+        "title": "正缘画像与桃花旺衰节点",
+        "body": "完整版将生成你的专属正缘画像，推演未来数年桃花旺衰与脱单关键节点，并给出应期把握之法。付费解锁后即可查看。",
     },
     {
-        "title": "婚后家庭财库与旺夫/旺妻指数预测",
-        "body": "完整版将测算婚后家庭财库旺衰与旺夫/旺妻指数,助力家宅兴旺。付费解锁后即可查看。",
+        "title": "婚后财运走势与家庭财富规划",
+        "body": "完整版将测算婚后财运旺衰与家庭财富走势，助力家宅兴旺、财库充盈。付费解锁后即可查看。",
     },
 ]
 
@@ -147,15 +146,28 @@ def _rank_of(score: int) -> str:
     return _RANK_BANDS[-1][1]
 
 
-def _score_note(ea: str, eb: str, element_rel: str, score: int) -> str:
-    """按五行生克方向与分数段生成评语。"""
-    if element_rel == "相生":
-        phrase = _ELEMENT_NOTE["A生B" if _GENERATES[ea] == eb else "B生A"]
-    elif element_rel == "相克":
-        phrase = _ELEMENT_NOTE["A克B" if _OVERCOMES[ea] == eb else "B克A"]
-    else:
-        phrase = _ELEMENT_NOTE["比和"]
-    note = phrase.format(ea=ea, eb=eb)
+def _element_score(day_element: str, hour: str | None) -> int:
+    """日主五行能量（满分 60）：年干五行定基准，时辰五行生克加减；缺失取基准分。"""
+    if hour is None:
+        return _ELEMENT_BASE
+    return _ELEMENT_BASE + _ELEMENT_HOUR_BONUS[_element_relation(day_element, BRANCH_ELEMENT[hour])]
+
+
+def _love_score(zodiac_branch: str, hour: str | None) -> int:
+    """正缘姻缘指数（满分 30）：生肖支与时辰支六合/三合/无/刑/冲；时辰缺失取中值。"""
+    if hour is None:
+        return _LOVE_MID
+    return _LOVE_SCORE[_branch_relation(zodiac_branch, hour)]
+
+
+def _hour_info_score(hour: str | None) -> int:
+    """时辰信息（满分 10）：缺失取中值 5。"""
+    return _HOUR_INFO["有"] if hour else _HOUR_INFO["缺"]
+
+
+def _score_note(name: str, element_rel: str, love_rel: str, score: int) -> str:
+    """按日主强弱、姻缘地支关系与分数段生成评语。"""
+    note = f"{name}日主{_ELEMENT_NOTE[element_rel]}，姻缘宫地支{love_rel}，气数中正。"
     band = 0
     for threshold, _ in _RANK_BANDS:
         if score >= threshold:
@@ -164,29 +176,46 @@ def _score_note(ea: str, eb: str, element_rel: str, score: int) -> str:
     return note + _BAND_NOTE[band]
 
 
-def _analysis_text(factors: dict, za: str, zb: str, ea: str, eb: str, zodiac_rel: str, element_rel: str, hour_rel: str) -> str:
-    """命理总评章节：生肖 + 五行 + 时辰综合描述。"""
-    return (
-        f"{factors['nameA']}属{za}、五行属{ea},{factors['nameB']}属{zb}、五行属{eb}。"
-        f"{_ZODIAC_DESC[zodiac_rel]},{_ELEMENT_DESC[element_rel]},"
-        f"{_HOUR_DESC.get(hour_rel, '双方时辰平和,中正无碍')}。"
-        "综合命理参详,此配对整体可期,宜惜缘相守,共赴白首。"
+def _analysis_text(
+    factors: dict,
+    day_element: str,
+    element_rel: str,
+    zodiac_branch: str,
+    hour: str | None,
+    love_rel: str,
+) -> str:
+    """命理总评章节：日主强弱 + 五行喜用 + 性格。"""
+    name = factors["name"]
+    zodiac = factors["zodiac"]
+    text = f"{name}属{zodiac}、五行属{day_element}。{_ELEMENT_NOTE[element_rel]}。"
+    if hour:
+        text += f"命主生于{hour}时，命宫{zodiac}与时辰地支{love_rel}，正缘桃花气数有依。"
+    else:
+        text += "时辰信息暂缺，命局推断以年柱为准，略有出入，仅供参考。"
+    text += (
+        f"五行喜用宜取生扶{day_element}之神，性格外柔内刚、重情重诺，"
+        "宜扬长避短、宽以待人，运势自可渐入佳境。"
     )
+    return text
 
 
 def _karma_chapters(factors: dict, focus_tags: list[str] | None) -> list[dict]:
-    """前世缘分与相处之道两章节；focus_tags 定制内容侧重。"""
-    za, zb = factors["zodiacA"], factors["zodiacB"]
+    """正缘画像/性格解析/事业财运三章节；focus_tags 定制内容侧重。"""
+    name = factors["name"]
+    zodiac = factors["zodiac"]
+    element = factors["element"]
     bodies = [
         (
-            f"前世轮回中,属{za}与属{zb}曾有宿世之约,今世再续前缘。"
-            "五百年回眸换今生擦肩,此等姻缘非偶然,乃因果牵引。"
-            "缘起则聚,缘尽则散,今世既已相逢,当惜眼前人,共修来世福。"
+            f"{name}属{zodiac}，正缘画像以五行属{element}者为佳，气质沉稳、心思细腻之人更易结缘。"
+            "桃花期多现于五行生扶之年，红鸾星动之际，宜主动走出舒适圈，良缘自现。"
         ),
         (
-            f"属{za}与属{zb}一刚一柔,性格各有长短。相处贵在求同存异:"
-            "善用对方长处,包容彼此短处,小事不争,大事共商,"
-            "方能使互补之利大于相克之弊,白首同心。"
+            f"{name}性格以{element}性为底色，外柔内刚，重情重诺。"
+            "相处之道贵在求同存异：善用对方长处，包容彼此短处，小事不争，大事共商，白首同心。"
+        ),
+        (
+            f"{name}事业财运走势与五行{element}气数相呼应，中年渐入佳境。"
+            "财运旺衰看流年财星：得地之年财源顺遂，宜开源节流、稳中求进，家业渐丰。"
         ),
     ]
     for tag in (focus_tags or []):
@@ -196,39 +225,37 @@ def _karma_chapters(factors: dict, focus_tags: list[str] | None) -> list[dict]:
         idx, sentence = entry
         bodies[idx] += sentence
     return [
-        {"title": "前世缘分 · 宿世因果", "body": bodies[0]},
-        {"title": "相处之道 · 性格互补", "body": bodies[1]},
+        {"title": "正缘画像 · 桃花期预测", "body": bodies[0]},
+        {"title": "性格解析 · 相处之道", "body": bodies[1]},
+        {"title": "事业财运 · 旺衰走势", "body": bodies[2]},
     ]
 
 
-def generate_report(factors: dict, focus_tags: list[str] | None = None) -> dict:
-    """生成简版合婚报告契约 JSON。
+def generate_single_report(factors: dict, focus_tags: list[str] | None = None) -> dict:
+    """生成简版单人运势报告契约 JSON。
 
     输入 divination.generate_factors 的 factors dict 与可选 focus_tags，
     输出契约：title/score/rank/scoreNote/analysis/karma/lockedPreview。
     """
-    za, zb = factors["zodiacA"], factors["zodiacB"]
-    ea, eb = factors["elementA"], factors["elementB"]
-    ha, hb = factors["birthHourA"], factors["birthHourB"]
+    name = factors["name"]
+    zodiac = factors["zodiac"]
+    element = factors["element"]
+    hour = factors["birthHour"]
 
-    zodiac_rel = _branch_relation(ZODIAC_BRANCH[za], ZODIAC_BRANCH[zb])
-    element_rel = _element_relation(ea, eb)
+    zodiac_branch = ZODIAC_BRANCH[zodiac]
+    element_rel = _element_relation(element, BRANCH_ELEMENT[hour]) if hour else "比和"
+    love_rel = _branch_relation(zodiac_branch, hour) if hour else "缺"
 
-    if ha and hb:
-        hour_rel = _branch_relation(ha, hb)
-        hour_score = _HOUR_SCORE.get(hour_rel, 6)
-    else:
-        hour_rel = "缺"
-        hour_score = 5
-
-    score = _ELEMENT_SCORE[element_rel] + _ZODIAC_SCORE[zodiac_rel] + hour_score
-    score = max(0, min(100, score))
+    element_score = _element_score(element, hour)
+    love_score = _love_score(zodiac_branch, hour)
+    hour_score = _hour_info_score(hour)
+    score = max(0, min(100, element_score + love_score + hour_score))
     rank = _rank_of(score)
-    score_note = _score_note(ea, eb, element_rel, score)
-    analysis = _analysis_text(factors, za, zb, ea, eb, zodiac_rel, element_rel, hour_rel)
+    score_note = _score_note(name, element_rel, love_rel, score)
+    analysis = _analysis_text(factors, element, element_rel, zodiac_branch, hour, love_rel)
 
     return {
-        "title": f"属相{za}配{zb}·八字合婚详批",
+        "title": f"{name} · 八字命盘详批（姻缘预览）",
         "score": score,
         "rank": rank,
         "scoreNote": score_note,

@@ -152,7 +152,7 @@ def get_order_report(order_no: str, db: Session = Depends(get_db)) -> dict:
         )
     else:
         report_view = {
-            "title": contract["title"] if contract else "八字合婚详批",
+            "title": contract["title"] if contract else "八字命盘详批（姻缘预览）",
             "locked": True,
             "lockedPreview": contract["lockedPreview"] if contract else [dict(x) for x in DEFAULT_LOCKED_PREVIEW],
         }

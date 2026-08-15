@@ -39,12 +39,9 @@ def client():
 
 
 VALID_PROFILE = {
-    "nameA": "张三",
-    "birthA": "1995-08-15",
-    "birthHourA": "子",
-    "nameB": "李四",
-    "birthB": "1997-02-03",
-    "birthHourB": "午",
+    "name": "张三",
+    "birth": "1995-08-15",
+    "birthHour": "子",
     "isLunar": False,
 }
 
