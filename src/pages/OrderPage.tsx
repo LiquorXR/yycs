@@ -167,7 +167,7 @@ function OrderPage() {
                   <div className="h-3 w-1/2 animate-pulse rounded bg-gold/10" />
                 </div>
               ) : previewError ? (
-                <p className="text-sm text-accent-hover" role="alert">
+                <p className="text-sm text-red-light" role="alert">
                   {previewError}
                 </p>
               ) : (
@@ -213,7 +213,7 @@ function OrderPage() {
               </>
             ) : productsError ? (
               <p
-                className="rounded-lg border border-accent/25 bg-accent/10 px-4 py-3 text-sm text-accent-hover"
+                className="rounded-lg border border-red/25 bg-red/10 px-4 py-3 text-sm text-red-light"
                 role="alert"
               >
                 {productsError}
@@ -248,7 +248,7 @@ function OrderPage() {
                           aria-hidden="true"
                         >
                           {active ? (
-                            <svg viewBox="0 0 24 24" className="size-3 text-[#2b110a]" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                            <svg viewBox="0 0 24 24" className="size-3 text-[#591010]" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
                               <path d="M5 12l4.5 4.5L19 7" />
                             </svg>
                           ) : null}
@@ -270,7 +270,7 @@ function OrderPage() {
 
         {submitError ? (
           <p
-            className="mt-6 rounded-lg border border-accent/25 bg-accent/10 px-4 py-3 text-sm text-accent-hover"
+            className="mt-6 rounded-lg border border-red/25 bg-red/10 px-4 py-3 text-sm text-red-light"
             role="alert"
           >
             {submitError}
@@ -279,7 +279,7 @@ function OrderPage() {
       </div>
 
       {/* 底部固定提交栏 */}
-      <div className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-border-gold bg-bg/95 backdrop-blur-md">
+      <div className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-border-gold bg-[#2e0808]/96 backdrop-blur-md">
         <div className="flex items-center justify-between gap-4 px-5 py-3">
           <div>
             <p className="text-xs text-muted">合计金额</p>

@@ -1,35 +1,38 @@
 @import "tailwindcss";
 
 /* ------------------------------------------------------------------ *
- * 国风玄学 · 深色鎏金设计令牌（Open Design 原型 35a2cc25 guofeng.css）
- * 墨朱底色 #100806 / 烫赤金 #e2b45f / 丹砂朱红 #d93829
+ * 国风玄学 · 中国红 × 鎏金设计令牌（Open Design 原型 35a2cc25 guofeng.css）
+ * 深绛红底 #6e1313 / 鎏金 #e2b45f / 丹砂朱红 #d93829 / 宣纸米白 #f7efdc
  * 展示字体：楷体；全局质感：fx-paper 宣纸颗粒 + fx-cloud 云气晕染
  * ------------------------------------------------------------------ */
 
 @theme {
-  /* 底与面 */
-  --color-bg: #100806; /* 页面主底 */
-  --color-surface: #1e110d; /* 次级面 */
-  --color-surface-card: rgba(43, 23, 17, 0.85); /* 卡片面 */
-  --color-surface-hover: #361b14; /* 悬停面 */
+  /* 底与面（深绛红） */
+  --color-bg: #6e1313; /* 页面主底 */
+  --color-surface: #8c1f1f; /* 次级面 */
+  --color-surface-card: rgba(110, 19, 19, 0.85); /* 卡片面 */
+  --color-surface-hover: #9a2626; /* 悬停面 */
 
-  /* 文字 */
-  --color-fg: #f9ede0; /* 主文字（凝脂玉白） */
-  --color-fg-secondary: #d8ba9c; /* 次级文字 */
-  --color-muted: #b5947a; /* 弱化文字 */
+  /* 文字（宣纸米白） */
+  --color-fg: #f7efdc; /* 主文字 */
+  --color-fg-secondary: #e8d9b6; /* 次级文字 */
+  --color-muted: #d8c9a8; /* 弱化文字 */
 
   /* 描边 */
-  --color-border: #422319;
-  --color-border-gold: #8c6d3f; /* 描金边 */
+  --color-border: #5c1b16;
+  --color-border-gold: #a8833f; /* 描金边 */
 
-  /* 强调 */
-  --color-accent: #d93829; /* 丹砂朱红 */
-  --color-accent-hover: #ee4533;
-  --color-accent-dark: #b81f11;
+  /* 强调（主行动 = 鎏金） */
+  --color-accent: #e2b45f; /* 鎏金 · 主行动 */
+  --color-accent-hover: #f0c978;
+  --color-red: #d93829; /* 丹砂 · 印章/播报点/错误 */
+  --color-red-deep: #a21f12;
+  --color-red-light: #ff7262;
   --color-gold: #e2b45f; /* 烫赤金 */
   --color-gold-dark: #a87e38;
   --color-gold-light: #fef1cf;
   --color-jade: #2b7a63; /* 翡翠碧绿（成功/完成态） */
+  --color-jade-light: #5cbb99; /* 亮翡翠 · 红底正向文字 */
   --color-blue: #64b5f6; /* 乾造 · 男方 */
   --color-pink: #ff80ab; /* 坤造 · 女方 */
 
@@ -49,7 +52,7 @@
   --shadow-card:
     0 8px 32px rgb(0 0 0 / 0.4), inset 0 0 16px rgb(226 180 95 / 0.05);
   --shadow-gold: 0 4px 20px rgb(226 180 95 / 0.15);
-  --shadow-red: 0 6px 24px rgb(217 56 41 / 0.25);
+  --shadow-red: 0 6px 24px rgb(226 180 95 / 0.25);
 
   /* 动效 */
   --animate-compass: compass-rotate 40s linear infinite; /* 罗盘外环 */
@@ -113,6 +116,24 @@
   }
 }
 
+@keyframes modal-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-slide-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
 @layer base {
   :root {
     color-scheme: dark;
@@ -127,12 +148,12 @@
     -webkit-tap-highlight-color: transparent;
   }
 
-  /* 墨朱底色 + 顶部朱红高光晕染（纯 CSS 静态） */
+  /* 中国红径向底 + 顶部鎏金高光晕染（纯 CSS 静态） */
   body {
     margin: 0;
     min-height: 100dvh;
     background:
-      radial-gradient(circle at 50% 20%, #2b110a 0%, #170b08 55%, #0d0604 100%)
+      radial-gradient(circle at 50% 20%, #8a1a1a 0%, #5a0f0f 55%, #3a0a0a 100%)
       fixed;
     color: var(--color-fg);
     font-family: var(--font-sans);
@@ -251,9 +272,9 @@
     align-items: center;
     justify-content: center;
     padding: 2px 8px;
-    background: rgb(217 56 41 / 0.2);
-    border: 1px solid var(--color-accent);
-    color: #ff7262;
+    background: linear-gradient(135deg, var(--color-red) 0%, var(--color-red-deep) 100%);
+    border: 1px solid var(--color-gold-light);
+    color: #fff;
     font-family: var(--font-kai);
     font-size: 11px;
     border-radius: 4px;
@@ -267,7 +288,7 @@
     justify-content: center;
     width: 42px;
     height: 42px;
-    background: radial-gradient(circle, #d93829 0%, #a21f12 100%);
+    background: radial-gradient(circle, var(--color-red) 0%, var(--color-red-deep) 100%);
     color: #fff;
     border: 2px solid #fce8cd;
     border-radius: 8px;
@@ -281,6 +302,28 @@
     text-shadow: 0 1px 2px rgb(0 0 0 / 0.5);
   }
 
+  /* 乾造 / 坤造 性别小徽章 */
+  .gender-chip {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 4px;
+    vertical-align: 2px;
+  }
+
+  .gender-chip-male {
+    background: var(--color-blue);
+    color: #07233f;
+  }
+
+  .gender-chip-female {
+    background: var(--color-pink);
+    color: #3d0a1c;
+  }
+
   /* ---------- 国风按钮 ---------- */
 
   .btn-guofeng-primary {
@@ -292,9 +335,9 @@
     width: 100%;
     min-height: 50px;
     padding: 12px 24px;
-    background: linear-gradient(135deg, #e63928 0%, #b81f11 100%);
-    color: #fff;
-    border: 1px solid #f5c782;
+    background: linear-gradient(135deg, #fce2a6 0%, #e2b45f 50%, #b88330 100%);
+    color: #591010;
+    border: 1px solid #fef1cf;
     border-radius: 25px;
     font-family: var(--font-kai);
     font-size: 17px;
@@ -302,8 +345,8 @@
     letter-spacing: 0.08em;
     cursor: pointer;
     box-shadow:
-      0 6px 20px rgb(217 56 41 / 0.45),
-      inset 0 1px 1px rgb(255 255 255 / 0.3);
+      0 6px 20px rgb(226 180 95 / 0.4),
+      inset 0 1px 1px rgb(255 255 255 / 0.4);
     transition:
       transform 0.15s ease,
       box-shadow 0.15s ease;
@@ -311,16 +354,16 @@
   }
 
   .btn-guofeng-primary:hover {
-    background: linear-gradient(135deg, #f0493a 0%, #cc2617 100%);
+    background: linear-gradient(135deg, #ffe9b8 0%, #eec36a 50%, #c28d37 100%);
     box-shadow:
-      0 8px 26px rgb(217 56 41 / 0.55),
-      inset 0 1px 1px rgb(255 255 255 / 0.35);
+      0 8px 26px rgb(226 180 95 / 0.55),
+      inset 0 1px 1px rgb(255 255 255 / 0.45);
     transform: translateY(-1px);
   }
 
   .btn-guofeng-primary:active {
     transform: scale(0.98);
-    box-shadow: 0 2px 10px rgb(217 56 41 / 0.3);
+    box-shadow: 0 2px 10px rgb(226 180 95 / 0.3);
   }
 
   .btn-guofeng-primary:disabled {
@@ -355,8 +398,8 @@
     min-height: 48px;
     padding: 12px 20px;
     background: linear-gradient(135deg, #fce2a6 0%, #e2b45f 50%, #b88330 100%);
-    color: #2b110a;
-    border: 1px solid #fff;
+    color: #591010;
+    border: 1px solid #fef1cf;
     border-radius: 24px;
     font-family: var(--font-kai);
     font-size: 16px;
@@ -385,7 +428,7 @@
     width: 100%;
     min-height: 48px;
     padding: 12px 20px;
-    background: rgb(16 8 6 / 0.6);
+    background: rgb(58 10 10 / 0.5);
     color: var(--color-gold);
     border: 1px solid var(--color-border-gold);
     border-radius: 24px;
@@ -401,7 +444,7 @@
   }
 
   .btn-guofeng-ghost:hover {
-    background: rgb(226 180 95 / 0.12);
+    background: rgb(226 180 95 / 0.14);
     border-color: var(--color-gold);
     transform: translateY(-1px);
   }
@@ -415,7 +458,7 @@
   .input-guofeng {
     width: 100%;
     height: 44px;
-    background: rgb(20 10 8 / 0.8);
+    background: rgb(46 8 8 / 0.6);
     border: 1px solid var(--color-border-gold);
     border-radius: 10px;
     padding: 0 14px;
@@ -436,11 +479,27 @@
     box-shadow: 0 0 10px rgb(226 180 95 / 0.35);
   }
 
+  .input-guofeng.input-error {
+    border-color: var(--color-red) !important;
+    background: rgb(217 56 41 / 0.14) !important;
+    box-shadow: 0 0 8px rgb(217 56 41 / 0.4) !important;
+  }
+
+  .field-error-msg {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 4px;
+    font-size: 11px;
+    line-height: 1.3;
+    color: var(--color-red-light);
+  }
+
   /* ---------- 标签 / 历法切换 ---------- */
 
   .tag-chip {
     padding: 6px 12px;
-    background: rgb(30 17 13 / 0.8);
+    background: rgb(58 10 10 / 0.6);
     border: 1px solid var(--color-border);
     border-radius: 999px;
     font-size: 12px;
@@ -455,14 +514,14 @@
   }
 
   .tag-chip.active {
-    background: rgb(217 56 41 / 0.2);
-    border-color: var(--color-accent);
+    background: rgb(226 180 95 / 0.16);
+    border-color: var(--color-gold);
     color: var(--color-gold-light);
     font-weight: 500;
   }
 
   .tag-chip.active:hover {
-    border-color: var(--color-accent);
+    border-color: var(--color-gold-light);
   }
 
   .cal-opt {
@@ -477,85 +536,131 @@
   }
 
   .cal-opt.active {
-    background: var(--color-border-gold);
-    color: var(--color-gold-light);
+    background: linear-gradient(135deg, #fce2a6 0%, #e2b45f 100%);
+    color: #591010;
     font-weight: 600;
   }
 
-  /* ---------- 国风弹窗 ---------- */
+  /* ---------- 国风弹窗（底部抽屉式） ---------- */
 
   .modal-backdrop {
     position: fixed;
     inset: 0;
-    z-index: 60;
+    z-index: 1000;
     display: flex;
     align-items: flex-end;
     justify-content: center;
-    background: rgb(0 0 0 / 0.7);
-    backdrop-filter: blur(4px);
-    padding: 16px;
+    background: rgb(26 4 4 / 0.82);
+    backdrop-filter: blur(6px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+
+  .modal-backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+    animation: modal-backdrop-in 0.25s ease both;
   }
 
   .modal-guofeng {
     position: relative;
     width: 100%;
     max-width: 420px;
-    max-height: calc(100dvh - 32px);
+    max-height: 85vh;
     overflow-y: auto;
-    background: linear-gradient(to bottom, #2b1711 0%, #160b08 100%);
+    background: #4a0e0e;
     border: 1px solid var(--color-border-gold);
-    border-radius: 16px;
-    padding: 20px 18px;
-    box-shadow: var(--shadow-card);
-    animation: fade-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+    border-bottom: none;
+    border-radius: 20px 20px 0 0;
+    padding: 20px 20px 28px;
+    box-shadow:
+      0 -8px 32px rgb(0 0 0 / 0.7),
+      0 0 20px rgb(226 180 95 / 0.35);
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1);
   }
 
-  .modal-guofeng::before {
-    content: '';
-    position: absolute;
-    inset: 4px;
-    border: 1px solid rgb(226 180 95 / 0.14);
-    border-radius: 12px;
-    pointer-events: none;
+  .modal-backdrop.open .modal-guofeng {
+    transform: translateY(0);
+    animation: modal-slide-in 0.3s cubic-bezier(0.2, 0, 0, 1) both;
   }
 
   .modal-header {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 10px;
-    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 16px;
   }
 
   .modal-title {
     flex: 1;
     font-family: var(--font-kai);
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 700;
     letter-spacing: 0.05em;
     color: var(--color-gold-light);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
   }
 
   .modal-close {
-    display: grid;
-    place-items: center;
-    width: 28px;
-    height: 28px;
     flex-shrink: 0;
-    border: 1px solid var(--color-border-gold);
+    background: none;
+    border: none;
+    padding: 4px 8px;
     border-radius: 999px;
-    background: rgb(16 8 6 / 0.6);
     color: var(--color-muted);
     cursor: pointer;
     transition:
       color 0.15s ease,
-      border-color 0.15s ease,
-      transform 0.15s ease;
+      background 0.15s ease;
   }
 
   .modal-close:hover {
     color: var(--color-gold-light);
-    border-color: var(--color-gold);
-    transform: scale(1.05);
+    background: rgb(226 180 95 / 0.12);
+  }
+
+  /* ---------- 支付方式选项卡（跨屏共用） ---------- */
+
+  .pay-methods {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 14px 0;
+  }
+
+  .pay-option {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: rgb(58 10 10 / 0.6);
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    color: var(--color-fg-secondary);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .pay-option:hover {
+    border-color: var(--color-border-gold);
+    color: var(--color-gold-light);
+  }
+
+  .pay-option.active {
+    background: rgb(43 122 99 / 0.15);
+    border-color: var(--color-jade);
+    color: var(--color-gold-light);
+    font-weight: 500;
   }
 
   /* ---------- 质感印记：宣纸颗粒 + 水墨云气 ---------- */
@@ -586,32 +691,32 @@
     background:
       radial-gradient(
         ellipse 90% 46% at 14% 8%,
-        rgb(226 180 95 / 0.1) 0%,
+        rgb(226 180 95 / 0.12) 0%,
         transparent 62%
       ),
       radial-gradient(
         ellipse 80% 40% at 88% 12%,
-        rgb(217 56 41 / 0.08) 0%,
+        rgb(255 114 98 / 0.1) 0%,
         transparent 55%
       ),
       radial-gradient(
         ellipse 120% 60% at 50% 108%,
-        rgb(43 122 99 / 0.07) 0%,
+        rgb(226 180 95 / 0.08) 0%,
         transparent 68%
       );
     z-index: 0;
   }
 
-  /* 内容层提升，置于质感纹理之上 */
-  .fx-paper > *,
-  .fx-cloud > * {
+  /* 内容层提升，置于质感纹理之上（弹窗抽屉除外，保持 fixed 定位） */
+  .fx-paper > :not(.modal-backdrop),
+  .fx-cloud > :not(.modal-backdrop) {
     position: relative;
     z-index: 1;
   }
 
-  /* 页面淡入过渡 */
+  /* 页面淡入过渡（无 fill 保留，避免残留 transform 使 fixed 子元素以页面为容器） */
   .fade-in {
-    animation: fade-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: fade-in 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   }
 }
 

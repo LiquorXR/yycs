@@ -35,7 +35,7 @@ function Compass() {
         </text>
       </svg>
 
-      {/* 内环：朱砂圆环 + 十字轴线，反向缓转 */}
+      {/* 内环：鎏金圆环 + 十字轴线，反向缓转 */}
       <svg
         className="absolute size-40 animate-reverse"
         viewBox="0 0 160 160"
@@ -46,18 +46,18 @@ function Compass() {
           cy="80"
           r="75"
           fill="none"
-          stroke="#d93829"
+          stroke="#e2b45f"
           strokeWidth="1.5"
         />
         <path
           d="M80 5 L80 155 M5 80 L155 80"
-          stroke="rgba(217, 56, 41, 0.4)"
+          stroke="rgba(226, 180, 95, 0.4)"
           strokeWidth="1"
         />
       </svg>
 
       {/* 中心：金边命盘 · 月老红线 */}
-      <div className="relative flex size-[100px] flex-col items-center justify-center rounded-full border-2 border-gold bg-[radial-gradient(circle,#2a110a_0%,#170b08_100%)] shadow-[0_0_25px_rgba(226,180,95,0.3)]">
+      <div className="relative flex size-[100px] flex-col items-center justify-center rounded-full border-2 border-gold bg-[radial-gradient(circle,#4a0e0e_0%,#2a0808_100%)] shadow-[0_0_25px_rgba(226,180,95,0.3)]">
         <span className="text-[32px] leading-none" aria-hidden="true">
           姻
         </span>
@@ -101,7 +101,7 @@ function Ticker() {
 
   return (
     <div
-      className="mx-5 mb-4 flex items-center gap-2 overflow-hidden rounded-full border border-border bg-surface/70 px-3.5 py-1.5 text-xs text-fg-secondary"
+      className="mx-5 mb-4 flex items-center gap-2 overflow-hidden rounded-full border border-border bg-[#3a0a0a]/55 px-3.5 py-1.5 text-xs text-fg-secondary"
       role="status"
       aria-live="polite"
       tabIndex={0}
@@ -120,7 +120,7 @@ function Ticker() {
     >
       <span
         aria-hidden="true"
-        className="size-1.5 shrink-0 animate-pulse-glow rounded-full bg-accent shadow-[0_0_8px_var(--color-accent)]"
+        className="size-1.5 shrink-0 animate-pulse-glow rounded-full bg-red shadow-[0_0_8px_var(--color-red)]"
       />
       <span
         className={`flex-1 truncate whitespace-nowrap transition-opacity duration-200 ${
@@ -164,8 +164,8 @@ function LandingPage() {
   return (
     <main className="fx-paper fx-cloud fade-in flex min-h-screen flex-col pb-6">
       {/* 顶部高光云纹护栏 */}
-      <section className="bg-[radial-gradient(circle_at_50%_0%,rgba(217,56,41,0.25)_0%,transparent_70%)] px-5 pt-5 pb-2.5 text-center">
-        <span className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-border-gold bg-gold/10 px-3 py-1 text-[11px] tracking-[0.1em] text-gold">
+      <section className="bg-[radial-gradient(circle_at_50%_0%,rgba(226,180,95,0.16)_0%,transparent_70%)] px-5 pt-5 pb-2.5 text-center">
+        <span className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-border-gold bg-gold/12 px-3 py-1 text-[11px] tracking-[0.1em] text-gold">
           敕造命盘 · 秘传合婚
         </span>
         <h1 className="text-gold-gradient mb-1.5 font-kai text-[28px] leading-[1.2] tracking-[0.05em]">
@@ -185,7 +185,7 @@ function LandingPage() {
         {FEATURES.map((f) => (
           <div
             key={f.icon}
-            className="flex items-start gap-2.5 rounded-[16px] border border-border-gold bg-surface-card/80 p-3.5"
+            className="flex items-start gap-2.5 rounded-[16px] border border-border-gold bg-[#6e1313]/60 p-3.5"
           >
             <span
               aria-hidden="true"
