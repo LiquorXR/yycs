@@ -1,0 +1,733 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------ *
+ * 国风玄学 · 中国红 × 鎏金设计令牌（Open Design 原型 35a2cc25 guofeng.css）
+ * 深绛红底 #6e1313 / 鎏金 #e2b45f / 丹砂朱红 #d93829 / 宣纸米白 #f7efdc
+ * 展示字体：楷体；全局质感：fx-paper 宣纸颗粒 + fx-cloud 云气晕染
+ * ------------------------------------------------------------------ */
+
+@theme {
+  /* 底与面（深绛红） */
+  --color-bg: #6e1313; /* 页面主底 */
+  --color-surface: #8c1f1f; /* 次级面 */
+  --color-surface-card: rgba(110, 19, 19, 0.85); /* 卡片面 */
+  --color-surface-hover: #9a2626; /* 悬停面 */
+
+  /* 文字（宣纸米白） */
+  --color-fg: #f7efdc; /* 主文字 */
+  --color-fg-secondary: #e8d9b6; /* 次级文字 */
+  --color-muted: #d8c9a8; /* 弱化文字 */
+
+  /* 描边 */
+  --color-border: #5c1b16;
+  --color-border-gold: #a8833f; /* 描金边 */
+
+  /* 强调 */
+  --color-red: #d93829; /* 丹砂 · 印章/播报点/错误 */
+  --color-red-deep: #a21f12;
+  --color-red-light: #ff7262;
+  --color-gold: #e2b45f; /* 烫赤金 */
+  --color-gold-dark: #a87e38;
+  --color-gold-light: #fef1cf;
+  --color-jade: #2b7a63; /* 翡翠碧绿（成功/完成态） */
+  --color-jade-light: #5cbb99; /* 亮翡翠 · 红底正向文字 */
+  --color-blue: #64b5f6; /* 乾造 · 男方 */
+  --color-pink: #ff80ab; /* 坤造 · 女方 */
+
+  /* 字体 */
+  --font-kai:
+    "Kaiti SC", "STKaiti", "Noto Serif SC", "Source Han Serif SC",
+    "AR PL UKai CN", Georgia, serif; /* 展示字体 */
+  --font-serif:
+    "Noto Serif SC", "Source Han Serif SC", "Songti SC", "SimSun", serif;
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* 墨影（暖调） */
+  --shadow-card:
+    0 8px 32px rgb(0 0 0 / 0.4), inset 0 0 16px rgb(226 180 95 / 0.05);
+  --shadow-gold: 0 4px 20px rgb(226 180 95 / 0.15);
+  --shadow-red: 0 6px 24px rgb(226 180 95 / 0.25);
+
+  /* 动效 */
+  --animate-compass: compass-rotate 40s linear infinite; /* 罗盘外环 */
+  --animate-reverse: reverse-rotate 25s linear infinite; /* 罗盘内环 */
+  --animate-compass-fast: compass-rotate 12s linear infinite; /* 推演外环 */
+  --animate-reverse-fast: reverse-rotate 8s linear infinite; /* 推演内环 */
+  --animate-taiji: compass-rotate 4s linear infinite; /* 太极转盘 */
+  --animate-pulse-glow: pulse-glow 1.5s ease-in-out infinite; /* 喜报红点 */
+  --animate-pulse-glow-slow: pulse-glow 2s ease-in-out infinite; /* 命盘印章 */
+
+  @keyframes compass-rotate {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes reverse-rotate {
+    from {
+      transform: rotate(360deg);
+    }
+    to {
+      transform: rotate(0deg);
+    }
+  }
+
+  @keyframes pulse-glow {
+    0%,
+    100% {
+      opacity: 0.6;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.05);
+    }
+  }
+}
+
+/* 供 .fade-in 与按钮流光使用的独立关键帧（全局 CSS，始终输出） */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shine {
+  0% {
+    transform: translateX(-100%) rotate(30deg);
+  }
+  20%,
+  100% {
+    transform: translateX(100%) rotate(30deg);
+  }
+}
+
+@keyframes modal-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-slide-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@layer base {
+  :root {
+    color-scheme: dark;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* 中国红径向底 + 顶部鎏金高光晕染（纯 CSS 静态） */
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background:
+      radial-gradient(circle at 50% 20%, #8a1a1a 0%, #5a0f0f 55%, #3a0a0a 100%)
+      fixed;
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    overscroll-behavior-y: none;
+  }
+
+  ::selection {
+    background-color: rgb(226 180 95 / 0.25);
+    color: var(--color-gold-light);
+  }
+
+  input,
+  select,
+  button {
+    font-family: inherit;
+  }
+
+  /* 通用隐藏滚动条 */
+  ::-webkit-scrollbar {
+    display: none;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 2px;
+  }
+}
+
+/* 顶部 / 底部安全区工具类（刘海屏 + 底部手势条） */
+@utility pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* 隐藏滚动条（横向滚动的卡片行） */
+@utility no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@layer components {
+  /* ---------- 文字特效 ---------- */
+
+  .text-gold-gradient {
+    background: linear-gradient(135deg, #fef1cf 0%, #e2b45f 50%, #b88636 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* ---------- 国风卡片（金边 + 内描金线） ---------- */
+
+  .card-guofeng {
+    position: relative;
+    background: var(--color-surface-card);
+    border: 1px solid var(--color-border-gold);
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: var(--shadow-card);
+    backdrop-filter: blur(10px);
+  }
+
+  .card-guofeng::before {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    right: 3px;
+    bottom: 3px;
+    border: 1px solid rgb(226 180 95 / 0.15);
+    border-radius: 13px;
+    pointer-events: none;
+  }
+
+  /* 国风角花饰角 */
+  .corner {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-color: var(--color-gold);
+    border-style: solid;
+    pointer-events: none;
+  }
+  .corner-tl {
+    top: 6px;
+    left: 6px;
+    border-width: 1.5px 0 0 1.5px;
+  }
+  .corner-tr {
+    top: 6px;
+    right: 6px;
+    border-width: 1.5px 1.5px 0 0;
+  }
+  .corner-bl {
+    bottom: 6px;
+    left: 6px;
+    border-width: 0 0 1.5px 1.5px;
+  }
+  .corner-br {
+    bottom: 6px;
+    right: 6px;
+    border-width: 0 1.5px 1.5px 0;
+  }
+
+  /* ---------- 印章与徽章 ---------- */
+
+  .seal-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 8px;
+    background: linear-gradient(135deg, var(--color-red) 0%, var(--color-red-deep) 100%);
+    border: 1px solid var(--color-gold-light);
+    color: #fff;
+    font-family: var(--font-kai);
+    font-size: 11px;
+    border-radius: 4px;
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+  }
+
+  .seal-red {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    background: radial-gradient(circle, var(--color-red) 0%, var(--color-red-deep) 100%);
+    color: #fff;
+    border: 2px solid #fce8cd;
+    border-radius: 8px;
+    font-family: var(--font-kai);
+    font-size: 14px;
+    font-weight: bold;
+    box-shadow:
+      0 0 12px rgb(217 56 41 / 0.6),
+      inset 0 0 4px rgb(255 255 255 / 0.4);
+    transform: rotate(-5deg);
+    text-shadow: 0 1px 2px rgb(0 0 0 / 0.5);
+  }
+
+  /* 乾造 / 坤造 性别小徽章 */
+  .gender-chip {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 4px;
+    vertical-align: 2px;
+  }
+
+  .gender-chip-male {
+    background: var(--color-blue);
+    color: #07233f;
+  }
+
+  .gender-chip-female {
+    background: var(--color-pink);
+    color: #3d0a1c;
+  }
+
+  /* ---------- 国风按钮 ---------- */
+
+  .btn-guofeng-primary {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    min-height: 50px;
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #fce2a6 0%, #e2b45f 50%, #b88330 100%);
+    color: #591010;
+    border: 1px solid #fef1cf;
+    border-radius: 25px;
+    font-family: var(--font-kai);
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    box-shadow:
+      0 6px 20px rgb(226 180 95 / 0.4),
+      inset 0 1px 1px rgb(255 255 255 / 0.4);
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.15s ease;
+    overflow: hidden;
+  }
+
+  .btn-guofeng-primary:hover {
+    background: linear-gradient(135deg, #ffe9b8 0%, #eec36a 50%, #c28d37 100%);
+    box-shadow:
+      0 8px 26px rgb(226 180 95 / 0.55),
+      inset 0 1px 1px rgb(255 255 255 / 0.45);
+    transform: translateY(-1px);
+  }
+
+  .btn-guofeng-primary:active {
+    transform: scale(0.98);
+    box-shadow: 0 2px 10px rgb(226 180 95 / 0.3);
+  }
+
+  .btn-guofeng-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .btn-guofeng-primary::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+      45deg,
+      transparent 45%,
+      rgb(255 255 255 / 0.25) 50%,
+      transparent 55%
+    );
+    transform: rotate(30deg);
+    animation: shine 4s infinite;
+  }
+
+  .btn-guofeng-gold {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    min-height: 48px;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #fce2a6 0%, #e2b45f 50%, #b88330 100%);
+    color: #591010;
+    border: 1px solid #fef1cf;
+    border-radius: 24px;
+    font-family: var(--font-kai);
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    box-shadow: 0 4px 18px rgb(226 180 95 / 0.35);
+    transition: transform 0.15s ease;
+  }
+
+  .btn-guofeng-gold:hover {
+    background: linear-gradient(135deg, #ffe9b8 0%, #eec36a 50%, #c28d37 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 22px rgb(226 180 95 / 0.5);
+  }
+
+  .btn-guofeng-gold:active {
+    transform: scale(0.98);
+  }
+
+  .btn-guofeng-ghost {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    min-height: 48px;
+    padding: 12px 20px;
+    background: rgb(58 10 10 / 0.5);
+    color: var(--color-gold);
+    border: 1px solid var(--color-border-gold);
+    border-radius: 24px;
+    font-family: var(--font-kai);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease,
+      transform 0.15s ease;
+  }
+
+  .btn-guofeng-ghost:hover {
+    background: rgb(226 180 95 / 0.14);
+    border-color: var(--color-gold);
+    transform: translateY(-1px);
+  }
+
+  .btn-guofeng-ghost:active {
+    transform: scale(0.98);
+  }
+
+  /* ---------- 表单控件 ---------- */
+
+  .input-guofeng {
+    width: 100%;
+    height: 44px;
+    background: rgb(46 8 8 / 0.6);
+    border: 1px solid var(--color-border-gold);
+    border-radius: 10px;
+    padding: 0 14px;
+    color: var(--color-fg);
+    font-size: 14px;
+    outline: none;
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+
+  .input-guofeng::placeholder {
+    color: var(--color-muted);
+  }
+
+  .input-guofeng:focus {
+    border-color: var(--color-gold);
+    box-shadow: 0 0 10px rgb(226 180 95 / 0.35);
+  }
+
+  .input-guofeng.input-error {
+    border-color: var(--color-red) !important;
+    background: rgb(217 56 41 / 0.14) !important;
+    box-shadow: 0 0 8px rgb(217 56 41 / 0.4) !important;
+  }
+
+  .field-error-msg {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 4px;
+    font-size: 11px;
+    line-height: 1.3;
+    color: var(--color-red-light);
+  }
+
+  /* ---------- 标签 / 历法切换 ---------- */
+
+  .tag-chip {
+    padding: 6px 12px;
+    background: rgb(58 10 10 / 0.6);
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    font-size: 12px;
+    color: var(--color-fg-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .tag-chip:hover {
+    border-color: var(--color-border-gold);
+    color: var(--color-gold-light);
+  }
+
+  .tag-chip.active {
+    background: rgb(226 180 95 / 0.16);
+    border-color: var(--color-gold);
+    color: var(--color-gold-light);
+    font-weight: 500;
+  }
+
+  .tag-chip.active:hover {
+    border-color: var(--color-gold-light);
+  }
+
+  .cal-opt {
+    padding: 3px 10px;
+    border-radius: 999px;
+    color: var(--color-muted);
+    cursor: pointer;
+  }
+
+  .cal-opt:hover {
+    color: var(--color-gold-light);
+  }
+
+  .cal-opt.active {
+    background: linear-gradient(135deg, #fce2a6 0%, #e2b45f 100%);
+    color: #591010;
+    font-weight: 600;
+  }
+
+  /* ---------- 国风弹窗（底部抽屉式） ---------- */
+
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    background: rgb(26 4 4 / 0.82);
+    backdrop-filter: blur(6px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+
+  .modal-backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+    animation: modal-backdrop-in 0.25s ease both;
+  }
+
+  .modal-guofeng {
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    max-height: 85vh;
+    overflow-y: auto;
+    background: #4a0e0e;
+    border: 1px solid var(--color-border-gold);
+    border-bottom: none;
+    border-radius: 20px 20px 0 0;
+    padding: 20px 20px 28px;
+    box-shadow:
+      0 -8px 32px rgb(0 0 0 / 0.7),
+      0 0 20px rgb(226 180 95 / 0.35);
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  .modal-backdrop.open .modal-guofeng {
+    transform: translateY(0);
+    animation: modal-slide-in 0.3s cubic-bezier(0.2, 0, 0, 1) both;
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 16px;
+  }
+
+  .modal-title {
+    flex: 1;
+    font-family: var(--font-kai);
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--color-gold-light);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+  }
+
+  .modal-close {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 999px;
+    color: var(--color-muted);
+    cursor: pointer;
+    transition:
+      color 0.15s ease,
+      background 0.15s ease;
+  }
+
+  .modal-close:hover {
+    color: var(--color-gold-light);
+    background: rgb(226 180 95 / 0.12);
+  }
+
+  /* ---------- 支付方式选项卡（跨屏共用） ---------- */
+
+  .pay-methods {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 14px 0;
+  }
+
+  .pay-option {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: rgb(58 10 10 / 0.6);
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    color: var(--color-fg-secondary);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .pay-option:hover {
+    border-color: var(--color-border-gold);
+    color: var(--color-gold-light);
+  }
+
+  .pay-option.active {
+    background: rgb(43 122 99 / 0.15);
+    border-color: var(--color-jade);
+    color: var(--color-gold-light);
+    font-weight: 500;
+  }
+
+  /* ---------- 质感印记：宣纸颗粒 + 水墨云气 ---------- */
+
+  .fx-paper {
+    position: relative;
+  }
+  .fx-paper::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.55;
+    mix-blend-mode: soft-light;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.95 0 0 0 0 0.82 0 0 0 0 0.6 0 0 0 0.22 0'/%3E%3C/filter%3E%3Crect width='260' height='260' filter='url(%23n)'/%3E%3C/svg%3E");
+    z-index: 0;
+  }
+
+  .fx-cloud {
+    position: relative;
+    overflow: hidden;
+  }
+  .fx-cloud::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(
+        ellipse 90% 46% at 14% 8%,
+        rgb(226 180 95 / 0.12) 0%,
+        transparent 62%
+      ),
+      radial-gradient(
+        ellipse 80% 40% at 88% 12%,
+        rgb(255 114 98 / 0.1) 0%,
+        transparent 55%
+      ),
+      radial-gradient(
+        ellipse 120% 60% at 50% 108%,
+        rgb(226 180 95 / 0.08) 0%,
+        transparent 68%
+      );
+    z-index: 0;
+  }
+
+  /* 内容层提升，置于质感纹理之上（弹窗抽屉除外，保持 fixed 定位） */
+  .fx-paper > :not(.modal-backdrop),
+  .fx-cloud > :not(.modal-backdrop) {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* 页面淡入过渡（无 fill 保留，避免残留 transform 使 fixed 子元素以页面为容器） */
+  .fade-in {
+    animation: fade-in 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+/* 动效降级：尊重系统减少动态偏好 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01s !important;
+  }
+  .btn-guofeng-primary::after {
+    animation: none !important;
+  }
+}
