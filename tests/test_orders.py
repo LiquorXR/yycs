@@ -168,7 +168,7 @@ def test_mock_pay_success_unlock_full_report(client):
         assert key in report
     assert isinstance(report["score"], int) and 0 <= report["score"] <= 100
     assert report["analysis"]["label"] == "命理总评"
-    assert len(report["karma"]) == 2
+    assert len(report["karma"]) == 3
     assert len(report["lockedPreview"]) == 2
     # 未配置 WECOM_QRCODE_URL → wecom 为 null
     assert unlocked["wecom"] is None

@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Header
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from app.core.crypto import encrypt_text
+from app.core.crypto import decrypt_text, encrypt_text
 from app.core.errors import BizError, ErrorCode
 from app.core.response import ok_response
 from app.db.session import get_db
@@ -16,7 +16,7 @@ from app.models.profile import Profile
 from app.models.report import Report
 from app.services.divination import generate_factors, generate_preview_report, validate_profile_input
 from app.services.idempotency import IDEM_SCOPE_PROFILE, get_idempotent_response, store_idempotent_response
-from app.services.report import generate_report
+from app.services.report import generate_single_report
 from app.services.seq import next_profile_id
 
 router = APIRouter(tags=["profiles"])
@@ -25,14 +25,11 @@ _PREVIEW_FIELDS = ("title", "contentUrl", "locked", "lockedNote")
 
 
 class ProfileCreateRequest(BaseModel):
-    nameA: str
-    birthA: str
-    birthHourA: str | None = None
-    nameB: str
-    birthB: str
-    birthHourB: str | None = None
+    name: str
+    birth: str
+    birthHour: str | None = None
     isLunar: bool = False
-    focusTags: list[str] | None = None
+    focusTags: list[str] | None = Field(default=None, description="正缘桃花期/婚后财运旺衰/性格解析/事业运势/避坑锦囊")
 
 
 def _preview_view(preview: dict) -> dict:
@@ -51,37 +48,21 @@ def create_profile(
     if cached is not None:
         return ok_response(cached)
 
-    validate_profile_input(
-        payload.nameA,
-        payload.nameB,
-        payload.birthA,
-        payload.birthB,
-        payload.birthHourA,
-        payload.birthHourB,
-        payload.isLunar,
-    )
+    validate_profile_input(payload.name, payload.birth, payload.birthHour, payload.isLunar)
 
     profile_id = next_profile_id(db)
-    factors = generate_factors(
-        payload.nameA,
-        payload.birthA,
-        payload.birthHourA,
-        payload.nameB,
-        payload.birthB,
-        payload.birthHourB,
-        payload.isLunar,
-    )
+    factors = generate_factors(payload.name, payload.birth, payload.birthHour, payload.isLunar)
     preview = generate_preview_report(profile_id, factors)
-    report_contract = generate_report(factors, payload.focusTags)
+    report_contract = generate_single_report(factors, payload.focusTags)
 
     profile = Profile(
         id=profile_id,
-        name_a=payload.nameA,
-        birth_a=encrypt_text(payload.birthA),
-        birth_hour_a=encrypt_text(payload.birthHourA) if payload.birthHourA else None,
-        name_b=payload.nameB,
-        birth_b=encrypt_text(payload.birthB),
-        birth_hour_b=encrypt_text(payload.birthHourB) if payload.birthHourB else None,
+        name_a=payload.name,
+        birth_a=encrypt_text(payload.birth),
+        birth_hour_a=encrypt_text(payload.birthHour) if payload.birthHour else None,
+        name_b=None,
+        birth_b=None,
+        birth_hour_b=None,
         is_lunar=payload.isLunar,
         combo_data=encrypt_text(json.dumps(factors, ensure_ascii=False)),
         preview_report=json.dumps(preview, ensure_ascii=False),
@@ -105,7 +86,7 @@ def create_profile(
 
 @router.get("/api/profiles/{profile_id}/preview")
 def get_preview(profile_id: str, db: Session = Depends(get_db)) -> dict:
-    """重新获取预览报告（脱敏：不返回密文，不含完整内容）。"""
+    """重新获取预览报告（脱敏：返回姓名/生辰明文，不返回密文，不含完整内容）。"""
     profile = db.query(Profile).filter(Profile.id == profile_id).first()
     if profile is None:
         raise BizError(ErrorCode.NOT_FOUND, "资源不存在")
@@ -113,9 +94,16 @@ def get_preview(profile_id: str, db: Session = Depends(get_db)) -> dict:
     preview = json.loads(profile.preview_report) if profile.preview_report else None
     if preview is None:
         preview = {
-            "title": "姻缘测算预览",
+            "title": "姻缘运势测算预览",
             "contentUrl": f"/static/reports/{profile_id}_preview.html",
             "locked": True,
             "lockedNote": "完整版需付费解锁",
         }
-    return ok_response({"profileId": profile.id, "previewReport": _preview_view(preview)})
+    return ok_response(
+        {
+            "profileId": profile.id,
+            "name": profile.name_a,
+            "birth": decrypt_text(profile.birth_a),
+            "previewReport": _preview_view(preview),
+        }
+    )
