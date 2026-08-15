@@ -30,6 +30,3 @@ Desktop.ini
 # Tooling (repo-specific)
 .opencode
 AGENTS.md
-
-# 文档（以 main 为准，不落分支）
-doc
