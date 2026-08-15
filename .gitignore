@@ -29,4 +29,13 @@ Desktop.ini
 
 # Tooling (repo-specific)
 .opencode
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.env
+*.db
+
+# Rules
 AGENTS.md
