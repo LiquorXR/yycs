@@ -142,10 +142,12 @@ function OrderPage() {
 
   if (!profileId) return <MissingProfile />
 
-  const summaryRows: { label: string; value: string | undefined }[] = [
-    { label: '甲方', value: preview?.nameA ? `${maskName(preview.nameA)} ${formatYearMonth(preview.birthA ?? '')}` : undefined },
-    { label: '乙方', value: preview?.nameB ? `${maskName(preview.nameB)} ${formatYearMonth(preview.birthB ?? '')}` : undefined },
-  ]
+  const summaryRow: { label: string; value: string | undefined } = {
+    label: '测算对象',
+    value: preview?.name
+      ? `${maskName(preview.name)} ${formatYearMonth(preview.birth ?? '')}`
+      : undefined,
+  }
 
   return (
     <main className="fx-paper fx-cloud fade-in min-h-screen pb-28">
@@ -173,19 +175,14 @@ function OrderPage() {
               ) : (
                 <>
                   <h3 className="font-kai text-base font-bold text-gold-light">
-                    {preview?.previewReport.title ?? '合婚测算报告'}
+                    {preview?.previewReport.title ?? '单人运势与姻缘预览'}
                   </h3>
                   <div className="mt-3 space-y-1.5 text-sm text-fg/85">
-                    {summaryRows.some((r) => r.value) ? (
-                      summaryRows.map(
-                        (r) =>
-                          r.value && (
-                            <p key={r.label} className="flex gap-2">
-                              <span className="shrink-0 text-muted">{r.label}</span>
-                              <span>{r.value}</span>
-                            </p>
-                          ),
-                      )
+                    {summaryRow.value ? (
+                      <p className="flex gap-2">
+                        <span className="shrink-0 text-muted">{summaryRow.label}</span>
+                        <span>{summaryRow.value}</span>
+                      </p>
                     ) : (
                       <p className="text-fg-secondary">
                         信息已加密保护，仅展示脱敏摘要

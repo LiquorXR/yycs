@@ -18,14 +18,14 @@ const HOURS = [
   { value: '吉时', label: '时辰不详 (系统推算)' },
 ]
 
-const FOCUS_TAGS = ['八字五行匹配', '正缘结婚年限', '婚后财运旺衰', '性格相克化解', '子女缘分推演']
-const DEFAULT_FOCUS = ['八字五行匹配', '正缘结婚年限', '婚后财运旺衰']
+const FOCUS_TAGS = ['正缘桃花期', '婚后财运旺衰', '性格解析', '事业运势', '避坑锦囊']
+const DEFAULT_FOCUS = ['正缘桃花期', '婚后财运旺衰', '性格解析']
 
 const LOADING_STEPS = [
   '排盘天干地支四柱与纳音五行...',
-  '推演二人八字喜用相生相克...',
-  '计算正缘结婚转折年份与婚后财运...',
-  '生成月老密签与化解锦囊...',
+  '推演八字喜用神与五行旺衰...',
+  '计算正缘桃花期与事业财运走势...',
+  '生成命盘密签与化解锦囊...',
 ]
 
 /** 推演超时阈值：30s 未完成则展示重试容器 */
@@ -46,8 +46,7 @@ interface StoredResult {
   lockedNote?: string
 }
 
-type PersonKey = 'A' | 'B'
-type FieldErrors = Partial<Record<'nameA' | 'birthA' | 'nameB' | 'birthB', string>>
+type FieldErrors = Partial<Record<'name' | 'birth', string>>
 
 const EMPTY: PersonForm = { name: '', birth: '', birthHour: '' }
 
@@ -77,14 +76,12 @@ function validateBirth(birth: string): string | undefined {
 /* ---------------- 全屏推演遮罩（03-loading） ---------------- */
 
 function CalcLoading({
-  maleName,
-  femaleName,
+  name,
   progress,
   timedOut,
   onRetry,
 }: {
-  maleName: string
-  femaleName: string
+  name: string
   progress: number
   timedOut: boolean
   onRetry: () => void
@@ -99,40 +96,21 @@ function CalcLoading({
     >
       <div>
         <h2 className="mb-1.5 font-kai text-[22px] tracking-[0.08em] text-gold-light">
-          天机交感 · 姻缘推演
+          天机交感 · 命盘推演
         </h2>
         <p className="text-[13px] text-muted">
-          正在排盘计算双方八字五行生克与宿世姻缘
+          正在排盘计算个人五行喜忌与运势姻缘
         </p>
       </div>
 
-      {/* 双人命盘两极 + 红线 */}
-      <div className="relative my-5 flex w-full items-center justify-around">
-        <div className="relative z-10 flex flex-col items-center gap-1.5">
-          <span className="grid size-[58px] animate-pulse-glow-slow place-items-center rounded-full border-2 border-gold bg-[radial-gradient(circle,#4a0e0e_0%,#2a0808_100%)] font-kai text-lg text-gold-light shadow-[0_0_16px_rgba(226,180,95,0.4)]">
-            乾
-          </span>
-          <span className="max-w-[120px] truncate text-[13px] font-medium text-fg">
-            {maleName}
-          </span>
-        </div>
-
-        <div
-          aria-hidden="true"
-          className="absolute top-[29px] right-[20%] left-[20%] z-0 h-0.5 bg-gradient-to-r from-gold via-gold-light to-gold shadow-[0_0_10px_var(--color-gold)]"
-        />
-        <span className="absolute top-1/2 left-1/2 z-10 grid size-6 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-gold-light bg-gold text-[11px] text-[#591010] shadow-[0_0_12px_var(--color-gold)]">
-          缘
+      {/* 命主居中 */}
+      <div className="relative z-10 mt-5 flex flex-col items-center gap-1.5">
+        <span className="grid size-[58px] animate-pulse-glow-slow place-items-center rounded-full border-2 border-gold bg-[radial-gradient(circle,#4a0e0e_0%,#2a0808_100%)] font-kai text-lg text-gold-light shadow-[0_0_16px_rgba(226,180,95,0.4)]">
+          命
         </span>
-
-        <div className="relative z-10 flex flex-col items-center gap-1.5">
-          <span className="grid size-[58px] animate-pulse-glow-slow place-items-center rounded-full border-2 border-gold bg-[radial-gradient(circle,#4a0e0e_0%,#2a0808_100%)] font-kai text-lg text-gold-light shadow-[0_0_16px_rgba(226,180,95,0.4)]">
-            坤
-          </span>
-          <span className="max-w-[120px] truncate text-[13px] font-medium text-fg">
-            {femaleName}
-          </span>
-        </div>
+        <span className="max-w-[120px] truncate text-[13px] font-medium text-fg">
+          {name}
+        </span>
       </div>
 
       {/* 太极罗盘 */}
@@ -231,10 +209,9 @@ function CalcLoading({
   )
 }
 
-/* ---------------- 个人信息卡片（乾造 / 坤造） ---------------- */
+/* ---------------- 个人信息卡片 ---------------- */
 
 function PersonSection({
-  gender,
   name,
   birth,
   birthHour,
@@ -244,7 +221,6 @@ function PersonSection({
   nameError,
   birthError,
 }: {
-  gender: 'male' | 'female'
   name: string
   birth: string
   birthHour: string
@@ -254,16 +230,11 @@ function PersonSection({
   nameError?: string
   birthError?: string
 }) {
-  const isMale = gender === 'male'
   return (
     <section className="rounded-[16px] border border-border-gold bg-surface-card p-4">
       <div className="mb-3 flex items-center justify-between">
-        <div
-          className={`font-kai text-[15px] font-bold ${
-            isMale ? 'text-blue' : 'text-pink'
-          }`}
-        >
-          {isMale ? '乾造（男方信息）' : '坤造（女方信息）'}
+        <div className="font-kai text-[15px] font-bold text-gold-light">
+          个人命盘
         </div>
         <div
           className="flex rounded-full border border-border bg-[#3a0a0a]/55 p-0.5 text-[11px]"
@@ -287,19 +258,19 @@ function PersonSection({
       <div className="space-y-3">
         <div>
           <label
-            htmlFor={`${gender}-name`}
+            htmlFor="person-name"
             className="mb-1 block text-xs text-fg-secondary"
           >
-            {isMale ? '男方姓名/昵称' : '女方姓名/昵称'}
+            姓名/昵称
             <span className="text-red-light" aria-hidden="true"> *</span>
           </label>
           <input
-            id={`${gender}-name`}
+            id="person-name"
             type="text"
             className={`input-guofeng ${nameError ? 'input-error' : ''}`}
             value={name}
             maxLength={20}
-            placeholder={`请输入${isMale ? '男方' : '女方'}姓名`}
+            placeholder="请输入姓名"
             aria-invalid={Boolean(nameError)}
             aria-required="true"
             required
@@ -316,14 +287,14 @@ function PersonSection({
         <div className="grid grid-cols-2 gap-2.5">
           <div>
             <label
-              htmlFor={`${gender}-date`}
+              htmlFor="person-date"
               className="mb-1 block text-xs text-fg-secondary"
             >
               出生日期{calendar === '农历' ? '（农历）' : ''}
               <span className="text-red-light" aria-hidden="true"> *</span>
             </label>
             <input
-              id={`${gender}-date`}
+              id="person-date"
               type="date"
               className={`input-guofeng ${birthError ? 'input-error' : ''}`}
               value={birth}
@@ -340,13 +311,13 @@ function PersonSection({
           </div>
           <div>
             <label
-              htmlFor={`${gender}-hour`}
+              htmlFor="person-hour"
               className="mb-1 block text-xs text-fg-secondary"
             >
               出生时辰
             </label>
             <select
-              id={`${gender}-hour`}
+              id="person-hour"
               className="input-guofeng"
               value={birthHour}
               onChange={(e) => onChange({ birthHour: e.target.value })}
@@ -391,22 +362,22 @@ function PreviewReport({ result }: { result: StoredResult }) {
     <section className="mt-4" aria-label="预览报告">
       <div className="overflow-hidden rounded-[16px] border border-border-gold bg-surface-card shadow-card">
         <div className="border-b border-border bg-gradient-to-b from-[#5a0f0f]/60 to-transparent px-5 py-4">
-          <p className="text-xs tracking-[0.3em] text-muted">合婚测算 · 预览报告</p>
+          <p className="text-xs tracking-[0.3em] text-muted">单人测算 · 预览报告</p>
           <h3 className="mt-1 font-kai text-lg font-bold text-gold-light">
             {result.title}
           </h3>
           <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-fg-secondary">
             <div className="flex items-center gap-1.5">
-              契合指数：<span className="font-bold text-gold">★★★★☆</span>
+              运势指数：<span className="font-bold text-gold">★★★★☆</span>
             </div>
             <div className="flex items-center gap-1.5">
-              五行互补：<span className="font-bold text-gold">4 / 5 项</span>
+              正缘桃花期：<span className="font-bold text-gold">今明两年</span>
             </div>
             <div className="flex items-center gap-1.5">
-              上等婚配：<span className="font-bold text-gold">中等偏上</span>
+              婚后财运：<span className="font-bold text-gold">稳步上升</span>
             </div>
             <div className="flex items-center gap-1.5">
-              正缘时机：<span className="font-bold text-gold">今明两年</span>
+              性格解析：<span className="font-bold text-gold">五行已排</span>
             </div>
           </div>
         </div>
@@ -433,9 +404,9 @@ function PreviewReport({ result }: { result: StoredResult }) {
               {result.lockedNote ?? '完整版需付费解锁'}
             </p>
             <p className="mt-1 text-xs leading-relaxed text-fg-secondary">
-              解锁后可查看完整合婚报告与
+              解锁后可查看完整命盘报告与
               <br />
-              专属缘分建议
+              专属运势建议
             </p>
           </div>
         </div>
@@ -452,8 +423,7 @@ function PreviewReport({ result }: { result: StoredResult }) {
 
 function CalcPage() {
   const navigate = useNavigate()
-  const [personA, setPersonA] = useState<PersonForm>(EMPTY)
-  const [personB, setPersonB] = useState<PersonForm>(EMPTY)
+  const [person, setPerson] = useState<PersonForm>(EMPTY)
   const [isLunar, setIsLunar] = useState(false)
   const [focusTags, setFocusTags] = useState<string[]>(DEFAULT_FOCUS)
   const [errors, setErrors] = useState<FieldErrors>({})
@@ -491,14 +461,9 @@ function CalcPage() {
     [],
   )
 
-  const patch = (person: PersonKey, patchValue: Partial<PersonForm>) => {
-    setErrors((prev) => ({
-      ...prev,
-      [`name${person}`]: undefined,
-      [`birth${person}`]: undefined,
-    }))
-    if (person === 'A') setPersonA((p) => ({ ...p, ...patchValue }))
-    else setPersonB((p) => ({ ...p, ...patchValue }))
+  const patch = (patchValue: Partial<PersonForm>) => {
+    setErrors((prev) => ({ ...prev, name: undefined, birth: undefined }))
+    setPerson((p) => ({ ...p, ...patchValue }))
   }
 
   const toggleFocus = (tag: string) => {
@@ -533,12 +498,9 @@ function CalcPage() {
       const [res] = await Promise.all([
         createProfile(
           {
-            nameA: personA.name.trim(),
-            birthA: personA.birth,
-            birthHourA: personA.birthHour || undefined,
-            nameB: personB.name.trim(),
-            birthB: personB.birth,
-            birthHourB: personB.birthHour || undefined,
+            name: person.name.trim(),
+            birth: person.birth,
+            birthHour: person.birthHour || undefined,
             isLunar,
             focusTags,
           },
@@ -576,23 +538,14 @@ function CalcPage() {
   const handleSubmit = async () => {
     if (showLoading) return
     const nextErrors: FieldErrors = {
-      nameA: validateName(personA.name),
-      birthA: validateBirth(personA.birth),
-      nameB: validateName(personB.name),
-      birthB: validateBirth(personB.birth),
+      name: validateName(person.name),
+      birth: validateBirth(person.birth),
     }
     const hasError = Object.values(nextErrors).some(Boolean)
     setErrors(nextErrors)
     if (hasError) {
-      const first = (['nameA', 'birthA', 'nameB', 'birthB'] as const).find(
-        (k) => nextErrors[k],
-      )
-      const fieldId = {
-        nameA: 'male-name',
-        birthA: 'male-date',
-        nameB: 'female-name',
-        birthB: 'female-date',
-      } as const
+      const first = (['name', 'birth'] as const).find((k) => nextErrors[k])
+      const fieldId = { name: 'person-name', birth: 'person-date' } as const
       if (first) document.getElementById(fieldId[first])?.focus()
       return
     }
@@ -629,7 +582,7 @@ function CalcPage() {
             <span>返回</span>
           </Link>
           <h2 className="font-kai text-[17px] text-gold-light">生辰八字排盘</h2>
-          <span className="seal-mark">八字合婚</span>
+          <span className="seal-mark">单人测算</span>
         </div>
       </div>
 
@@ -642,27 +595,14 @@ function CalcPage() {
         noValidate
       >
         <PersonSection
-          gender="male"
-          name={personA.name}
-          birth={personA.birth}
-          birthHour={personA.birthHour}
+          name={person.name}
+          birth={person.birth}
+          birthHour={person.birthHour}
           calendar={calendar}
           onToggleCalendar={(c) => setIsLunar(c === '农历')}
-          onChange={(p) => patch('A', p)}
-          nameError={errors.nameA}
-          birthError={errors.birthA}
-        />
-
-        <PersonSection
-          gender="female"
-          name={personB.name}
-          birth={personB.birth}
-          birthHour={personB.birthHour}
-          calendar={calendar}
-          onToggleCalendar={(c) => setIsLunar(c === '农历')}
-          onChange={(p) => patch('B', p)}
-          nameError={errors.nameB}
-          birthError={errors.birthB}
+          onChange={patch}
+          nameError={errors.name}
+          birthError={errors.birth}
         />
 
         {/* 核心关注维度 */}
@@ -695,7 +635,7 @@ function CalcPage() {
         ) : null}
 
         <button type="submit" className="btn-guofeng-primary" disabled={showLoading}>
-          <span>天地交泰 · 开启命盘演练</span>
+          <span>天机交感 · 开启命盘推演</span>
           <svg
             width="18"
             height="18"
@@ -741,8 +681,7 @@ function CalcPage() {
       {/* 全屏推演遮罩 */}
       {showLoading ? (
         <CalcLoading
-          maleName={personA.name.trim() || '男方'}
-          femaleName={personB.name.trim() || '女方'}
+          name={person.name.trim() || '命主'}
           progress={progress}
           timedOut={timedOut}
           onRetry={handleRetry}

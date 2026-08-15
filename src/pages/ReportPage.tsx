@@ -54,8 +54,8 @@ const BOOK_SLOTS = [
   '明天 10:00 - 11:00 (约满可预定)',
 ]
 
-const CONSULT_TOPICS = ['正缘结婚最佳年份', '婚后买房置业财运', '双方长辈关系调控']
-const DEFAULT_CONSULT_TOPICS = ['正缘结婚最佳年份', '婚后买房置业财运']
+const CONSULT_TOPICS = ['正缘桃花期', '婚后财运旺衰', '事业运势点拨']
+const DEFAULT_CONSULT_TOPICS = ['正缘桃花期', '婚后财运旺衰']
 
 function MasterConsult({
   wecom,
@@ -100,10 +100,10 @@ function MasterConsult({
         </span>
         <div className="min-w-0 flex-1">
           <h4 className="mb-0.5 font-kai text-[15px] text-gold-light">
-            玄天道长 · 1V1 姻缘亲批
+            玄天道长 · 1V1 命理亲批
           </h4>
           <p className="truncate text-xs text-muted">
-            {wecom.note ?? '30年周易合婚经验 · 专属化解符箓与择吉日'}
+            {wecom.note ?? '30年周易命理经验 · 专属化解符箓与择吉日'}
           </p>
         </div>
         <button
@@ -150,7 +150,7 @@ function MasterConsult({
               >
                 道
               </span>
-              <h3 className="modal-title">玄天道长 · 1V1 姻缘优先亲批</h3>
+              <h3 className="modal-title">玄天道长 · 1V1 命理优先亲批</h3>
               <button
                 type="button"
                 className="modal-close"
@@ -185,7 +185,7 @@ function MasterConsult({
                   玄天道长 (研几三十载)
                 </h4>
                 <p className="mt-0.5 text-xs leading-relaxed text-fg-secondary">
-                  已为 50,000+ 对新人进行八字合婚与择吉日
+                  已为 50,000+ 人进行八字命理排盘与择吉日
                 </p>
               </div>
             </div>
@@ -379,27 +379,26 @@ function ReportPage() {
           >
             <span className="seal-red absolute top-3 right-3">敕批</span>
             <span className="mb-1.5 inline-block rounded border border-border-gold bg-gold/15 px-2.5 py-0.5 text-[11px] tracking-[0.1em] text-gold">
-              周易阴阳五行合婚天书
+              周易阴阳五行命盘天书
             </span>
             <h1 className="mb-1 font-kai text-[22px] tracking-[0.05em] text-gold-light">
-              {reportTitle ?? '八字合婚 · 姻缘命盘详批'}
+              {reportTitle ?? '八字命盘 · 运势姻缘详批'}
             </h1>
             <div className="text-sm text-fg-secondary">
-              <span className="gender-chip gender-chip-male">乾造</span>
-              <span className="mx-1">(男方)</span>
-              <span className="mx-1.5 text-gold">♥</span>
-              <span className="gender-chip gender-chip-female">坤造</span>
-              <span className="mx-1">(女方)</span>
+              <span className="mx-1 inline-block rounded border border-border-gold bg-gold/15 px-1.5 py-0.5 text-[11px] font-semibold tracking-[0.1em] text-gold-light">
+                命主
+              </span>
+              <span className="mx-1">单人测算 · 运势与姻缘预览</span>
             </div>
           </section>
 
           {/* 已解锁：总分 / 命理总评 / 因果章节 */}
           {unlocked ? (
             <>
-              {/* 匹配总分英雄卡 */}
+              {/* 运势总分英雄卡 */}
               <section
                 className="relative rounded-[16px] border border-border-gold bg-[radial-gradient(circle_at_50%_30%,rgba(226,180,95,0.12)_0%,rgba(110,19,19,0.9)_80%)] px-4 py-5 text-center"
-                aria-label="匹配总分"
+                aria-label="运势总分"
               >
                 <div className="relative mx-auto mb-2.5 flex size-[120px] flex-col items-center justify-center">
                   <svg
@@ -433,7 +432,7 @@ function ReportPage() {
                   >
                     {report.report.score ?? 0}
                   </span>
-                  <span className="mt-0.5 text-xs text-muted">契合指数</span>
+                  <span className="mt-0.5 text-xs text-muted">运势指数</span>
                 </div>
 
                 <div className="mb-1 font-kai text-lg tracking-[0.08em] text-gold">
@@ -473,9 +472,9 @@ function ReportPage() {
                 </section>
               ) : null}
 
-              {/* 三世因果与姻缘批语 */}
+              {/* 命盘章节详批（章节标题直接渲染后端数据） */}
               {report.report.karma && report.report.karma.length ? (
-                <section className="card-guofeng" aria-label="三世因果与姻缘批语">
+                <section className="card-guofeng" aria-label="命盘章节详批">
                   <Corners />
                   <div className="mb-3 flex items-center justify-between">
                     <h3 className="flex items-center gap-1.5 font-kai text-base text-gold-light">
@@ -490,7 +489,7 @@ function ReportPage() {
                       >
                         <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
                       </svg>
-                      三世因果与姻缘批语
+                      命盘章节详批
                     </h3>
                   </div>
 
@@ -515,7 +514,7 @@ function ReportPage() {
           {/* 深度付费解锁区域 */}
           <section
             className="relative overflow-hidden rounded-[16px] border-[1.5px] border-border-gold bg-gradient-to-b from-[#5a0e0e]/95 to-[#2e0808]/98 p-4 shadow-[0_8px_32px_rgba(0,0,0,0.6)]"
-            aria-label="高级婚姻运势深度推演"
+            aria-label="高级运势深度推演"
           >
             <div className="mb-3 flex items-center justify-between">
               <h3 className="flex items-center gap-1.5 font-kai text-base text-gold-light">
@@ -531,7 +530,7 @@ function ReportPage() {
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                   <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                 </svg>
-                高级婚姻运势深度推演{unlocked ? '' : ' (未解锁)'}
+                高级运势深度推演{unlocked ? '' : ' (未解锁)'}
               </h3>
               {unlocked ? <span className="seal-mark">已解锁</span> : null}
             </div>
@@ -574,7 +573,7 @@ function ReportPage() {
                     <LockIcon className="size-6" />
                   </span>
                   <h4 className="mb-1 font-kai text-[17px] text-gold-light">
-                    完整版需付费解锁《双人深度婚姻天书报告》
+                    完整版需付费解锁《个人命盘深度天书报告》
                   </h4>
                   <p className="mb-2.5 text-xs text-fg-secondary">
                     解锁后包含未来3年运势转折、婚后财运、避坑锦囊与大师一对一亲批
@@ -615,7 +614,7 @@ function ReportPage() {
             className="btn-guofeng-primary"
           >
             <span>
-              解锁全套姻缘批书 + 大师亲批 (
+              解锁全套命盘批书 + 大师亲批 (
               {formatPrice(amount ?? 9900)})
             </span>
           </button>
@@ -651,7 +650,7 @@ function ReportPage() {
                 <path d="M3.5 7a2.5 2.5 0 0 1 2.5-2.5h14.5V19H6A2.5 2.5 0 0 0 3.5 21.5V7z" opacity="0.45" transform="translate(1 1)" />
                 <path d="M3.5 7a2.5 2.5 0 0 1 2.5-2.5h14.5V19H6A2.5 2.5 0 0 0 3.5 21.5V7z" opacity="0.22" transform="translate(2 2)" />
               </svg>
-              <h3 className="modal-title">八字合婚天书 · 深度详批</h3>
+              <h3 className="modal-title">八字命盘天书 · 深度详批</h3>
               <button
                 type="button"
                 className="modal-close"
@@ -676,7 +675,7 @@ function ReportPage() {
             {/* 测算对象 */}
             <p className="mb-3 text-sm text-fg-secondary">
               测算对象：
-              <span className="font-bold text-gold-light">李大为 & 林静雅</span>
+              <span className="font-bold text-gold-light">命主 · 单人运势与姻缘预览</span>
             </p>
 
             {/* 四重权益框 */}
@@ -685,8 +684,8 @@ function ReportPage() {
                 ✨ 解锁即享四重天书核心权益：
               </p>
               <ul className="space-y-1.5 text-xs leading-relaxed text-fg-secondary">
-                <li>1. 男女八字五行冲克与大运合化全析</li>
-                <li>2. 未来 10 年正缘危机与转折年份预警</li>
+                <li>1. 八字五行喜忌与大运走势全析</li>
+                <li>2. 未来 10 年正缘桃花与转折年份预警</li>
                 <li>3. 婚后财运旺衰与置业买房最佳时机</li>
                 <li>4. 专属化解锦囊与玄天道长 1V1 优先接通</li>
               </ul>

@@ -1,12 +1,9 @@
 import http from './http'
 
 export interface CreateProfileRequest {
-  nameA: string
-  birthA: string
-  birthHourA?: string
-  nameB: string
-  birthB: string
-  birthHourB?: string
+  name: string
+  birth: string
+  birthHour?: string
   isLunar?: boolean
   focusTags?: string[]
 }
@@ -25,16 +22,14 @@ export interface CreateProfileResult {
 
 /**
  * 重新获取预览报告（下单页摘要展示用）。
- * 脱敏字段（nameA/nameB/birthA/birthB）为 A 阶段扩展：
+ * 脱敏字段（name/birth）为后端扩展：
  * 后端未返回时前端仅展示报告标题。
  */
 export interface ProfilePreview {
   profileId: string
   previewReport: PreviewReport
-  nameA?: string
-  nameB?: string
-  birthA?: string
-  birthB?: string
+  name?: string
+  birth?: string
 }
 
 interface ApiEnvelope<T> {

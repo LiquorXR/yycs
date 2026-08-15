@@ -56,13 +56,13 @@ function Compass() {
         />
       </svg>
 
-      {/* 中心：金边命盘 · 月老红线 */}
+      {/* 中心：金边命盘 · 个人命盘 */}
       <div className="relative flex size-[100px] flex-col items-center justify-center rounded-full border-2 border-gold bg-[radial-gradient(circle,#4a0e0e_0%,#2a0808_100%)] shadow-[0_0_25px_rgba(226,180,95,0.3)]">
         <span className="text-[32px] leading-none" aria-hidden="true">
-          姻
+          运
         </span>
         <span className="font-kai text-xs tracking-[0.1em] text-gold-light">
-          月老红线
+          个人命盘
         </span>
       </div>
     </div>
@@ -72,10 +72,10 @@ function Compass() {
 /* ---------------- 实时测算喜报播报 ---------------- */
 
 const TICKER_ITEMS = [
-  '李** 与 王** 刚刚测算合婚 · 匹配度 96% 【天作之合】',
-  '张** 单人测算 · 预测2026农历四月遇到正缘',
-  '陈** 与 刘** 刚刚测算合婚 · 匹配度 88% 【上等婚配】',
-  '赵** 测算成功 · 获得【大师亲批·解婚煞避坑锦囊】',
+  '张** 单人测算 · 预测今年秋季遇到正缘',
+  '李** 单人测算 · 正缘桃花期与财运走势 已生成',
+  '王** 测算成功 · 婚后财运旺衰与性格解析 已批注',
+  '赵** 测算成功 · 获得【大师亲批·避坑锦囊】',
 ]
 
 const TICKER_INTERVAL = 3500
@@ -137,24 +137,24 @@ function Ticker() {
 
 const FEATURES = [
   {
-    icon: '合',
-    title: '八字契合度',
-    desc: '对盘天干地支，推演五行喜用相生相克',
-  },
-  {
     icon: '缘',
     title: '正缘桃花期',
-    desc: '精准预测感情关键节点与修成正果年份',
+    desc: '精准预测感情关键节点与桃花旺衰年份',
   },
   {
     icon: '财',
-    title: '婚后旺夫/旺财',
-    desc: '分析二人结合后的财运格局与家庭运势',
+    title: '婚后财运旺衰',
+    desc: '推演财运走势与置业吸金最佳时机',
+  },
+  {
+    icon: '性',
+    title: '性格解析',
+    desc: '剖析五行禀性，解锁相处之道与自我认知',
   },
   {
     icon: '避',
-    title: '相处避坑指南',
-    desc: '预判情感矛盾触发点，提供解化妙招',
+    title: '避坑指南',
+    desc: '预判运势风险点，提供化解妙招',
   },
 ]
 
@@ -166,13 +166,13 @@ function LandingPage() {
       {/* 顶部高光云纹护栏 */}
       <section className="bg-[radial-gradient(circle_at_50%_0%,rgba(226,180,95,0.16)_0%,transparent_70%)] px-5 pt-5 pb-2.5 text-center">
         <span className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-border-gold bg-gold/12 px-3 py-1 text-[11px] tracking-[0.1em] text-gold">
-          敕造命盘 · 秘传合婚
+          敕造命盘 · 单人测算
         </span>
         <h1 className="text-gold-gradient mb-1.5 font-kai text-[28px] leading-[1.2] tracking-[0.05em]">
-          八字合婚 · 姻缘天注定
+          八字命盘 · 运势姻缘一测便知
         </h1>
         <p className="mb-4 text-[13px] tracking-[0.02em] text-fg-secondary">
-          测算二人八字五行 · 预测婚姻吉凶与正缘转折
+          测算个人五行喜忌 · 预测正缘桃花与运势转折
         </p>
 
         <Compass />
@@ -205,7 +205,7 @@ function LandingPage() {
       <section className="flex flex-col gap-3 px-5">
         <Link to="/calc" className="block">
           <button type="button" className="btn-guofeng-primary">
-            <span>双人合婚测算 (输入双方八字)</span>
+            <span>立即测算 · 开启个人命盘</span>
             <svg
               width="18"
               height="18"
@@ -217,12 +217,6 @@ function LandingPage() {
             >
               <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>
-          </button>
-        </Link>
-
-        <Link to="/calc" className="block">
-          <button type="button" className="btn-guofeng-ghost">
-            <span>单人测算 (看个人正缘与桃花运)</span>
           </button>
         </Link>
 
