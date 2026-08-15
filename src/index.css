@@ -22,9 +22,7 @@
   --color-border: #5c1b16;
   --color-border-gold: #a8833f; /* 描金边 */
 
-  /* 强调（主行动 = 鎏金） */
-  --color-accent: #e2b45f; /* 鎏金 · 主行动 */
-  --color-accent-hover: #f0c978;
+  /* 强调 */
   --color-red: #d93829; /* 丹砂 · 印章/播报点/错误 */
   --color-red-deep: #a21f12;
   --color-red-light: #ff7262;

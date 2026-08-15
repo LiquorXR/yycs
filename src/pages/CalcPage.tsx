@@ -291,7 +291,7 @@ function PersonSection({
             className="mb-1 block text-xs text-fg-secondary"
           >
             {isMale ? '男方姓名/昵称' : '女方姓名/昵称'}
-            <span className="text-red" aria-hidden="true"> *</span>
+            <span className="text-red-light" aria-hidden="true"> *</span>
           </label>
           <input
             id={`${gender}-name`}
@@ -320,7 +320,7 @@ function PersonSection({
               className="mb-1 block text-xs text-fg-secondary"
             >
               出生日期{calendar === '农历' ? '（农历）' : ''}
-              <span className="text-red" aria-hidden="true"> *</span>
+              <span className="text-red-light" aria-hidden="true"> *</span>
             </label>
             <input
               id={`${gender}-date`}

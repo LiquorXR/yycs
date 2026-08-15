@@ -706,27 +706,16 @@ function ReportPage() {
             </div>
 
             {/* 支付方式 */}
-            <div className="pay-methods" role="radiogroup" aria-label="支付方式">
-              <button
-                type="button"
-                role="radio"
-                aria-checked="true"
-                className="pay-option active"
-              >
+            <div className="pay-methods">
+              <span className="pay-option active">
                 <span aria-hidden="true">🟢</span>
                 微信支付
-              </button>
-              <button
-                type="button"
-                disabled
-                role="radio"
-                aria-checked="false"
-                className="pay-option opacity-60"
-              >
+              </span>
+              <span className="pay-option opacity-60">
                 <span aria-hidden="true">🔵</span>
                 支付宝
                 <span className="text-[10px]">暂未开通</span>
-              </button>
+              </span>
             </div>
 
             <button

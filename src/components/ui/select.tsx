@@ -24,7 +24,6 @@ function Select({ className, options, placeholder, ...props }: SelectProps) {
           'pr-10',
           'focus:border-gold focus:ring-2 focus:ring-gold/20',
           'disabled:cursor-not-allowed disabled:opacity-50',
-          'aria-[invalid=true]:border-red',
           className,
         )}
         {...props}
