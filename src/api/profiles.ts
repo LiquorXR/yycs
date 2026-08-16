@@ -10,7 +10,6 @@ export interface CreateProfileRequest {
 
 export interface PreviewReport {
   title: string
-  contentUrl: string
   locked: boolean
   lockedNote?: string
 }
