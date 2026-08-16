@@ -23,6 +23,7 @@
 | v1.0.3 | 2026-08-13 | 同步简版报告契约与 focusTags：提交测算信息新增 focusTags（定制报告章节）；获取报告标记为 A 阶段已实现（简版契约：score/rank/scoreNote/analysis/karma/lockedPreview，含解锁/未解锁两态与 wecom 占位说明）；新增 dev 模拟解锁接口 pay-success-mock（仅 APP_ENV=dev 注册，生产 404） |  |
 | v1.0.4 | 2026-08-16 | 测算单人化：提交测算信息（§2.3）与重新获取预览报告（§2.4）由双人（nameA/nameB/birthA/birthB）改为单人（name/birth/birthHour），focusTags 取值更新为单人 5 键；报告契约内容单人化（§2.8：title 为「姓名 · 八字命盘详批（姻缘预览）」、rank 五档、karma 三章节、lockedPreview 两章节） |  |
 | v1.0.5 | 2026-08-16 | 删除预览报告 contentUrl 字段（§2.3/§2.4 响应示例）：静态报告文件未落地，契约内容全部内联返回；同步移除前端 /static 代理与后端静态文件服务说明 |  |
+| v1.0.6 | 2026-08-16 | 生产同域部署：前端静态产物改由 backend 托管（/assets + SPA 回退 index.html），nginx 仅 TLS 反代 |  |
 
 ---
 
@@ -34,7 +35,7 @@
 |---|---|
 | 开发环境（dev） | `http://127.0.0.1:8000/api`（后端本地）；前端 Vite dev server 代理转发 `/api` |
 | 测试环境（staging） | `https://staging.<域名>/api` |
-| 生产环境（prod） | `https://<域名>/api`（同域部署：nginx 托管静态 + 反代 /api） |
+| 生产环境（prod） | `https://<域名>/api`（同域部署：nginx/NPM 仅反代，前端静态由 backend 托管） |
 
 > 约定：所有接口路径统一以 `/api` 开头（或网关统一剥离）。
 > 注：`<域名>` 为 ICP 备案后实际域名（办理中），域名就绪后替换。
