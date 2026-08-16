@@ -16,7 +16,8 @@ def test_create_profile_success(client):
     assert preview["locked"] is True
     assert preview["lockedNote"] == "完整版需付费解锁"
     assert preview["title"] == "张三 · 姻缘运势测算预览"
-    assert preview["contentUrl"].endswith("_preview.html")
+    # 死链字段已删除：previewReport 不含 contentUrl
+    assert "contentUrl" not in preview
 
 
 def test_create_profile_without_birth_hour(client):
@@ -93,7 +94,8 @@ def test_preview_returns_masked(client):
     assert d["birth"] == "1995-08-15"
     preview = d["previewReport"]
     assert preview["locked"] is True
-    assert preview["contentUrl"].endswith("_preview.html")
+    # 死链字段已删除：previewReport 不含 contentUrl
+    assert "contentUrl" not in preview
     # 脱敏：响应不含密文
     raw = resp.text
     assert "gAAAA" not in raw

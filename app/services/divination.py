@@ -85,10 +85,10 @@ def generate_factors(
     }
 
 
-def generate_preview_report(profile_id: str, factors: dict) -> dict:
+def generate_preview_report(factors: dict) -> dict:
     """生成预览报告（掩码，不涉及真实测算内容）。
 
-    返回 dict 含 title/contentUrl/locked/lockedNote/summary；对外响应仅取前四项，
+    返回 dict 含 title/locked/lockedNote/summary；对外响应仅取前三项，
     summary 仅为展示型摘要（生肖/五行标签），完整测算 B 阶段实现。
     """
     title = f"{factors['name']} · 姻缘运势测算预览"
@@ -99,7 +99,6 @@ def generate_preview_report(profile_id: str, factors: dict) -> dict:
     )
     return {
         "title": title,
-        "contentUrl": f"/static/reports/{profile_id}_preview.html",
         "locked": True,
         "lockedNote": "完整版需付费解锁",
         "summary": summary,

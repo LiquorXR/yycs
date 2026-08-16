@@ -21,7 +21,7 @@ from app.services.seq import next_profile_id
 
 router = APIRouter(tags=["profiles"])
 
-_PREVIEW_FIELDS = ("title", "contentUrl", "locked", "lockedNote")
+_PREVIEW_FIELDS = ("title", "locked", "lockedNote")
 
 
 class ProfileCreateRequest(BaseModel):
@@ -33,7 +33,7 @@ class ProfileCreateRequest(BaseModel):
 
 
 def _preview_view(preview: dict) -> dict:
-    """对外预览视图：仅暴露 title/contentUrl/locked/lockedNote（不含 summary）。"""
+    """对外预览视图：仅暴露 title/locked/lockedNote（不含 summary）。"""
     return {k: preview.get(k) for k in _PREVIEW_FIELDS}
 
 
@@ -52,7 +52,7 @@ def create_profile(
 
     profile_id = next_profile_id(db)
     factors = generate_factors(payload.name, payload.birth, payload.birthHour, payload.isLunar)
-    preview = generate_preview_report(profile_id, factors)
+    preview = generate_preview_report(factors)
     report_contract = generate_single_report(factors, payload.focusTags)
 
     profile = Profile(
@@ -95,7 +95,6 @@ def get_preview(profile_id: str, db: Session = Depends(get_db)) -> dict:
     if preview is None:
         preview = {
             "title": "姻缘运势测算预览",
-            "contentUrl": f"/static/reports/{profile_id}_preview.html",
             "locked": True,
             "lockedNote": "完整版需付费解锁",
         }
