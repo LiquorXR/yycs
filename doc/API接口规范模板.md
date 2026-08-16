@@ -7,7 +7,7 @@
 | 项目 | 内容 |
 |---|---|
 | 项目名称 | 振凡命理 |
-| 文档版本 | v1.0.4 |
+| 文档版本 | v1.0.5 |
 | 编写人 |  |
 | 编写日期 | 2026-08-11 |
 | 审核人 |  |
@@ -22,6 +22,7 @@
 | v1.0.2 | 2026-08-13 | 与代码实现核对同步：补齐全部已实现接口状态标注、订单详情字段、创建订单 A 阶段返回形态（payType 等为 null）、关单响应；修正生产 Base URL（同域反代）与限流实现状态说明 |  |
 | v1.0.3 | 2026-08-13 | 同步简版报告契约与 focusTags：提交测算信息新增 focusTags（定制报告章节）；获取报告标记为 A 阶段已实现（简版契约：score/rank/scoreNote/analysis/karma/lockedPreview，含解锁/未解锁两态与 wecom 占位说明）；新增 dev 模拟解锁接口 pay-success-mock（仅 APP_ENV=dev 注册，生产 404） |  |
 | v1.0.4 | 2026-08-16 | 测算单人化：提交测算信息（§2.3）与重新获取预览报告（§2.4）由双人（nameA/nameB/birthA/birthB）改为单人（name/birth/birthHour），focusTags 取值更新为单人 5 键；报告契约内容单人化（§2.8：title 为「姓名 · 八字命盘详批（姻缘预览）」、rank 五档、karma 三章节、lockedPreview 两章节） |  |
+| v1.0.5 | 2026-08-16 | 删除预览报告 contentUrl 字段（§2.3/§2.4 响应示例）：静态报告文件未落地，契约内容全部内联返回；同步移除前端 /static 代理与后端静态文件服务说明 |  |
 
 ---
 
@@ -296,7 +297,6 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
     "profileId": "P2026080900123",
     "previewReport": {
       "title": "张三 · 姻缘运势测算预览",
-      "contentUrl": "/static/reports/P2026080900123_preview.html",
       "locked": true,
       "lockedNote": "完整版需付费解锁"
     }
@@ -337,7 +337,6 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
     "birth": "1995-08-15",
     "previewReport": {
       "title": "张三 · 姻缘运势测算预览",
-      "contentUrl": "/static/reports/P2026080900123_preview.html",
       "locked": true,
       "lockedNote": "完整版需付费解锁"
     }
