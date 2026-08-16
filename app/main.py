@@ -38,6 +38,7 @@ app = FastAPI(
     title=settings.APP_NAME,
     debug=settings.DEBUG,
     lifespan=lifespan,
+    docs_url=None,
 )
 
 app.add_middleware(
@@ -106,8 +107,8 @@ if _DIST_DIR.is_dir():
 
     @app.get("/{full_path:path}", response_model=None, include_in_schema=False)
     async def spa_fallback(full_path: str):
-        # 保 API 语义：api/、docs/、openapi.json 前缀不得回退 index.html
-        if full_path.startswith(("api/", "docs/", "openapi.json")):
+        # 保 API 语义：/api、/docs 精确路径及 api/、docs/、openapi.json 前缀不得回退 index.html
+        if full_path in ("api", "docs") or full_path.startswith(("api/", "docs/", "openapi.json")):
             return _json_404()
 
         # 命中 dist 下真实文件（favicon.svg、icons.svg 等）直接返回
