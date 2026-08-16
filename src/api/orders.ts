@@ -39,7 +39,6 @@ export interface OrderReport {
     lockedPreview: Array<{ title: string; body: string }>
     locked?: boolean
     lockedNote?: string
-    contentUrl?: string
   }
   wecom: {
     addWay?: string
