@@ -39,5 +39,10 @@ class Settings(BaseSettings):
     # 企微「联系我」活码二维码 URL；未配置时已解锁报告 wecom 字段返回 null
     WECOM_QRCODE_URL: str | None = None
 
+    # 前端构建产物目录（容器内 WORKDIR 为 /app，默认 ./dist 即 /app/dist）；
+    # 生产由 backend 容器内托管前端静态产物，nginx 仅反代 127.0.0.1:8000；
+    # dev/测试使用 Vite，目录不存在时静默跳过静态托管
+    FRONTEND_DIST_DIR: str = "./dist"
+
 
 settings = Settings()

@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
 from app.core.errors import BizError, ErrorCode
@@ -83,3 +85,39 @@ app.include_router(health.router)
 app.include_router(products.router)
 app.include_router(profiles.router)
 app.include_router(orders.router)
+
+# 生产静态托管：backend 容器内直接托管前端构建产物，nginx 仅反代 127.0.0.1:8000。
+# 必须在全部 API 路由注册之后追加 catch-all；dev/测试用 Vite，目录不存在时静默跳过。
+_DIST_DIR = Path(settings.FRONTEND_DIST_DIR)
+
+
+def _json_404() -> JSONResponse:
+    """API/文档前缀命中 catch-all 时返回 JSON 404，保留 API 语义。"""
+    return JSONResponse(
+        status_code=404,
+        content={"code": ErrorCode.NOT_FOUND, "message": "资源不存在", "data": None},
+    )
+
+
+if _DIST_DIR.is_dir():
+    _assets_dir = _DIST_DIR / "assets"
+    if _assets_dir.is_dir():
+        app.mount("/assets", StaticFiles(directory=_assets_dir), name="assets")
+
+    @app.get("/{full_path:path}", response_model=None, include_in_schema=False)
+    async def spa_fallback(full_path: str):
+        # 保 API 语义：api/、docs/、openapi.json 前缀不得回退 index.html
+        if full_path.startswith(("api/", "docs/", "openapi.json")):
+            return _json_404()
+
+        # 命中 dist 下真实文件（favicon.svg、icons.svg 等）直接返回
+        target = (_DIST_DIR / full_path).resolve()
+        if target.is_file() and target.is_relative_to(_DIST_DIR.resolve()):
+            return FileResponse(target)
+
+        # SPA fallback：/、/calc、/order、/pay/:orderNo、/report/:orderNo 等
+        index_file = _DIST_DIR / "index.html"
+        if index_file.is_file():
+            return FileResponse(index_file, media_type="text/html")
+
+        return _json_404()

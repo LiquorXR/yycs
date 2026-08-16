@@ -1,14 +1,14 @@
 name: zhenfan
 
 services:
-  # 一次性构建：容器运行时执行 npm run build，产物经 bind mount 落宿主 ./dist，由主机 nginx 托管
+  # 一次性构建：容器运行时执行 npm run build，产物经命名卷 frontend_dist 交由 backend 托管
   frontend-build:
     build:
       context: .
       dockerfile: Dockerfile.frontend
     command: ["npm", "run", "build"]
     volumes:
-      - ./dist:/app/dist
+      - frontend_dist:/app/dist
     restart: "no"
 
   # 一次性迁移+种子：prod 不走 dev 自动建表/种子，由 init_prod.py 完成
@@ -22,7 +22,7 @@ services:
       - app_data:/data
     restart: "no"
 
-  # 后端 API：仅映射回环地址，由主机 nginx 反代 /api 与 /static
+  # 后端 API + 前端静态托管：仅映射回环地址，由主机 nginx 统一反代到 127.0.0.1:8000
   backend:
     build:
       context: .
@@ -31,10 +31,13 @@ services:
     env_file: .env
     volumes:
       - app_data:/data
+      - frontend_dist:/app/dist:ro
     ports:
       - "127.0.0.1:8000:8000"
     depends_on:
       migrate:
+        condition: service_completed_successfully
+      frontend-build:
         condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/api/health')"]
@@ -45,3 +48,4 @@ services:
 
 volumes:
   app_data:
+  frontend_dist:
