@@ -582,7 +582,6 @@ function CalcPage() {
             <span>返回</span>
           </Link>
           <h2 className="font-kai text-[17px] text-gold-light">生辰八字排盘</h2>
-          <span className="seal-mark">单人测算</span>
         </div>
       </div>
 
