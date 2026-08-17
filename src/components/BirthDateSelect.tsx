@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Lunar, LunarMonth, LunarYear, Solar } from 'lunar-typescript'
 
 interface BirthDateSelectProps {
@@ -40,9 +40,14 @@ export default function BirthDateSelect({
   const [month, setMonth] = useState('')
   const [day, setDay] = useState('')
 
+  const birthRef = useRef(birth)
+  useEffect(() => {
+    birthRef.current = birth
+  })
+
   /* 用户操作驱动的 birth 变化由内部状态直接接管，仅在历法切换时按 birth 重算回显 */
   useEffect(() => {
-    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(birth)
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(birthRef.current)
     if (!m) {
       setYear('')
       setMonth('')
@@ -62,7 +67,7 @@ export default function BirthDateSelect({
       setMonth(String(mo))
       setDay(String(d))
     }
-  }, [birth, calendar])
+  }, [calendar])
 
   const monthOptions = useMemo(() => {
     if (calendar === '公历') {
