@@ -666,9 +666,9 @@ function CalcPage() {
                 </span>
               </p>
             </div>
-            <div className="w-32 shrink-0">
+            <div className="w-28 shrink-0">
               <Link to={`/order?profileId=${result.profileId}`} className="block">
-                <button type="button" className="btn-guofeng-primary !min-h-[46px] !text-[15px]">
+                <button type="button" className="btn-guofeng-primary !min-h-[40px] !px-4 !text-[13px]">
                   解锁完整版
                 </button>
               </Link>
