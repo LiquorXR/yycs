@@ -150,7 +150,7 @@ function OrderPage() {
   }
 
   return (
-    <main className="fx-paper fx-cloud fade-in min-h-screen pb-28">
+    <main className="fx-paper fx-cloud min-h-screen pb-28">
       <PageHeader title="确认订单" backTo="/calc" />
 
       <div className="px-5 pt-6">

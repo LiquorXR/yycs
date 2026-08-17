@@ -127,7 +127,7 @@ function PayPage() {
   const showEmpty = !showH5 && !showNative
 
   return (
-    <main className="fx-paper fx-cloud fade-in min-h-screen pb-28">
+    <main className="fx-paper fx-cloud min-h-screen pb-28">
       <PageHeader
         title="订单支付"
         backTo={order?.profileId ? `/order?profileId=${order.profileId}` : '/'}
