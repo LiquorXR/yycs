@@ -558,7 +558,7 @@ function CalcPage() {
   }
 
   return (
-    <main className={`fx-paper fx-cloud fade-in min-h-screen ${result ? 'pb-28' : 'pb-6'}`}>
+    <main className={`fx-paper fx-cloud min-h-screen ${result ? 'pb-28' : 'pb-6'}`}>
       {/* 顶部导航 */}
       <div className="border-b border-border px-5 pt-3 pb-2">
         <div className="flex items-center justify-between">

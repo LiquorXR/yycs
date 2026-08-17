@@ -240,7 +240,7 @@ const FEATURES = [
 
 function LandingPage() {
   return (
-    <main className="fx-paper fx-cloud fade-in flex min-h-screen flex-col pb-6">
+    <main className="fx-paper fx-cloud flex min-h-screen flex-col pb-6">
       {/* 顶部高光云纹护栏 */}
       <section className="bg-[radial-gradient(circle_at_50%_0%,rgba(226,180,95,0.16)_0%,transparent_70%)] px-5 pt-5 pb-2.5 text-center">
         <span className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-border-gold bg-gold/12 px-3 py-1 text-[11px] tracking-[0.1em] text-gold">
