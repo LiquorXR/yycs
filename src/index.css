@@ -119,7 +119,7 @@
 /* 供 .fade-in 与按钮流光使用的独立关键帧（全局 CSS，始终输出） */
 @keyframes fade-in {
   from {
-    opacity: 0;
+    opacity: 0.6;
     transform: translateY(8px);
   }
   to {
@@ -170,16 +170,22 @@
     -webkit-tap-highlight-color: transparent;
   }
 
-  /* 中国红径向底 + 顶部鎏金高光晕染（纯 CSS 静态） */
+  /* 中国红径向底 + 顶部鎏金高光晕染（纯 CSS 静态，固定锚定视口） */
   body {
     margin: 0;
     min-height: 100dvh;
-    background:
-      radial-gradient(circle at 50% 20%, #8a1a1a 0%, #5a0f0f 55%, #3a0a0a 100%)
-      fixed;
+    background: #3a0a0a;
     color: var(--color-fg);
     font-family: var(--font-sans);
     overscroll-behavior-y: none;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background: radial-gradient(circle at 50% 20%, #8a1a1a 0%, #5a0f0f 55%, #3a0a0a 100%);
   }
 
   ::selection {
