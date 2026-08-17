@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { createProfile, newIdempotencyKey } from '@/api/profiles'
+import BirthDateSelect from '@/components/BirthDateSelect'
 
 const HOURS = [
   { value: '子', label: '子时 (23:00 - 00:59)' },
@@ -284,24 +285,20 @@ function PersonSection({
           ) : null}
         </div>
 
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="space-y-3">
           <div>
-            <label
-              htmlFor="person-date"
+            <span
+              id="person-date-label"
               className="mb-1 block text-xs text-fg-secondary"
             >
               出生日期{calendar === '农历' ? '（农历）' : ''}
               <span className="text-red-light" aria-hidden="true"> *</span>
-            </label>
-            <input
-              id="person-date"
-              type="date"
-              className={`input-guofeng ${birthError ? 'input-error' : ''}`}
-              value={birth}
-              aria-invalid={Boolean(birthError)}
-              aria-required="true"
-              required
-              onChange={(e) => onChange({ birth: e.target.value })}
+            </span>
+            <BirthDateSelect
+              birth={birth}
+              calendar={calendar}
+              error={birthError}
+              onChange={(v) => onChange({ birth: v })}
             />
             {birthError ? (
               <p className="field-error-msg" role="alert">
