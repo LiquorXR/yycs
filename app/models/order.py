@@ -42,6 +42,8 @@ class Order(Base):
     amount: Mapped[int] = mapped_column(Integer, nullable=False, comment="金额（分）")
     state: Mapped[str] = mapped_column(String(16), nullable=False, default=OrderState.CREATED.value)
     pay_type: Mapped[str | None] = mapped_column(String(16), nullable=True, comment="h5/native/jsapi")
+    pay_url: Mapped[str | None] = mapped_column(Text, nullable=True, comment="H5 支付拉起 URL（mweb_url）")
+    code_url: Mapped[str | None] = mapped_column(Text, nullable=True, comment="Native 扫码支付二维码内容")
     ad_params: Mapped[dict | None] = mapped_column(JSON, nullable=True, comment="磁力投放归因 JSON")
     fail_reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=utcnow)

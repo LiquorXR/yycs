@@ -1,10 +1,11 @@
-"""订单模块路由：创建订单、订单详情、关单、获取报告、开发环境模拟解锁。"""
+"""订单模块路由：创建订单、订单详情、关单、获取报告、退款、开发环境模拟解锁。"""
 
 from __future__ import annotations
 
 import json
+import logging
 
-from fastapi import APIRouter, Depends, Header
+from fastapi import APIRouter, Depends, Header, Request
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -16,9 +17,12 @@ from app.db.session import get_db
 from app.models.order import Order, OrderState
 from app.models.pay_transaction import PayTransaction
 from app.models.report import Report
-from app.services import order_service
+from app.services import order_service, pay_service
 from app.services.idempotency import IDEM_SCOPE_ORDER, get_idempotent_response, store_idempotent_response
 from app.services.report import DEFAULT_LOCKED_PREVIEW
+from app.services.wechatpay import WechatPayError
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["orders"])
 
@@ -55,10 +59,11 @@ class OrderCreateRequest(BaseModel):
 @router.post("/api/orders")
 def create_order(
     payload: OrderCreateRequest,
+    request: Request,
     db: Session = Depends(get_db),
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ) -> dict:
-    """创建订单：金额以服务端产品表为准，响应 payType/payUrl/codeUrl 待 B 阶段支付模块填充（本期返回 null）。"""
+    """创建订单：金额以服务端产品表为准；支付配置齐全时返回真实 payType/payUrl/codeUrl，否则 null 降级。"""
     if not idempotency_key:
         raise BizError(ErrorCode.PARAM_VALIDATION, "参数校验失败：Idempotency-Key 必填")
     if payload.paymentMethod not in PAYMENT_METHODS:
@@ -77,8 +82,22 @@ def create_order(
         payload.amount,
     )
 
-    # B 阶段：支付模块统一下单后填充 payType/payUrl/codeUrl
-    data = {"orderNo": order_no, "amount": amount, "payType": None, "payUrl": None, "codeUrl": None}
+    order = db.query(Order).filter(Order.order_no == order_no).first()
+    client_ip = request.client.host if request.client else None
+    pay_info = pay_service.ensure_payment(db, order, client_ip)
+
+    # 同步订单支付参数（auto 会实际路由到 h5/native）
+    order.pay_type = pay_info["payType"] or order.pay_type
+    order.pay_url = pay_info["payUrl"]
+    order.code_url = pay_info["codeUrl"]
+
+    data = {
+        "orderNo": order_no,
+        "amount": amount,
+        "payType": pay_info["payType"],
+        "payUrl": pay_info["payUrl"],
+        "codeUrl": pay_info["codeUrl"],
+    }
     store_idempotent_response(db, idempotency_key, IDEM_SCOPE_ORDER, data)
     db.commit()
     return ok_response(data)
@@ -99,6 +118,8 @@ def get_order(order_no: str, db: Session = Depends(get_db)) -> dict:
             "amount": order.amount,
             "state": order.state,
             "payType": order.pay_type,
+            "payUrl": order.pay_url,
+            "codeUrl": order.code_url,
             "openid": order.openid,
             "adParams": order.ad_params,
             "failReason": order.fail_reason,
@@ -110,7 +131,7 @@ def get_order(order_no: str, db: Session = Depends(get_db)) -> dict:
 
 @router.post("/api/orders/{order_no}/close")
 def close_order(order_no: str, db: Session = Depends(get_db)) -> dict:
-    """关单：仅 CREATED 可关；已支付 12002，其余非 CREATED 12003。"""
+    """关单：仅 CREATED 可关；已支付 12002，其余非 CREATED 12003。配置齐全时同步调用微信关单（幂等）。"""
     order = db.query(Order).filter(Order.order_no == order_no).first()
     if order is None:
         raise BizError(ErrorCode.NOT_FOUND, "资源不存在")
@@ -118,9 +139,37 @@ def close_order(order_no: str, db: Session = Depends(get_db)) -> dict:
         raise BizError(ErrorCode.ORDER_ALREADY_PAID, "订单已支付")
     if order.state != OrderState.CREATED.value:
         raise BizError(ErrorCode.ORDER_STATUS_INVALID, "订单状态不允许操作")
+
+    if pay_service.wx_ready():
+        try:
+            pay_service.wechatpay.client.close_order(order.out_trade_no)
+        except WechatPayError as e:
+            # 微信关单失败不阻塞本地关单，记录原因由对账补偿兜底
+            logger.warning("微信关单失败：order_no=%s, %s", order.order_no, e)
+
     order.state = OrderState.CLOSED.value
     db.commit()
     return ok_response({"orderNo": order.order_no, "state": order.state})
+
+
+class RefundRequest(BaseModel):
+    reason: str | None = Field(None, description="退款原因")
+
+
+@router.post("/api/orders/{order_no}/refund")
+def refund_order(
+    order_no: str,
+    payload: RefundRequest | None = None,
+    db: Session = Depends(get_db),
+) -> dict:
+    """发起退款（人工审核后调用）：仅已进入支付链路的订单可退，微信申请成功后订单进入 REFUNDING。"""
+    order = db.query(Order).filter(Order.order_no == order_no).first()
+    if order is None:
+        raise BizError(ErrorCode.NOT_FOUND, "资源不存在")
+    if not pay_service.is_paid_state(order.state):
+        raise BizError(ErrorCode.ORDER_STATUS_INVALID, "订单未支付，不可退款")
+    data = pay_service.create_refund(db, order, payload.reason if payload else None)
+    return ok_response(data)
 
 
 @router.get("/api/orders/{order_no}/report")

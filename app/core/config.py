@@ -44,5 +44,35 @@ class Settings(BaseSettings):
     # dev/测试使用 Vite，目录不存在时静默跳过静态托管
     FRONTEND_DIST_DIR: str = "./dist"
 
+    # ===== 微信支付 V3 =====
+    # 商户参数一律经环境变量注入，禁止硬编码；未配置完整时支付功能优雅降级：
+    # 订单仍可创建，payType/payUrl/codeUrl 返回 null（前端已有空态处理）。
+    # 商户号（微信支付商户平台获取）
+    WXPAY_MCHID: str | None = None
+    # 公众号/小程序 appid（H5/Native 统一下单必填）
+    WXPAY_APPID: str | None = None
+    # APIv3 密钥（32 字节，商户平台「APIv3 密钥」设置，用于回调报文解密）
+    WXPAY_APIV3_KEY: str | None = None
+    # 商户 API 私钥路径（apiclient_key.pem，仅服务端持有）
+    WXPAY_PRIVATE_KEY_PATH: str | None = None
+    # 商户证书序列号（Authorization 头 serial_no）
+    WXPAY_CERT_SERIAL: str | None = None
+    # 微信支付平台证书路径（验签回调/响应；未配置时 notify 一律返回 FAIL）
+    WXPAY_PLATFORM_CERT_PATH: str | None = None
+    # 支付结果回调 URL（公网可访问，HTTPS）
+    WXPAY_NOTIFY_URL: str | None = None
+    # 退款结果回调 URL（本期退款回调为占位，预留配置）
+    WXPAY_REFUND_NOTIFY_URL: str | None = None
+    # 微信支付 API 基址（沙箱联调可改）
+    WXPAY_API_BASE: str = "https://api.mch.weixin.qq.com"
+
+    # ===== 对账/补偿定时任务 =====
+    # 总开关：dev 默认关闭（避免后台线程干扰联调），prod 需显式开启
+    RECONCILE_ENABLED: bool = False
+    # 扫描周期（秒），默认 5 分钟
+    RECONCILE_INTERVAL_SECONDS: int = 300
+    # 超时阈值：创建超过该分钟数仍为 CREATED 的订单进入查单补偿
+    RECONCILE_STALE_MINUTES: int = 30
+
 
 settings = Settings()

@@ -79,3 +79,40 @@ def test_upgrade_downgrade_upgrade_roundtrip(migrate_db):
         "birth_hour_b": True,
     }
     engine.dispose()
+
+
+def _order_columns(engine) -> list[str]:
+    return [c["name"] for c in inspect(engine).get_columns("orders")]
+
+
+def test_orders_pay_checkout_columns_upgrade(migrate_db):
+    """升级到 head：orders 具备 pay_url/code_url（支付模块 B 阶段）。"""
+    url, cfg = migrate_db
+    command.upgrade(cfg, "head")
+    engine = create_engine(url)
+    cols = _order_columns(engine)
+    assert "pay_url" in cols and "code_url" in cols
+    engine.dispose()
+
+
+def test_orders_pay_checkout_columns_downgrade(migrate_db):
+    """降级回 6f3a9d2c5b1e：pay_url/code_url 移除，与既有 schema 对齐。"""
+    url, cfg = migrate_db
+    command.upgrade(cfg, "head")
+    command.downgrade(cfg, "6f3a9d2c5b1e")
+    engine = create_engine(url)
+    cols = _order_columns(engine)
+    assert "pay_url" not in cols and "code_url" not in cols
+    assert "pay_type" in cols and "ad_params" in cols
+    engine.dispose()
+
+
+def test_orders_pay_checkout_columns_roundtrip(migrate_db):
+    url, cfg = migrate_db
+    command.upgrade(cfg, "head")
+    command.downgrade(cfg, "6f3a9d2c5b1e")
+    command.upgrade(cfg, "head")
+    engine = create_engine(url)
+    cols = _order_columns(engine)
+    assert "pay_url" in cols and "code_url" in cols
+    engine.dispose()

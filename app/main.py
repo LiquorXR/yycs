@@ -15,14 +15,14 @@ from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 from app.core.errors import BizError, ErrorCode
 from app.core.response import ok_response
-from app.routers import health, orders, products, profiles
+from app.routers import health, orders, pay, products, profiles
 
 logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """启动钩子：dev 环境自动建表 + 种子产品（生产走 alembic 迁移）。"""
+    """启动钩子：dev 环境自动建表 + 种子产品（生产走 alembic 迁移）；启动对账后台任务。"""
     if settings.APP_ENV == "dev":
         import app.models  # noqa: F401  确保模型注册到 Base.metadata
         from app.db.session import Base, SessionLocal, engine
@@ -31,6 +31,10 @@ async def lifespan(app: FastAPI):
         Base.metadata.create_all(bind=engine)
         with SessionLocal() as db:
             seed_products(db)
+
+    from app.services.reconcile import start_reconcile_loop
+
+    start_reconcile_loop()
     yield
 
 
@@ -86,6 +90,7 @@ app.include_router(health.router)
 app.include_router(products.router)
 app.include_router(profiles.router)
 app.include_router(orders.router)
+app.include_router(pay.router)
 
 # 生产静态托管：backend 容器内直接托管前端构建产物，nginx 仅反代 127.0.0.1:8000。
 # 必须在全部 API 路由注册之后追加 catch-all；dev/测试用 Vite，目录不存在时静默跳过。
