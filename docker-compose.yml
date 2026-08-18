@@ -35,7 +35,7 @@ services:
       # 微信支付商户私钥/平台证书（WXPAY_PRIVATE_KEY_PATH / WXPAY_PLATFORM_CERT_PATH）
       - ./certs:/app/certs:ro
     ports:
-      - "127.0.0.1:8000:8000"
+      - "8000:8000"
     depends_on:
       migrate:
         condition: service_completed_successfully
