@@ -24,6 +24,7 @@
 | v1.0.4 | 2026-08-16 | 测算单人化：提交测算信息（§2.3）与重新获取预览报告（§2.4）由双人（nameA/nameB/birthA/birthB）改为单人（name/birth/birthHour），focusTags 取值更新为单人 5 键；报告契约内容单人化（§2.8：title 为「姓名 · 八字命盘详批（姻缘预览）」、rank 五档、karma 三章节、lockedPreview 两章节） |  |
 | v1.0.5 | 2026-08-16 | 删除预览报告 contentUrl 字段（§2.3/§2.4 响应示例）：静态报告文件未落地，契约内容全部内联返回；同步移除前端 /static 代理与后端静态文件服务说明 |  |
 | v1.0.6 | 2026-08-16 | 生产同域部署：前端静态产物改由 backend 托管（/assets + SPA 回退 index.html），nginx 仅 TLS 反代 |  |
+| v1.0.7 | 2026-08-18 | 微信支付 V3 支付闭环落地：创建订单（§2.5）支付配置齐全时返回真实 payType/payUrl/codeUrl（H5/Native），否则 null 降级；微信支付回调（§2.10）改为已实现（验签/AES-GCM 解密/幂等/恰好一次解锁）；新增查单与对账补偿说明；关单同步调用微信关单；删除 §2.11 退款回调（产品决策移除退款功能，退款接口/回调/模型/配置全部下线） |  |
 
 ---
 
@@ -101,7 +102,7 @@ Authorization: Bearer <token>
 ```
 
 > 约定：HTTP 状态码表达传输层结果（2xx 成功、4xx 客户端错误、5xx 服务端错误）；业务状态码表达业务层结果（始终随 body 返回）。
-> 例外：三方回调接口（微信支付 `POST /api/pay/notify`、退款 `POST /api/refund/notify`、企业微信 `POST /api/wecom/notify`）不遵循统一包装，按微信/企微协议返回（`SUCCESS`/`FAIL`、`echostr`/`success`），见 §2.10~2.12。
+> 例外：回调接口（微信支付 `POST /api/pay/notify`、企业微信 `POST /api/wecom/notify`）不遵循统一包装，按微信/企微协议返回（`SUCCESS`/`FAIL`、`echostr`/`success`），见 §2.10~2.11。
 
 ### 1.5 分页约定
 
@@ -152,7 +153,7 @@ Authorization: Bearer <token>
 
 ## 2. 接口文档
 
-> 公开接口默认免鉴权（见 §1.3）；回调接口见 §2.10~2.12（例外协议，不遵循统一包装）。
+> 公开接口默认免鉴权（见 §1.3）；回调接口见 §2.10~2.11（例外协议，不遵循统一包装）。
 
 ### 2.1 产品列表
 
@@ -404,14 +405,14 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
   "data": {
     "orderNo": "S20260809001",
     "amount": 9900,
-    "payType": null,
-    "payUrl": null,
+    "payType": "h5",
+    "payUrl": "https://wx.tenpay.com/cgi-bin/mmpayweb-bin/checkmweb?...",
     "codeUrl": null
   }
 }
 ```
 
-> A 阶段（支付模块未落地）：`payType/payUrl/codeUrl` 恒为 `null`；B 阶段统一下单后填充（见响应字段说明）。
+> 支付配置齐全（微信支付商户参数就绪）时：`payType` 为 `h5`（拉起微信）或 `native`（扫码），对应填充 `payUrl`/`codeUrl`；配置未就绪时三字段恒为 `null` 降级（订单仍可创建，前端展示待支付）。
 
 #### 响应字段说明
 
@@ -419,9 +420,9 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 |---|---|---|
 | data.orderNo | string | 内部订单号 |
 | data.amount | int | 实际应付金额（分） |
-| data.payType | string \| null | A 阶段恒为 `null`；B 阶段为 `h5`（拉起微信）/ `native`（扫码） |
-| data.payUrl | string \| null | H5 支付跳转 URL（B 阶段 payType=h5 时）；A 阶段为 null |
-| data.codeUrl | string \| null | 扫码支付二维码内容（B 阶段 payType=native 时）；A 阶段为 null |
+| data.payType | string \| null | `h5`（拉起微信）/ `native`（扫码）；支付配置未就绪时为 `null` |
+| data.payUrl | string \| null | H5 支付跳转 URL（payType=h5 时）；否则 null |
+| data.codeUrl | string \| null | 扫码支付二维码内容（payType=native 时）；否则 null |
 
 #### 错误响应
 
@@ -459,7 +460,9 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
     "outTradeNo": "S20260809001",
     "amount": 9900,
     "state": "CREATED",
-    "payType": "auto",
+    "payType": "h5",
+    "payUrl": "https://wx.tenpay.com/cgi-bin/mmpayweb-bin/checkmweb?...",
+    "codeUrl": null,
     "openid": "",
     "adParams": null,
     "failReason": null,
@@ -474,9 +477,11 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | 字段 | 类型 | 说明 |
 |---|---|---|
 | data.productId | int | 产品 ID |
-| data.outTradeNo | string | 微信商户订单号（A 阶段 = orderNo） |
-| data.state | string | 状态机：CREATED/PAID/UNLOCKED/DELIVERED/ADDED_WECOM/CLOSED/REFUNDING/REFUNDED |
-| data.payType | string | 创建订单时传入的支付方式：auto / h5 / native |
+| data.outTradeNo | string | 微信商户订单号（= orderNo） |
+| data.state | string | 状态机：CREATED/PAID/UNLOCKED/DELIVERED/ADDED_WECOM/CLOSED |
+| data.payType | string \| null | 实际支付方式：`auto` 请求会被服务端路由为 `h5`/`native` 并回写；支付配置未就绪时为 `null` |
+| data.payUrl | string \| null | H5 支付跳转 URL（payType=h5 时）；否则 null |
+| data.codeUrl | string \| null | 扫码支付二维码内容（payType=native 时）；否则 null |
 | data.openid | string | 微信 openid（A 阶段为空串） |
 | data.adParams | object \| null | 磁力投放归因参数（原样返回，未传为 null） |
 | data.failReason | string \| null | 失败原因（正常为 null） |
@@ -512,6 +517,8 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
   }
 }
 ```
+
+> 支付配置就绪时同步调用微信关单接口（微信关单失败不阻塞本地关单，由对账补偿兜底）；仅 CREATED 可关，已支付 12002，其余状态 12003。
 
 #### 错误响应
 
@@ -666,7 +673,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | 接口名称 | 微信支付结果回调 |
 | 接口地址 | `POST /api/pay/notify` |
 | 鉴权要求 | 无（微信平台证书/公钥验签） |
-| 实现状态 | **B 阶段未实现**（支付模块） |
+| 实现状态 | **A 阶段已实现** |
 | 版本 | v1 |
 | 协议 | **例外**：不遵循统一包装，返回 `{"code":"SUCCESS"}` / `{"code":"FAIL"}` |
 
@@ -674,9 +681,9 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 
 1. 验签：`Wechatpay-Signature` 头 + 微信平台证书验签，失败返回 `FAIL`
 2. 解密：`resource` 字段 AES-256-GCM 解密出明文（transaction_id、amount.total、out_trade_no、trade_state）
-3. 幂等：订单已 PAID 直接返回 `SUCCESS`（不重复解锁）
-4. 一致性：`amount.total` 与订单金额比对，不一致告警并拒绝
-5. 成功：事务内解锁完整报告（CAS）+ 生成企微「联系我」活码（state=订单号）
+3. 幂等：订单已支付/已解锁直接返回 `SUCCESS`（不重复解锁）
+4. 一致性：`amount.total` 与订单金额比对，不一致告警并拒绝（防改价/防串单）
+5. 成功：事务内 CAS（`UPDATE ... WHERE state='CREATED'`）推进订单状态并解锁完整报告，保证并发回调「恰好一次」解锁；重复回调幂等返回 `SUCCESS`
 
 #### 错误响应
 
@@ -685,22 +692,9 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | 200 | `{"code":"SUCCESS"}` | 处理成功 |
 | 200 | `{"code":"FAIL"}` | 验签/解密/业务校验失败，微信将重试 |
 
-### 2.11 退款结果回调（预留）
+> 对账兜底：支付配置就绪时后台定时任务（每 5 分钟）扫描超 30 分钟仍为 CREATED 的订单，调用微信查单接口按结果推进状态；微信平台证书未配置时回调一律返回 `FAIL`（不静默放行）。
 
-#### 基本信息
-
-| 项目 | 内容 |
-|---|---|
-| 接口名称 | 退款结果回调 |
-| 接口地址 | `POST /api/refund/notify` |
-| 鉴权要求 | 无（微信平台证书验签） |
-| 实现状态 | **预留**（本期退款为人工审核后发起，回调逻辑预留） |
-| 版本 | v1 |
-| 协议 | **例外**：不遵循统一包装，返回 `SUCCESS`/`FAIL` |
-
-> 本期退款流程为人工审核后发起，回调逻辑预留，接口可先返回 `FAIL` 占位。
-
-### 2.12 企业微信事件回调
+### 2.11 企业微信事件回调
 
 #### 基本信息
 
@@ -721,7 +715,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 4. 幂等：同 `external_userid` 重复事件不重复写
 5. 处理失败返回非 `success`，企微将重推（最长 3 天）
 
-### 2.13 模拟支付成功（dev 联调专用）
+### 2.12 模拟支付成功（dev 联调专用）
 
 #### 基本信息
 
@@ -733,7 +727,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | 实现状态 | **仅开发环境可用**（APP_ENV=dev 时注册路由；生产返回 404） |
 | 版本 | v1 |
 
-> 说明：仅用于本地联调打通「解锁 → 获取报告」链路。支付模块与企微外部接口未就绪，开发/联调环境通过本接口模拟支付成功，将订单置为已支付并解锁简版报告。生产环境（APP_ENV=prod）路由不注册，请求返回 HTTP 404（FastAPI 默认响应，无统一业务包装）；正式支付走 §2.10 微信支付回调。
+> 说明：仅用于本地联调打通「解锁 → 获取报告」链路。开发/联调环境通过本接口模拟支付成功，将订单置为已解锁并落 mock 支付流水。生产环境（APP_ENV=prod）路由不注册，请求返回 HTTP 404（FastAPI 默认响应，无统一业务包装）；正式支付走 §2.10 微信支付回调。
 
 #### 请求示例
 
@@ -749,10 +743,12 @@ POST /api/orders/S20260809001/pay-success-mock
   "message": "success",
   "data": {
     "orderNo": "S20260809001",
-    "state": "PAID"
+    "state": "UNLOCKED"
   }
 }
 ```
+
+> 响应 `state` 为 `UNLOCKED`（模拟支付成功后一步到位解锁完整报告）；真实支付链路中 `PAID` 为回调验签成功后的中间态（见 §2.8 解锁判定）。
 
 #### 错误响应
 
