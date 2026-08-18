@@ -25,6 +25,7 @@
 | v1.0.5 | 2026-08-16 | 删除预览报告 contentUrl 字段（§2.3/§2.4 响应示例）：静态报告文件未落地，契约内容全部内联返回；同步移除前端 /static 代理与后端静态文件服务说明 |  |
 | v1.0.6 | 2026-08-16 | 生产同域部署：前端静态产物改由 backend 托管（/assets + SPA 回退 index.html），nginx 仅 TLS 反代 |  |
 | v1.0.7 | 2026-08-18 | 微信支付 V3 支付闭环落地：创建订单（§2.5）支付配置齐全时返回真实 payType/payUrl/codeUrl（H5/Native），否则 null 降级；微信支付回调（§2.10）改为已实现（验签/AES-GCM 解密/幂等/恰好一次解锁）；新增查单与对账补偿说明；关单同步调用微信关单；删除 §2.11 退款回调（产品决策移除退款功能，退款接口/回调/模型/配置全部下线） |  |
+| v1.0.8 | 2026-08-18 | 报告交付模式变更：获取报告（§2.8）改为**一律返回锁定态**（title + locked=true + lockedPreview），不再下发 score/rank/analysis/karma 等完整内容——付费后由人工经企业微信交付完整结果；wecom 字段改为「已支付 + 配置企微二维码」时返回；§2.8 错误响应移除 14002（该错误码定义保留于 §4.3，接口不再抛出） |  |
 
 ---
 
@@ -529,7 +530,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | 409 | 12003 | 订单状态不允许操作 | 非 CREATED 状态不可关单 |
 | 500 | 50000 | 服务器内部错误 | 联系管理员 |
 
-### 2.8 获取报告
+### 2.8 获取报告（含企微活码）
 
 #### 基本信息
 
@@ -538,12 +539,12 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | 接口名称 | 获取报告（含企微活码） |
 | 接口地址 | `GET /api/orders/{orderNo}/report` |
 | 鉴权要求 | 公开（免鉴权），服务端强制校验订单支付状态与 profile 归属 |
-| 实现状态 | **A 阶段已实现**（简版报告） |
+| 实现状态 | **A 阶段已实现** |
 | 版本 | v1 |
 
-> 说明：本期系统仅生成**简版报告**（含评分/排名/评分说明/核心分析/化解建议等章节，无四柱与雷达图）；**完整报告由支付后添加客服企业微信，人工交付**。订单未解锁时返回锁定态（含 2 条锁定预览）；已解锁（UNLOCKED/DELIVERED/ADDED_WECOM 状态）时返回简版全量契约并附带企微加好友信息。
+> 说明：**本期系统不在页面下发完整测算结果**（评分/总评/章节详批等），付费后由人工通过企业微信交付完整结果。因此本接口**无论订单状态如何，一律返回锁定态**：`title` + `locked=true` + `lockedPreview`（2 条预览章节，付费前后一致）。`wecom` 字段仅在订单已支付（PAID/UNLOCKED/DELIVERED/ADDED_WECOM）且配置了企微二维码时返回；否则为 `null`。
 
-#### 响应示例（付费已解锁）
+#### 响应示例（已支付，返回企微引导）
 
 ```json
 {
@@ -554,19 +555,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
     "state": "UNLOCKED",
     "report": {
       "title": "张三 · 八字命盘详批（姻缘预览）",
-      "score": 82,
-      "rank": "上等运势 · 正缘可期",
-      "scoreNote": "日主得时辰生助，正缘气数可期，姻缘宫得时得地，宜主动把握，顺遂可期。",
-      "locked": false,
-      "analysis": {
-        "label": "命理总评",
-        "text": "命主属猪、五行属水，生于子时……正缘桃花气数有依。五行喜用宜取生扶水之神，性格外柔内刚、重情重诺，宜主动社交把握良缘。"
-      },
-      "karma": [
-        { "title": "正缘画像 · 桃花期预测", "body": "命主属猪，正缘画像以五行属火者为佳……桃花期多现于五行生扶之年。" },
-        { "title": "性格解析 · 相处之道", "body": "命主性格以水性为底色，外柔内刚，重情重诺……" },
-        { "title": "事业财运 · 旺衰走势", "body": "命主事业财运走势与五行水气数相呼应，中年渐入佳境……" }
-      ],
+      "locked": true,
       "lockedPreview": [
         { "title": "正缘画像与桃花旺衰节点", "body": "完整版将生成你的专属正缘画像，推演未来数年桃花旺衰与脱单关键节点，并给出应期把握之法。付费解锁后即可查看。" },
         { "title": "婚后财运走势与家庭财富规划", "body": "完整版将测算婚后财运旺衰与家庭财富走势，助力家宅兴旺、财库充盈。付费解锁后即可查看。" }
@@ -580,7 +569,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 }
 ```
 
-#### 响应示例（未付费/未解锁）
+#### 响应示例（未支付 / 未配置企微）
 
 ```json
 {
@@ -606,19 +595,12 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
-| data.state | string | 订单状态（解锁判定依据：UNLOCKED/DELIVERED/ADDED_WECOM；PAID 为已支付未解锁） |
-| data.report | object | 简版报告内容；未解锁时仅含 title/locked/lockedPreview（locked=true） |
-| data.report.title | string | 报告标题（`姓名 · 八字命盘详批（姻缘预览）`） |
-| data.report.score | int | 运势综合指数（0~100 = 日主五行能量 60 + 正缘姻缘指数 30 + 时辰信息 10；未解锁时缺省，前端按 0 兜底） |
-| data.report.rank | string | 运势等级五档：`上等运势 · 正缘可期`（≥90）/`上吉之配 · 良缘可期`/`中上之合 · 良缘可成`/`中平之配 · 磨合可圆`/`缘浅之合 · 宜加经营`（<60，具体档位以服务端为准） |
-| data.report.scoreNote | string | 评分说明（未解锁时缺省，前端按空串兜底） |
-| data.report.locked | boolean | 是否锁定（true 未解锁 / false 已解锁） |
-| data.report.analysis | object \| null | 命理总评 `{label, text}`（label=`命理总评`）；仅已解锁返回 |
-| data.report.analysis.label | string | 分析章节标题 |
-| data.report.analysis.text | string | 分析正文（日主强弱/五行喜用/性格/正缘桃花） |
-| data.report.karma | array \| null | 单人运势章节列表 `[{title, body}]`（3 条：正缘画像·桃花期预测 / 性格解析·相处之道 / 事业财运·旺衰走势）；仅已解锁返回 |
-| data.report.lockedPreview | array | 锁定预览 `[{title, body}]`（2 条：正缘画像与桃花旺衰节点 / 婚后财运走势与家庭财富规划），解锁前后均返回 |
-| data.wecom | object \| null | 企微加好友信息；未解锁为 null；已解锁且未配置 `WECOM_QRCODE_URL` 时亦为 null |
+| data.state | string | 订单状态：CREATED/PAID/UNLOCKED/DELIVERED/ADDED_WECOM/CLOSED；已支付态为 PAID/UNLOCKED/DELIVERED/ADDED_WECOM |
+| data.report | object | 报告内容；**恒为锁定态**：仅含 title/locked/lockedPreview（locked=true），不再返回 score/rank/analysis/karma 等完整字段 |
+| data.report.title | string | 报告标题（`姓名 · 八字命盘详批（姻缘预览）`）；报告记录缺失时返回兜底标题 |
+| data.report.locked | boolean | 恒为 `true`（完整结果由人工企微交付，页面不展示） |
+| data.report.lockedPreview | array | 锁定预览 `[{title, body}]`（2 条：正缘画像与桃花旺衰节点 / 婚后财运走势与家庭财富规划），付费前后均返回；报告记录缺失时返回默认预览 |
+| data.wecom | object \| null | 企微加好友信息；已支付且配置 `WECOM_QRCODE_URL` 时返回，否则 null |
 | data.wecom.qrcodeUrl | string | 企微二维码 URL。当前为配置占位 URL（环境变量 `WECOM_QRCODE_URL`）；企微真活码（state=订单号归因）后续接入后填充 |
 | data.wecom.note | string | 加好友提示语 |
 
@@ -626,7 +608,6 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 
 | HTTP 状态码 | 业务 code | message | 说明 |
 |---|---|---|---|
-| 403 | 14002 | 报告未解锁 | 未支付或他人 profile 越权拉取 |
 | 404 | 10004 | 资源不存在 | 订单不存在 |
 | 500 | 50000 | 服务器内部错误 | 联系管理员 |
 
@@ -748,7 +729,7 @@ POST /api/orders/S20260809001/pay-success-mock
 }
 ```
 
-> 响应 `state` 为 `UNLOCKED`（模拟支付成功后一步到位解锁完整报告）；真实支付链路中 `PAID` 为回调验签成功后的中间态（见 §2.8 解锁判定）。
+> 响应 `state` 为 `UNLOCKED`（模拟支付成功后订单进入已支付态）；报告接口不展示完整内容，正式支付链路见 §2.8 与 §2.10。
 
 #### 错误响应
 
