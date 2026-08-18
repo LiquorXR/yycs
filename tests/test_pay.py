@@ -331,10 +331,12 @@ def test_pay_notify_success_unlocks_exactly_once(client_and_factory, monkeypatch
         order = db.query(Order).filter(Order.order_no == order_no).one()
         assert order.state == OrderState.UNLOCKED.value
 
-    # 报告接口返回完整内容
+    # 自动解锁状态机照常生效，但报告接口不返回完整内容
     report_resp = client.get(f"/api/orders/{order_no}/report").json()["data"]
     assert report_resp["state"] == "UNLOCKED"
-    assert report_resp["report"]["locked"] is False
+    assert report_resp["report"]["locked"] is True
+    for key in ("score", "rank", "scoreNote", "analysis", "karma"):
+        assert key not in report_resp["report"]
 
 
 def test_pay_notify_bad_signature_fail(client_and_factory, monkeypatch, tmp_path):
