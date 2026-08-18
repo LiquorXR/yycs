@@ -30,7 +30,6 @@ class ErrorCode:
     PRODUCT_NOT_FOUND = 13001  # 产品不存在
 
     DIVINATION_INFO_INVALID = 14001  # 测算信息无效
-    REPORT_NOT_UNLOCKED = 14002  # 报告未解锁
 
     INTERNAL_ERROR = 50000  # 服务器内部错误
 
@@ -49,7 +48,6 @@ _HTTP_STATUS_MAP: dict[int, int] = {
     ErrorCode.CALLBACK_SIGN_FAILED: 400,
     ErrorCode.PRODUCT_NOT_FOUND: 404,
     ErrorCode.DIVINATION_INFO_INVALID: 422,
-    ErrorCode.REPORT_NOT_UNLOCKED: 403,
     ErrorCode.INTERNAL_ERROR: 500,
 }
 
