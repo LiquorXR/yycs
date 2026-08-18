@@ -28,16 +28,9 @@ router = APIRouter(tags=["orders"])
 
 PAYMENT_METHODS = ("auto", "h5", "native")
 
-# 已进入支付/交付链路的状态，关单一律拒绝（12002）
+# 已进入支付/交付链路的状态：关单一律拒绝（12002）；报告接口据此决定是否展示企微引导
 _PAID_STATES = {
     OrderState.PAID.value,
-    OrderState.UNLOCKED.value,
-    OrderState.DELIVERED.value,
-    OrderState.ADDED_WECOM.value,
-}
-
-# 已解锁报告可返回完整契约的状态
-_UNLOCKED_STATES = {
     OrderState.UNLOCKED.value,
     OrderState.DELIVERED.value,
     OrderState.ADDED_WECOM.value,
@@ -152,7 +145,8 @@ def close_order(order_no: str, db: Session = Depends(get_db)) -> dict:
 
 @router.get("/api/orders/{order_no}/report")
 def get_order_report(order_no: str, db: Session = Depends(get_db)) -> dict:
-    """获取报告：未解锁返回锁定预览（lockedPreview），已解锁返回完整契约与企微活码。"""
+    """获取报告：无论订单状态一律只返回锁定预览（title + lockedPreview + locked=true），
+    完整测算结果由人工交付；已支付订单在配置企微客服码时返回 wecom 引导。"""
     order = db.query(Order).filter(Order.order_no == order_no).first()
     if order is None:
         raise BizError(ErrorCode.NOT_FOUND, "资源不存在")
@@ -165,25 +159,16 @@ def get_order_report(order_no: str, db: Session = Depends(get_db)) -> dict:
     )
     contract = json.loads(report.full_report) if report and report.full_report else None
 
-    unlocked = order.state in _UNLOCKED_STATES
-    if unlocked and (report is None or report.state != "unlocked" or contract is None):
-        raise BizError(ErrorCode.REPORT_NOT_UNLOCKED, "报告未解锁")
-
-    if unlocked:
-        report_view = dict(contract)
-        report_view["locked"] = False
-        wecom = (
-            {"qrcodeUrl": settings.WECOM_QRCODE_URL, "note": _WECOM_NOTE}
-            if settings.WECOM_QRCODE_URL
-            else None
-        )
-    else:
-        report_view = {
-            "title": contract["title"] if contract else "八字命盘详批（姻缘预览）",
-            "locked": True,
-            "lockedPreview": contract["lockedPreview"] if contract else [dict(x) for x in DEFAULT_LOCKED_PREVIEW],
-        }
-        wecom = None
+    report_view = {
+        "title": contract["title"] if contract else "八字命盘详批（姻缘预览）",
+        "locked": True,
+        "lockedPreview": contract["lockedPreview"] if contract else [dict(x) for x in DEFAULT_LOCKED_PREVIEW],
+    }
+    wecom = (
+        {"qrcodeUrl": settings.WECOM_QRCODE_URL, "note": _WECOM_NOTE}
+        if order.state in _PAID_STATES and settings.WECOM_QRCODE_URL
+        else None
+    )
 
     return ok_response({"orderNo": order.order_no, "state": order.state, "report": report_view, "wecom": wecom})
 

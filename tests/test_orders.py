@@ -1,10 +1,46 @@
-"""订单模块接口测试：创建/防改价 12001/幂等/10004/13001/关单 12003/查询。"""
+"""订单模块接口测试：创建/防改价 12001/幂等/10004/13001/关单 12003/查询/报告。"""
 
 from __future__ import annotations
 
+import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
+
+import app.models  # noqa: F401
+from app.db.session import Base, get_db
+from app.main import app
+from app.models.report import Report
+from app.services.seed import seed_products
 from tests.conftest import create_profile
 
 ORDER_KEY = "order-key-0001"
+
+
+@pytest.fixture()
+def client_and_factory():
+    """独立内存 SQLite + 种子，返回 (TestClient, session 工厂) 便于直查 DB。"""
+    engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(bind=engine)
+    factory = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+    with factory() as db:
+        seed_products(db)
+
+    def override_get_db():
+        db = factory()
+        try:
+            yield db
+        finally:
+            db.close()
+
+    app.dependency_overrides[get_db] = override_get_db
+    yield TestClient(app), factory
+    app.dependency_overrides.clear()
 
 
 def _profile_id(client) -> str:
@@ -143,7 +179,7 @@ def test_get_order_report_not_found_10004(client):
     assert resp.json()["code"] == 10004
 
 
-def test_mock_pay_success_unlock_full_report(client):
+def test_mock_pay_success_report_stays_locked(client):
     pid = _profile_id(client)
     order_no = _create_order(client, pid, key="mock-unlock").json()["data"]["orderNo"]
 
@@ -163,13 +199,14 @@ def test_mock_pay_success_unlock_full_report(client):
     unlocked = client.get(f"/api/orders/{order_no}/report").json()["data"]
     assert unlocked["state"] == "UNLOCKED"
     report = unlocked["report"]
-    assert report["locked"] is False
-    for key in ("title", "score", "rank", "scoreNote", "analysis", "karma", "lockedPreview"):
+    # 解锁状态机照常推进，但报告接口不返回完整测算内容
+    assert report["locked"] is True
+    for key in ("title", "lockedPreview"):
         assert key in report
-    assert isinstance(report["score"], int) and 0 <= report["score"] <= 100
-    assert report["analysis"]["label"] == "命理总评"
-    assert len(report["karma"]) == 3
+    for key in ("score", "rank", "scoreNote", "analysis", "karma"):
+        assert key not in report
     assert len(report["lockedPreview"]) == 2
+    assert all(k["title"] and k["body"] for k in report["lockedPreview"])
     # 未配置 WECOM_QRCODE_URL → wecom 为 null
     assert unlocked["wecom"] is None
 
@@ -197,8 +234,34 @@ def test_report_wecom_qrcode_when_configured(client, monkeypatch):
     order_no = _create_order(client, pid, key="mock-wecom").json()["data"]["orderNo"]
     client.post(f"/api/orders/{order_no}/pay-success-mock")
     data = client.get(f"/api/orders/{order_no}/report").json()["data"]
+    # 已支付且配置企微 → 返回 wecom 引导，但报告仍为锁定预览
     assert data["wecom"]["qrcodeUrl"] == "https://qywx.example.com/qr"
     assert data["wecom"]["note"]
+    assert data["report"]["locked"] is True
+    for key in ("score", "analysis", "karma"):
+        assert key not in data["report"]
+
+
+def test_report_missing_returns_default_preview(client_and_factory):
+    client, factory = client_and_factory
+    pid = create_profile(client, _key="report-no-record")["profileId"]
+    resp = client.post(
+        "/api/orders",
+        json={"profileId": pid, "productId": 1},
+        headers={"Idempotency-Key": "report-no-record-order"},
+    )
+    order_no = resp.json()["data"]["orderNo"]
+    with factory() as db:
+        db.query(Report).filter(Report.profile_id == pid).delete()
+        db.commit()
+
+    data = client.get(f"/api/orders/{order_no}/report").json()["data"]
+    report = data["report"]
+    assert report["locked"] is True
+    assert report["title"] == "八字命盘详批（姻缘预览）"
+    assert len(report["lockedPreview"]) == 2
+    assert all(k["title"] and k["body"] for k in report["lockedPreview"])
+    assert data["wecom"] is None
 
 
 def test_pay_success_mock_disabled_in_prod(monkeypatch):
