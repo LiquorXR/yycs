@@ -26,19 +26,14 @@ export interface OrderDetail {
   paidAt?: string | null
 }
 
+/** 报告接口：无论订单状态一律返回 title + lockedPreview + locked=true；完整内容由人工企微交付 */
 export interface OrderReport {
   orderNo: string
   state: string
   report: {
     title: string
-    score?: number
-    rank?: string
-    scoreNote?: string
-    analysis?: { label: string; text: string }
-    karma?: Array<{ title: string; body: string }>
     lockedPreview: Array<{ title: string; body: string }>
     locked?: boolean
-    lockedNote?: string
   }
   wecom: {
     addWay?: string

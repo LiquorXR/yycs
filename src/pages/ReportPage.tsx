@@ -3,8 +3,8 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { getOrder, getOrderReport, type OrderReport } from '@/api/orders'
 import { formatPrice } from '@/lib/format'
 
-/** 已解锁（完整报告可用）的订单状态 */
-const UNLOCKED_STATES = ['UNLOCKED', 'DELIVERED', 'ADDED_WECOM']
+/** 已支付（付款成功，进入人工交付流程）的订单状态 */
+const PAID_STATES = ['PAID', 'UNLOCKED', 'DELIVERED', 'ADDED_WECOM']
 
 /** 轮询间隔：5s */
 const POLL_INTERVAL = 5000
@@ -12,8 +12,8 @@ const POLL_INTERVAL = 5000
 /** 倒计时总秒数：14:59 */
 const COUNTDOWN_SECONDS = 899
 
-function isUnlocked(report: OrderReport): boolean {
-  return UNLOCKED_STATES.includes(report.state) || report.report.locked === false
+function isPaid(report: OrderReport): boolean {
+  return PAID_STATES.includes(report.state)
 }
 
 function LockIcon({ className }: { className?: string }) {
@@ -31,18 +31,6 @@ function LockIcon({ className }: { className?: string }) {
       <rect x="4" y="11" width="16" height="9" rx="2" />
       <path d="M8 11V7a4 4 0 0 1 8 0v4" />
     </svg>
-  )
-}
-
-/** 国风角花饰角（配合 card-guofeng） */
-function Corners() {
-  return (
-    <>
-      <span aria-hidden="true" className="corner corner-tl" />
-      <span aria-hidden="true" className="corner corner-tr" />
-      <span aria-hidden="true" className="corner corner-bl" />
-      <span aria-hidden="true" className="corner corner-br" />
-    </>
   )
 }
 
@@ -287,7 +275,7 @@ function ReportPage() {
         if (!active) return
         setReport(r)
         setError(null)
-        if (isUnlocked(r)) {
+        if (isPaid(r)) {
           if (timer) clearInterval(timer)
         }
       } catch (err) {
@@ -334,7 +322,7 @@ function ReportPage() {
     return () => window.removeEventListener('keydown', onKey)
   }, [payModalOpen])
 
-  const unlocked = report ? isUnlocked(report) : false
+  const paid = report ? isPaid(report) : false
   const reportTitle = report?.report.title
   const countdown = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(
     seconds % 60,
@@ -392,125 +380,6 @@ function ReportPage() {
             </div>
           </section>
 
-          {/* 已解锁：总分 / 命理总评 / 因果章节 */}
-          {unlocked ? (
-            <>
-              {/* 运势总分英雄卡 */}
-              <section
-                className="relative rounded-[16px] border border-border-gold bg-[radial-gradient(circle_at_50%_30%,rgba(226,180,95,0.12)_0%,rgba(110,19,19,0.9)_80%)] px-4 py-5 text-center"
-                aria-label="运势总分"
-              >
-                <div className="relative mx-auto mb-2.5 flex size-[120px] flex-col items-center justify-center">
-                  <svg
-                    className="absolute inset-0 size-[120px] -rotate-90"
-                    viewBox="0 0 120 120"
-                    aria-hidden="true"
-                  >
-                    <circle
-                      cx="60"
-                      cy="60"
-                      r="52"
-                      fill="none"
-                      stroke="rgba(226,180,95,0.2)"
-                      strokeWidth="8"
-                    />
-                    <circle
-                      cx="60"
-                      cy="60"
-                      r="52"
-                      fill="none"
-                      stroke="#e2b45f"
-                      strokeWidth="8"
-                      strokeDasharray="326"
-                      strokeDashoffset="26"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  <span
-                    className="font-kai text-[38px] leading-none font-bold text-gold-light"
-                    style={{ textShadow: '0 0 12px rgba(226,180,95,0.6)' }}
-                  >
-                    {report.report.score ?? 0}
-                  </span>
-                  <span className="mt-0.5 text-xs text-muted">运势指数</span>
-                </div>
-
-                <div className="mb-1 font-kai text-lg tracking-[0.08em] text-gold">
-                  {report.report.rank ?? ''}
-                </div>
-                <p className="text-xs text-fg-secondary">
-                  {report.report.scoreNote ?? ''}
-                </p>
-              </section>
-
-              {/* 命理总评 */}
-              {report.report.analysis ? (
-                <section className="card-guofeng" aria-label="命理总评">
-                  <Corners />
-                  <div className="mb-3 flex items-center justify-between">
-                    <h3 className="flex items-center gap-1.5 font-kai text-base text-gold-light">
-                      <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="var(--color-gold)"
-                        strokeWidth="2"
-                        aria-hidden="true"
-                      >
-                        <circle cx="12" cy="12" r="10" />
-                        <path d="M12 2a10 10 0 0 1 0 20 10 10 0 0 1 0-20z" />
-                        <path d="M12 6v6l4 2" />
-                      </svg>
-                      {report.report.analysis.label}
-                    </h3>
-                    <span className="seal-mark">天机批注</span>
-                  </div>
-                  <p className="rounded-lg border-l-[3px] border-gold bg-[#2e0808]/55 p-2.5 text-[13px] leading-relaxed text-fg-secondary">
-                    {report.report.analysis.text}
-                  </p>
-                </section>
-              ) : null}
-
-              {/* 命盘章节详批（章节标题直接渲染后端数据） */}
-              {report.report.karma && report.report.karma.length ? (
-                <section className="card-guofeng" aria-label="命盘章节详批">
-                  <Corners />
-                  <div className="mb-3 flex items-center justify-between">
-                    <h3 className="flex items-center gap-1.5 font-kai text-base text-gold-light">
-                      <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="var(--color-gold)"
-                        strokeWidth="2"
-                        aria-hidden="true"
-                      >
-                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                      </svg>
-                      命盘章节详批
-                    </h3>
-                  </div>
-
-                  {report.report.karma.map((k) => (
-                    <div
-                      key={k.title}
-                      className="mb-2.5 rounded-[10px] border border-border bg-[#3a0a0a]/55 p-3 last:mb-0"
-                    >
-                      <h4 className="mb-1 flex items-center gap-1.5 font-kai text-sm text-gold">
-                        {k.title}
-                      </h4>
-                      <p className="text-[13px] leading-relaxed text-fg-secondary">
-                        {k.body}
-                      </p>
-                    </div>
-                  ))}
-                </section>
-              ) : null}
-            </>
-          ) : null}
-
           {/* 深度付费解锁区域 */}
           <section
             className="relative overflow-hidden rounded-[16px] border-[1.5px] border-border-gold bg-gradient-to-b from-[#5a0e0e]/95 to-[#2e0808]/98 p-4 shadow-[0_8px_32px_rgba(0,0,0,0.6)]"
@@ -530,13 +399,16 @@ function ReportPage() {
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                   <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                 </svg>
-                高级运势深度推演{unlocked ? '' : ' (未解锁)'}
+                高级运势深度推演{paid ? '' : ' (未解锁)'}
               </h3>
-              {unlocked ? <span className="seal-mark">已解锁</span> : null}
             </div>
 
-            {unlocked ? (
-              report.report.lockedPreview.map((k) => (
+            {/* 预览模糊占位 */}
+            <div
+              className="pointer-events-none opacity-60"
+              style={{ filter: 'blur(4px)' }}
+            >
+              {report.report.lockedPreview.map((k) => (
                 <div
                   key={k.title}
                   className="mb-2.5 rounded-[10px] border border-border bg-[#3a0a0a]/55 p-3 last:mb-0"
@@ -546,54 +418,36 @@ function ReportPage() {
                     {k.body}
                   </p>
                 </div>
-              ))
-            ) : (
-              <>
-                {/* 预览模糊占位 */}
-                <div
-                  className="pointer-events-none opacity-60"
-                  style={{ filter: 'blur(4px)' }}
-                >
-                  {report.report.lockedPreview.map((k) => (
-                    <div
-                      key={k.title}
-                      className="mb-2.5 rounded-[10px] border border-border bg-[#3a0a0a]/55 p-3 last:mb-0"
-                    >
-                      <h4 className="mb-1 font-kai text-sm text-gold">{k.title}</h4>
-                      <p className="text-[13px] leading-relaxed text-fg-secondary">
-                        {k.body}
-                      </p>
-                    </div>
-                  ))}
-                </div>
+              ))}
+            </div>
 
-                {/* 浮层解锁遮罩 */}
-                <div className="absolute inset-x-0 top-[60px] bottom-0 z-10 flex flex-col items-center justify-end bg-gradient-to-b from-[#6e1313]/35 to-[#2e0808]/98 px-4 py-5 backdrop-blur-[8px]">
-                  <span className="mb-2 grid size-11 place-items-center rounded-full bg-gradient-to-b from-gold to-gold-dark text-[#591010] shadow-[0_0_20px_rgba(226,180,95,0.6)]">
-                    <LockIcon className="size-6" />
+            {/* 未支付：浮层解锁遮罩 */}
+            {!paid ? (
+              <div className="absolute inset-x-0 top-[60px] bottom-0 z-10 flex flex-col items-center justify-end bg-gradient-to-b from-[#6e1313]/35 to-[#2e0808]/98 px-4 py-5 backdrop-blur-[8px]">
+                <span className="mb-2 grid size-11 place-items-center rounded-full bg-gradient-to-b from-gold to-gold-dark text-[#591010] shadow-[0_0_20px_rgba(226,180,95,0.6)]">
+                  <LockIcon className="size-6" />
+                </span>
+                <h4 className="mb-1 font-kai text-[17px] text-gold-light">
+                  完整版需付费解锁《个人命盘深度天书报告》
+                </h4>
+                <p className="mb-2.5 text-xs text-fg-secondary">
+                  解锁后包含未来3年运势转折、婚后财运、避坑锦囊与大师一对一亲批
+                </p>
+                <div className="mb-3 rounded-full border border-gold bg-gold/16 px-2.5 py-0.5 font-mono text-xs text-gold-light">
+                  限时特惠名额倒计时{' '}
+                  <span role="timer" aria-live="off">
+                    {countdown}
                   </span>
-                  <h4 className="mb-1 font-kai text-[17px] text-gold-light">
-                    完整版需付费解锁《个人命盘深度天书报告》
-                  </h4>
-                  <p className="mb-2.5 text-xs text-fg-secondary">
-                    解锁后包含未来3年运势转折、婚后财运、避坑锦囊与大师一对一亲批
-                  </p>
-                  <div className="mb-3 rounded-full border border-gold bg-gold/16 px-2.5 py-0.5 font-mono text-xs text-gold-light">
-                    限时特惠名额倒计时{' '}
-                    <span role="timer" aria-live="off">
-                      {countdown}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setPayModalOpen(true)}
-                    className="btn-guofeng-ghost"
-                  >
-                    查看完整解锁权益
-                  </button>
                 </div>
-              </>
-            )}
+                <button
+                  type="button"
+                  onClick={() => setPayModalOpen(true)}
+                  className="btn-guofeng-ghost"
+                >
+                  查看完整解锁权益
+                </button>
+              </div>
+            ) : null}
           </section>
 
           {/* 大师亲批导流（企微数据） */}
@@ -605,8 +459,8 @@ function ReportPage() {
         </div>
       ) : null}
 
-      {/* 底部固定解锁栏（真实订单价格） */}
-      {report && !unlocked ? (
+      {/* 底部固定解锁栏（真实订单价格，仅未支付显示） */}
+      {report && !paid ? (
         <div className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-border-gold bg-[#2e0808]/96 px-4 pt-2.5 pb-5 backdrop-blur-md">
           <button
             type="button"
