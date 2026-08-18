@@ -97,18 +97,6 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('transaction_id')
     )
     op.create_index('ix_pay_transactions_order_no', 'pay_transactions', ['order_no'], unique=False)
-    op.create_table('refunds',
-    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('order_no', sa.String(length=32), nullable=False),
-    sa.Column('refund_no', sa.String(length=64), nullable=True),
-    sa.Column('amount', sa.Integer(), nullable=False),
-    sa.Column('state', sa.String(length=16), nullable=True),
-    sa.Column('reason', sa.String(length=255), nullable=True),
-    sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.ForeignKeyConstraint(['order_no'], ['orders.order_no'], ),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index('ix_refunds_order_no', 'refunds', ['order_no'], unique=False)
     op.create_table('reports',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('profile_id', sa.String(length=32), nullable=False),
@@ -142,8 +130,6 @@ def downgrade() -> None:
     op.drop_table('wecom_contacts')
     op.drop_index(op.f('ix_reports_profile_id'), table_name='reports')
     op.drop_table('reports')
-    op.drop_index('ix_refunds_order_no', table_name='refunds')
-    op.drop_table('refunds')
     op.drop_index('ix_pay_transactions_order_no', table_name='pay_transactions')
     op.drop_table('pay_transactions')
     op.drop_index('ix_delivery_tasks_order_no', table_name='delivery_tasks')

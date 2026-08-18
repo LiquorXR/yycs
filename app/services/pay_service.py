@@ -1,4 +1,4 @@
-"""支付服务：统一下单、回调处理（验签/解密/幂等/恰好一次解锁）、退款、查单推进。
+"""支付服务：统一下单、回调处理（验签/解密/幂等/恰好一次解锁）、查单推进。
 
 核心不变量：
 - 金额一律整数分，回调金额与订单精确比对，不一致拒绝（防改价/防串单）。
@@ -15,12 +15,10 @@ import logging
 from sqlalchemy import update as sa_update
 from sqlalchemy.orm import Session
 
-from app.core.errors import BizError, ErrorCode
 from app.core.timeutil import utcnow
 from app.models.order import Order, OrderState
 from app.models.pay_transaction import PayTransaction
 from app.models.product import Product
-from app.models.refund import Refund
 from app.models.report import Report
 from app.services import wechatpay
 from app.services.wechatpay import WechatPayError
@@ -33,8 +31,6 @@ _PAID_CHAIN_STATES = {
     OrderState.UNLOCKED.value,
     OrderState.DELIVERED.value,
     OrderState.ADDED_WECOM.value,
-    OrderState.REFUNDING.value,
-    OrderState.REFUNDED.value,
 }
 
 _PAYMENT_DESC = "振凡命理·测算服务"
@@ -184,31 +180,3 @@ def handle_pay_notify(db: Session, headers, raw_body: bytes) -> tuple[str, str]:
         return "SUCCESS", ""
     logger.error("回调业务校验不通过：%s", message)
     return "FAIL", message
-
-
-def create_refund(db: Session, order: Order, reason: str | None) -> dict:
-    """人工审核后发起退款：订单进入 REFUNDING，返回退款单信息。"""
-    if not wx_ready():
-        raise BizError(ErrorCode.PAYMENT_RAISE_FAILED, "微信支付未配置")
-
-    existing = db.query(Refund).filter(Refund.order_no == order.order_no).first()
-    if existing is not None:
-        raise BizError(ErrorCode.CONFLICT, "该订单已存在退款申请")
-
-    refund_no = f"R{order.order_no}"
-    db.add(Refund(order_no=order.order_no, refund_no=refund_no, amount=order.amount, state="PROCESSING", reason=reason))
-    try:
-        wechatpay.client.create_refund(
-            out_trade_no=order.out_trade_no,
-            out_refund_no=refund_no,
-            total=order.amount,
-            refund_amount=order.amount,
-            reason=reason,
-        )
-    except WechatPayError as e:
-        db.rollback()
-        raise BizError(ErrorCode.PAYMENT_RAISE_FAILED, f"退款发起失败：{e}") from None
-
-    order.state = OrderState.REFUNDING.value
-    db.commit()
-    return {"orderNo": order.order_no, "refundNo": refund_no, "state": order.state}

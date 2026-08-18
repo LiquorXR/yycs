@@ -21,8 +21,6 @@ class OrderState(str, Enum):
     DELIVERED = "DELIVERED"  # 企微活码生成/展示
     ADDED_WECOM = "ADDED_WECOM"  # 用户扫码加企微
     CLOSED = "CLOSED"  # 超时关单/用户取消
-    REFUNDING = "REFUNDING"  # 人工发起退款
-    REFUNDED = "REFUNDED"  # 微信退款成功
 
 
 class Order(Base):

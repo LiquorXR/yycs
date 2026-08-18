@@ -61,8 +61,6 @@ class Settings(BaseSettings):
     WXPAY_PLATFORM_CERT_PATH: str | None = None
     # 支付结果回调 URL（公网可访问，HTTPS）
     WXPAY_NOTIFY_URL: str | None = None
-    # 退款结果回调 URL（本期退款回调为占位，预留配置）
-    WXPAY_REFUND_NOTIFY_URL: str | None = None
     # 微信支付 API 基址（沙箱联调可改）
     WXPAY_API_BASE: str = "https://api.mch.weixin.qq.com"
 

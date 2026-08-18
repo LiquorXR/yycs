@@ -2,7 +2,7 @@
 
 覆盖能力：
 - 统一下单：H5（h5_url）与 Native（code_url）
-- 主动查单、关单、退款
+- 主动查单、关单
 - 请求签名（SHA256-RSA）与响应/回调验签（微信平台证书公钥）
 - 回调 resource 报文 AES-256-GCM 解密（APIv3 密钥）
 
@@ -222,7 +222,7 @@ class WechatPayClient:
         data = self._request("POST", "/v3/pay/transactions/native", body)
         return data.get("code_url") or ""
 
-    # ---- 查单 / 关单 / 退款 ----
+    # ---- 查单 / 关单 ----
 
     def query_order(self, out_trade_no: str) -> dict:
         """主动查单：GET /v3/pay/transactions/out-trade-no/{no}?mchid=...。"""
@@ -234,26 +234,6 @@ class WechatPayClient:
         """关单（幂等）：POST /v3/pay/transactions/out-trade-no/{no}/close。"""
         encoded = urllib.parse.quote(out_trade_no, safe="")
         self._request("POST", f"/v3/pay/transactions/out-trade-no/{encoded}/close", {"mchid": self._cfg.WXPAY_MCHID})
-
-    def create_refund(
-        self,
-        out_trade_no: str,
-        out_refund_no: str,
-        total: int,
-        refund_amount: int,
-        reason: str | None = None,
-    ) -> dict:
-        """申请退款（本期人工审核后发起）。"""
-        body = {
-            "out_trade_no": out_trade_no,
-            "out_refund_no": out_refund_no,
-            "amount": {"refund": refund_amount, "total": total, "currency": "CNY"},
-        }
-        if reason:
-            body["reason"] = reason
-        if self._cfg.WXPAY_REFUND_NOTIFY_URL:
-            body["notify_url"] = self._cfg.WXPAY_REFUND_NOTIFY_URL
-        return self._request("POST", "/v3/refund/domestic/refunds", body)
 
 
 client = WechatPayClient()

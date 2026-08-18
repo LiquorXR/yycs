@@ -1,4 +1,4 @@
-"""订单模块路由：创建订单、订单详情、关单、获取报告、退款、开发环境模拟解锁。"""
+"""订单模块路由：创建订单、订单详情、关单、获取报告、开发环境模拟解锁。"""
 
 from __future__ import annotations
 
@@ -34,8 +34,6 @@ _PAID_STATES = {
     OrderState.UNLOCKED.value,
     OrderState.DELIVERED.value,
     OrderState.ADDED_WECOM.value,
-    OrderState.REFUNDING.value,
-    OrderState.REFUNDED.value,
 }
 
 # 已解锁报告可返回完整契约的状态
@@ -150,26 +148,6 @@ def close_order(order_no: str, db: Session = Depends(get_db)) -> dict:
     order.state = OrderState.CLOSED.value
     db.commit()
     return ok_response({"orderNo": order.order_no, "state": order.state})
-
-
-class RefundRequest(BaseModel):
-    reason: str | None = Field(None, description="退款原因")
-
-
-@router.post("/api/orders/{order_no}/refund")
-def refund_order(
-    order_no: str,
-    payload: RefundRequest | None = None,
-    db: Session = Depends(get_db),
-) -> dict:
-    """发起退款（人工审核后调用）：仅已进入支付链路的订单可退，微信申请成功后订单进入 REFUNDING。"""
-    order = db.query(Order).filter(Order.order_no == order_no).first()
-    if order is None:
-        raise BizError(ErrorCode.NOT_FOUND, "资源不存在")
-    if not pay_service.is_paid_state(order.state):
-        raise BizError(ErrorCode.ORDER_STATUS_INVALID, "订单未支付，不可退款")
-    data = pay_service.create_refund(db, order, payload.reason if payload else None)
-    return ok_response(data)
 
 
 @router.get("/api/orders/{order_no}/report")

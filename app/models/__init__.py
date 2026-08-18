@@ -8,7 +8,6 @@ from app.models.order import Order, OrderState
 from app.models.pay_transaction import PayTransaction
 from app.models.product import Product
 from app.models.profile import Profile
-from app.models.refund import Refund
 from app.models.report import Report
 from app.models.wecom_contact import WecomContact
 
@@ -20,7 +19,6 @@ __all__ = [
     "PayTransaction",
     "Product",
     "Profile",
-    "Refund",
     "Report",
     "WecomContact",
 ]

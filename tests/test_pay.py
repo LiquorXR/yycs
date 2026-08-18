@@ -1,4 +1,4 @@
-"""微信支付 V3 闭环测试：统一下单参数、notify 验签/解密/幂等/恰好一次、查单推进、关单、退款、降级路径。
+"""微信支付 V3 闭环测试：统一下单参数、notify 验签/解密/幂等/恰好一次、查单推进、关单、降级路径。
 
 用生成的 RSA 密钥对与 AES-GCM 构造真实签名回调，端到端走 /api/pay/notify。
 """
@@ -78,7 +78,6 @@ def _configure_wxpay(monkeypatch, tmp_path, with_platform_cert=True):
     monkeypatch.setattr(settings, "WXPAY_PRIVATE_KEY_PATH", str(tmp_path / "merchant.pem"))
     monkeypatch.setattr(settings, "WXPAY_PLATFORM_CERT_PATH", str(tmp_path / "platform.pem") if with_platform_cert else None)
     monkeypatch.setattr(settings, "WXPAY_NOTIFY_URL", "https://example.com/api/pay/notify")
-    monkeypatch.setattr(settings, "WXPAY_REFUND_NOTIFY_URL", "https://example.com/api/refund/notify")
 
     # 默认打桩统一下单，避免真实网络；需要自定义时测试内覆盖
     monkeypatch.setattr(wechatpay.client, "create_h5_payment", lambda *a, **k: "https://wx.tenpay.com/cgi-bin/mmpayweb/bin/checkmweb?pr=TEST")
@@ -526,62 +525,6 @@ def test_close_order_wechat_error_still_closes(client_and_factory, monkeypatch, 
     resp = client.post(f"/api/orders/{order_no}/close")
     assert resp.status_code == 200
     assert resp.json()["data"]["state"] == "CLOSED"
-
-
-# ===================== 退款 =====================
-
-
-def _paid_order(client, key) -> str:
-    order_no = _create_order(client, key=key)
-    resp = client.post(f"/api/orders/{order_no}/pay-success-mock")
-    assert resp.status_code == 200
-    return order_no
-
-
-def test_refund_requires_paid_state(client):
-    order_no = _create_order(client, key="refund-notpaid")
-    resp = client.post(f"/api/orders/{order_no}/refund")
-    assert resp.status_code == 409
-    assert resp.json()["code"] == 12003
-
-
-def test_refund_success_flow(client_and_factory, monkeypatch, tmp_path):
-    client, factory = client_and_factory
-    _configure_wxpay(monkeypatch, tmp_path, with_platform_cert=False)
-    order_no = _paid_order(client, "refund-ok")
-    calls = {}
-    monkeypatch.setattr(wechatpay.client, "create_refund", lambda **kw: calls.update(kw) or {"refund_id": "REF-1"})
-
-    resp = client.post(f"/api/orders/{order_no}/refund", json={"reason": "用户申请退款"})
-    assert resp.status_code == 200
-    data = resp.json()["data"]
-    assert data["refundNo"] == f"R{order_no}"
-    assert data["state"] == "REFUNDING"
-    assert calls["out_trade_no"] == order_no
-    assert calls["out_refund_no"] == f"R{order_no}"
-    assert calls["total"] == 9900 and calls["refund_amount"] == 9900
-
-    with factory() as db:
-        order = db.query(Order).filter(Order.order_no == order_no).one()
-        assert order.state == OrderState.REFUNDING.value
-
-    # 重复发起 → 409 冲突
-    resp2 = client.post(f"/api/orders/{order_no}/refund")
-    assert resp2.status_code == 409
-    assert resp2.json()["code"] == 10005
-
-
-def test_refund_not_configured_raises(client):
-    order_no = _paid_order(client, "refund-nocfg")
-    resp = client.post(f"/api/orders/{order_no}/refund")
-    assert resp.status_code == 502
-    assert resp.json()["code"] == 12004
-
-
-def test_refund_notify_placeholder(client):
-    resp = client.post("/api/refund/notify", content=b'{"out_refund_no":"R1"}', headers={"Content-Type": "application/json"})
-    assert resp.status_code == 200
-    assert resp.json()["code"] == "FAIL"
 
 
 # ===================== 恰好一次（CAS） =====================
