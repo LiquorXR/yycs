@@ -329,7 +329,7 @@ function ReportPage() {
   ).padStart(2, '0')}.${Math.floor(Math.random() * 9)}`
 
   return (
-    <main className="fx-paper fx-cloud min-h-screen px-4 pt-4 pb-24">
+    <main className="fx-paper fx-cloud min-h-screen px-4 pt-4 pb-24 page-enter">
       {loading ? (
         <div className="animate-pulse space-y-4" aria-label="报告加载中">
           <div className="h-28 rounded-2xl bg-gold/10" />
