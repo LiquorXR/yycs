@@ -112,7 +112,7 @@ def test_create_order_product_not_found_13001(client):
 
 def test_create_order_invalid_payment_method_10001(client):
     pid = _profile_id(client)
-    resp = _create_order(client, pid, key="order-key-method", paymentMethod="alipay")
+    resp = _create_order(client, pid, key="order-key-method", paymentMethod="invalid_pay")
     assert resp.status_code == 400
     assert resp.json()["code"] == 10001
 
