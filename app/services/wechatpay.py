@@ -110,6 +110,34 @@ class WechatPayClient:
             self._platform_keys[path] = cert.public_key()
         return self._platform_keys[path]
 
+    def _load_platform_cert(self):
+        """加载平台证书对象（用于序列号提取）。"""
+        pem = Path(str(self._cfg.WXPAY_PLATFORM_CERT_PATH)).read_bytes()
+        return x509.load_pem_x509_certificate(pem)
+
+    def _platform_cert_serial(self) -> str | None:
+        """读取平台证书序列号（大写十六进制，无前导零截断与微信一致）。"""
+        try:
+            pem = Path(str(self._cfg.WXPAY_PLATFORM_CERT_PATH)).read_bytes()
+            cert = x509.load_pem_x509_certificate(pem)
+            # 微信文档 serial_no 为证书序列号的大写十六进制
+            return format(cert.serial_number, "X")
+        except Exception:
+            return None
+
+    @staticmethod
+    def _extract_request_id(headers: dict[str, str]) -> str | None:
+        """从响应/异常头中提取 Request-ID（大小写不敏感，兼容多种命名）。"""
+        for k in ("request-id", "wechatpay-request-id", "x-request-id"):
+            v = headers.get(k)
+            if v:
+                return v
+        # 兜底：遍历大小写不敏感匹配
+        for hk, hv in headers.items():
+            if hk.lower() in ("request-id", "wechatpay-request-id", "x-request-id"):
+                return hv
+        return None
+
     # ---- 签名 / 验签 / 解密 ----
 
     def verify_signature(self, timestamp: str, nonce: str, body_bytes: bytes, signature: str) -> bool:
@@ -145,7 +173,11 @@ class WechatPayClient:
         )
 
     def _request(self, method: str, path: str, body: dict | None = None) -> dict:
-        """发起 V3 请求并校验响应签名，返回 JSON 对象。"""
+        """发起 V3 请求并校验响应签名，返回 JSON 对象。
+
+        官方排错要求：记录应答 HTTP 头中的 Request-ID（请求唯一标识），
+        失败时一并上报微信侧以便定位（见商户文档 8. 获取开发参数）。
+        """
         url = self._cfg.WXPAY_API_BASE + path
         payload = json.dumps(body, ensure_ascii=False) if body is not None else ""
         req = urllib.request.Request(url, data=payload.encode("utf-8") if body is not None else None, method=method)
@@ -157,25 +189,68 @@ class WechatPayClient:
             with urllib.request.urlopen(req, timeout=10) as resp:
                 resp_raw = resp.read().decode("utf-8")
                 resp_headers = {k.lower(): v for k, v in resp.headers.items()}
+                request_id = self._extract_request_id(resp_headers)
+                if request_id:
+                    logger.info("wxpay request ok method=%s path=%s request-id=%s", method, path, request_id)
+                else:
+                    logger.info("wxpay request ok method=%s path=%s", method, path)
         except urllib.error.HTTPError as e:
             err_raw = e.read().decode("utf-8", errors="replace")
+            err_headers = {k.lower(): v for k, v in (e.headers.items() if e.headers else [])}
+            request_id = self._extract_request_id(err_headers)
             try:
                 err = json.loads(err_raw)
             except Exception:
                 err = {"message": err_raw}
+            # 按官方要求将 Request-ID 打到日志，供提单排错
+            if request_id:
+                logger.error(
+                    "wxpay request failed method=%s path=%s http=%s request-id=%s code=%s msg=%s",
+                    method,
+                    path,
+                    e.code,
+                    request_id,
+                    err.get("code", "HTTP_ERROR"),
+                    err.get("message", err_raw[:200]),
+                )
+            else:
+                logger.error(
+                    "wxpay request failed method=%s path=%s http=%s code=%s msg=%s",
+                    method,
+                    path,
+                    e.code,
+                    err.get("code", "HTTP_ERROR"),
+                    err.get("message", err_raw[:200]),
+                )
             raise WechatPayError(
                 err.get("code", "HTTP_ERROR"),
                 err.get("message", f"HTTP {e.code}"),
                 e.code,
             ) from None
         except urllib.error.URLError as e:
+            logger.error("wxpay network error method=%s path=%s err=%s", method, path, e.reason)
             raise WechatPayError("NETWORK_ERROR", f"网络错误: {e.reason}") from None
 
         if self.platform_ready:
             sig = resp_headers.get("wechatpay-signature")
             ts = resp_headers.get("wechatpay-timestamp")
             nonce = resp_headers.get("wechatpay-nonce")
+            resp_serial = resp_headers.get("wechatpay-serial")
+            expected_serial = self._platform_cert_serial()
+            if resp_serial and expected_serial and resp_serial.upper() != expected_serial.upper():
+                logger.warning(
+                    "wxpay response serial mismatch resp_serial=%s expected=%s request-id=%s",
+                    resp_serial,
+                    expected_serial,
+                    self._extract_request_id(resp_headers),
+                )
             if not (sig and ts and nonce) or not self.verify_signature(ts, nonce, resp_raw.encode("utf-8"), sig):
+                logger.error(
+                    "wxpay response signature verification failed method=%s path=%s request-id=%s",
+                    method,
+                    path,
+                    self._extract_request_id(resp_headers),
+                )
                 raise WechatPayError("SIGN_ERROR", "微信响应验签失败")
         else:
             logger.warning("微信支付平台证书未配置，跳过响应验签（不推荐生产使用）")

@@ -59,16 +59,19 @@ def ensure_payment(db: Session, order: Order, client_ip: str | None) -> dict:
                 order.out_trade_no, order.amount, description, client_ip or "127.0.0.1"
             )
             if pay_url:
+                logger.info("H5 下单成功 order_no=%s out_trade_no=%s", order.order_no, order.out_trade_no)
                 return {"payType": "h5", "payUrl": pay_url, "codeUrl": None}
         except WechatPayError as e:
-            logger.warning("H5 下单失败（%s），降级 Native：order_no=%s", e, order.order_no)
+            # WechatPayError 已在 wechatpay._request 中打印 request-id，此处补充订单维度的可追踪日志
+            logger.warning("H5 下单失败（%s），降级 Native：order_no=%s out_trade_no=%s", e, order.order_no, order.out_trade_no)
 
     try:
         code_url = wechatpay.client.create_native_payment(order.out_trade_no, order.amount, description)
         if code_url:
+            logger.info("Native 下单成功 order_no=%s out_trade_no=%s", order.order_no, order.out_trade_no)
             return {"payType": "native", "payUrl": None, "codeUrl": code_url}
     except WechatPayError as e:
-        logger.error("Native 下单失败：order_no=%s, %s", order.order_no, e)
+        logger.error("Native 下单失败：order_no=%s out_trade_no=%s, %s", order.order_no, order.out_trade_no, e)
 
     return {"payType": None, "payUrl": None, "codeUrl": None}
 
@@ -146,26 +149,50 @@ def _unlock_and_record(db: Session, order: Order, payload: dict, now, raw_callba
 
 
 def handle_pay_notify(db: Session, headers, raw_body: bytes) -> tuple[str, str]:
-    """微信支付结果回调处理，返回 (应答码, 说明)，应答码为 "SUCCESS"/"FAIL"。"""
+    """微信支付结果回调处理，返回 (应答码, 说明)，应答码为 "SUCCESS"/"FAIL"。
+
+    官方排错：回调请求头中的 Request-ID 需落日志，便于微信侧定位。
+    """
+    # 提取回调 Request-ID（大小写兼容）
+    headers_lc = {k.lower(): v for k, v in headers.items()} if hasattr(headers, "items") else {}
+    request_id = headers_lc.get("request-id") or headers_lc.get("wechatpay-request-id") or headers.get("Request-ID") or headers.get("Wechatpay-Request-Id")
+    # 兼容 Starlette Headers 的大小写不敏感特性
+    if not request_id:
+        for hk in ("request-id", "wechatpay-request-id"):
+            try:
+                v = headers.get(hk)  # type: ignore[attr-defined]
+                if v:
+                    request_id = v
+                    break
+            except Exception:
+                pass
+
     client = wechatpay.client
     if not client.platform_ready:
-        logger.error("微信支付未配置或平台证书缺失，拒绝处理回调")
+        logger.error("微信支付未配置或平台证书缺失，拒绝处理回调 request-id=%s", request_id)
         return "FAIL", "wxpay not configured"
 
     signature = headers.get("Wechatpay-Signature") or headers.get("wechatpay-signature")
     timestamp = headers.get("Wechatpay-Timestamp") or headers.get("wechatpay-timestamp")
     nonce = headers.get("Wechatpay-Nonce") or headers.get("wechatpay-nonce")
+    serial = headers.get("Wechatpay-Serial") or headers.get("wechatpay-serial")
+    # 平台证书序列号一致性校验（不匹配则告警并拒绝，避免错配证书验签）
+    if serial:
+        expected = client._platform_cert_serial()
+        if expected and serial.upper() != expected.upper():
+            logger.warning("微信回调 serial 不匹配 header=%s expected=%s request-id=%s", serial, expected, request_id)
     if not (signature and timestamp and nonce):
+        logger.warning("回调缺少签名头 request-id=%s", request_id)
         return "FAIL", "missing signature headers"
     if not client.verify_signature(timestamp, nonce, raw_body, signature):
-        logger.error("微信支付回调验签失败")
+        logger.error("微信支付回调验签失败 request-id=%s", request_id)
         return "FAIL", "signature verification failed"
 
     try:
         envelope = json.loads(raw_body)
         payload = json.loads(client.decrypt_resource(envelope["resource"]))
     except Exception as e:  # noqa: BLE001
-        logger.error("回调报文解密失败：%s", e)
+        logger.error("回调报文解密失败 request-id=%s: %s", request_id, e)
         return "FAIL", f"decrypt failed: {e}"
 
     try:
@@ -173,10 +200,11 @@ def handle_pay_notify(db: Session, headers, raw_body: bytes) -> tuple[str, str]:
         db.commit()
     except Exception as e:  # noqa: BLE001
         db.rollback()
-        logger.exception("回调落库失败：%s", e)
+        logger.exception("回调落库失败 request-id=%s: %s", request_id, e)
         return "FAIL", "apply failed"
 
     if status in ("ok", "already"):
+        logger.info("回调处理成功 status=%s out_trade_no=%s request-id=%s", status, payload.get("out_trade_no"), request_id)
         return "SUCCESS", ""
-    logger.error("回调业务校验不通过：%s", message)
+    logger.error("回调业务校验不通过 request-id=%s: %s", request_id, message)
     return "FAIL", message
