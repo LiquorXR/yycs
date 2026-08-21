@@ -1,0 +1,734 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>振凡命理 · H5 高保真原型 — 高级精美 · 动效出色 · 交互丝滑</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@500;600;700&family=Plus+Jakarta+Sans:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        bg: '#3a0a0a', surface: '#8c1f1f', 'surface-card': 'rgba(110,19,19,0.86)',
+        fg: '#f7efdc', 'fg-secondary': '#e8d9b6', muted: '#d8c9a8',
+        border: '#5c1b16', 'border-gold': '#a8833f',
+        gold: '#e2b45f', 'gold-dark': '#a87e38', 'gold-light': '#fef1cf',
+        red: '#d93829', 'red-deep': '#a21f12', jade: '#2b7a63', 'jade-light': '#5cbb99',
+      },
+      fontFamily: {
+        kai: ['"Noto Serif SC"','Kaiti SC','STKaiti', 'serif'],
+        shufa: ['"Ma Shan Zheng"','STXingkai', 'serif'],
+        sans: ['-apple-system','PingFang SC','Microsoft YaHei', 'sans-serif'],
+      },
+      boxShadow: {
+        card: '0 8px 32px rgba(0,0,0,0.4), inset 0 0 16px rgba(226,180,95,0.05)',
+        gold: '0 4px 20px rgba(226,180,95,0.15)',
+      },
+      keyframes: {
+        'compass-rotate': { '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)' } },
+        'reverse-rotate': { '0%': { transform: 'rotate(360deg)' }, '100%': { transform: 'rotate(0deg)' } },
+        'pulse-glow': { '0%,100%': { opacity: '0.6', transform: 'scale(1)' }, '50%': { opacity: '1', transform: 'scale(1.06)' } },
+        'shine': { '0%': { transform: 'translateX(-100%) rotate(30deg)' }, '20%,100%': { transform: 'translateX(120%) rotate(30deg)' } },
+        'fade-in-up': { '0%': { opacity: '0', transform: 'translateY(14px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+        'shimmer': { '0%': { transform: 'translateX(-100%)' }, '100%': { transform: 'translateX(100%)' } },
+        'float-y': { '0%,100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-6px)' } },
+      },
+      animation: {
+        'compass': 'compass-rotate 38s linear infinite',
+        'reverse': 'reverse-rotate 26s linear infinite',
+        'taiji': 'compass-rotate 4s linear infinite',
+        'bagua': 'reverse-rotate 22s linear infinite',
+        'pulse-glow': 'pulse-glow 1.6s ease-in-out infinite',
+        'float-y': 'float-y 3.2s ease-in-out infinite',
+      }
+    }
+  }
+}
+</script>
+<style>
+*{ -webkit-tap-highlight-color: transparent; }
+body{ background:#0e0a0a; }
+.phone-shadow{ box-shadow: 0 32px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(226,180,95,0.12), 0 0 80px rgba(226,180,95,0.06); }
+.text-gold-gradient{ background: linear-gradient(135deg,#fef1cf 0%,#e2b45f 48%,#b88636 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.btn-primary{ position:relative; overflow:hidden; background: linear-gradient(135deg,#fce2a6 0%,#e2b45f 50%,#b88330 100%); color:#591010; border:1px solid #fef1cf; border-radius:999px; box-shadow: 0 8px 24px rgba(226,180,95,0.38), inset 0 1px 0 rgba(255,255,255,0.45); transition: transform .16s cubic-bezier(.16,1,.3,1), box-shadow .16s ease, filter .16s ease; }
+.btn-primary::after{ content:''; position:absolute; inset:0; background: linear-gradient(45deg, transparent 45%, rgba(255,255,255,0.28) 50%, transparent 55%); transform: translateX(-120%) rotate(30deg); animation: shine 3.2s infinite; }
+.btn-primary:active{ transform: scale(0.98); }
+.btn-primary:hover{ filter: brightness(1.06); box-shadow: 0 10px 28px rgba(226,180,95,0.5); transform: translateY(-1px); }
+.card-guofeng{ background: rgba(110,19,19,0.88); border:1px solid #a8833f; border-radius:16px; box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 0 16px rgba(226,180,95,0.05); backdrop-filter: blur(10px); position:relative; }
+.card-guofeng::before{ content:''; position:absolute; inset:3px; border:1px solid rgba(226,180,95,0.14); border-radius:13px; pointer-events:none; }
+.seal{ display:inline-flex; align-items:center; justify-content:center; padding:2px 8px; background: linear-gradient(135deg,#d93829 0%,#a21f12 100%); border:1px solid #fce8cd; color:#fff; font-family:"Noto Serif SC",serif; font-size:11px; border-radius:4px; letter-spacing:.1em; }
+.input-guofeng{ width:100%; height:44px; background: rgba(46,8,8,0.62); border:1px solid #a8833f; border-radius:10px; padding:0 14px; color:#f7efdc; outline:none; transition: border-color .2s, box-shadow .2s, background .2s; }
+.input-guofeng:focus{ border-color:#e2b45f; box-shadow: 0 0 0 3px rgba(226,180,95,0.18), 0 0 16px rgba(226,180,95,0.2); }
+.input-guofeng::placeholder{ color: rgba(216,201,168,0.62); }
+.tag-chip{ padding:6px 12px; background: rgba(58,10,10,0.62); border:1px solid #5c1b16; border-radius:999px; font-size:12px; color:#e8d9b6; cursor:pointer; transition: all .2s cubic-bezier(.16,1,.3,1); user-select:none; }
+.tag-chip.active{ background: rgba(226,180,95,0.16); border-color:#e2b45f; color:#fef1cf; font-weight:600; box-shadow: 0 2px 10px rgba(226,180,95,0.14); }
+.no-scrollbar{ scrollbar-width:none; -ms-overflow-style:none; }
+.no-scrollbar::-webkit-scrollbar{ display:none; }
+.fx-paper{ position:relative; }
+.fx-paper::before{ content:''; position:absolute; inset:0; pointer-events:none; opacity:.34; mix-blend-mode: soft-light; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.42'/%3E%3C/svg%3E"); border-radius: inherit; }
+.page-enter{ animation: fade-in-up .42s cubic-bezier(.16,1,.3,1) both; }
+.stagger > *{ opacity:0; animation: fade-in-up .42s cubic-bezier(.16,1,.3,1) both; }
+.stagger > *:nth-child(1){ animation-delay:.04s } .stagger > *:nth-child(2){ animation-delay:.1s } .stagger > *:nth-child(3){ animation-delay:.16s } .stagger > *:nth-child(4){ animation-delay:.22s } .stagger > *:nth-child(5){ animation-delay:.28s }
+.pressable{ transition: transform .14s cubic-bezier(.16,1,.3,1), box-shadow .14s ease, border-color .2s ease; }
+.pressable:active{ transform: scale(0.97); }
+.haptic-dot{ width:6px; height:6px; border-radius:999px; background:#d93829; box-shadow: 0 0 8px #d93829; }
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{ animation-duration:.01ms !important; transition-duration:.01ms !important; }
+}
+</style>
+</head>
+<body class="min-h-screen text-fg antialiased selection:bg-gold/20">
+<!-- TOP BAR -->
+<header class="sticky top-0 z-40 backdrop-blur-xl bg-[#0e0a0a]/72 border-b border-white/[0.07]">
+  <div class="max-w-[1280px] mx-auto px-4 md:px-6 h-[56px] flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <div class="size-8 rounded-lg bg-gradient-to-br from-gold-light via-gold to-gold-dark grid place-items-center text-[#3a0a0a] font-shufa text-[16px] shadow-gold">振</div>
+      <div>
+        <div class="text-[13px] font-semibold tracking-[0.14em] text-white">振凡命理 · H5 高保真原型</div>
+        <div class="text-[11px] text-white/55 -mt-0.5">Premium · 国风玄学 · 移动端 H5 · 375×812</div>
+      </div>
+      <span class="hidden md:inline-flex ml-2 px-2 py-0.5 rounded-full bg-white/10 border border-white/10 text-[10px] tracking-widest text-white/70">PROTOTYPE v1.0</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <button id="reduceMotionBtn" class="hidden md:inline-flex items-center gap-1.5 px-3 h-7 rounded-full bg-white/8 border border-white/10 text-xs text-white/80 hover:bg-white/12 transition"> <span class="size-1.5 rounded-full bg-emerald-400 animate-pulse"></span> 动效：标准</button>
+      <a href="#spec" class="hidden md:inline-flex px-3 h-7 rounded-full bg-gold text-[#3a0a0a] text-xs font-semibold hover:brightness-110 transition">查看设计规范 ↓</a>
+      <span class="md:hidden text-[11px] text-white/60">左右滑动查看页面</span>
+    </div>
+  </div>
+  <!-- page tabs -->
+  <div class="border-t border-white/[0.06] bg-[#0e0a0a]/60">
+    <div class="max-w-[1280px] mx-auto px-2 md:px-6">
+      <div class="flex items-center gap-1.5 py-2 overflow-x-auto no-scrollbar">
+        <button data-tab="landing" class="tab-btn active shrink-0 px-3.5 h-7 rounded-full text-xs font-medium bg-gold text-[#3a0a0a] border border-gold-light">01 Landing · 首页</button>
+        <button data-tab="calc" class="tab-btn shrink-0 px-3.5 h-7 rounded-full text-xs font-medium bg-white/8 text-white/70 border border-white/10 hover:bg-white/12">02 Calc · 测算</button>
+        <button data-tab="loading" class="tab-btn shrink-0 px-3.5 h-7 rounded-full text-xs font-medium bg-white/8 text-white/70 border border-white/10 hover:bg-white/12">03 Loading · 推演</button>
+        <button data-tab="order" class="tab-btn shrink-0 px-3.5 h-7 rounded-full text-xs font-medium bg-white/8 text-white/70 border border-white/10 hover:bg-white/12">04 Order · 订单</button>
+        <button data-tab="pay" class="tab-btn shrink-0 px-3.5 h-7 rounded-full text-xs font-medium bg-white/8 text-white/70 border border-white/10 hover:bg-white/12">05 Pay · 支付</button>
+        <button data-tab="report" class="tab-btn shrink-0 px-3.5 h-7 rounded-full text-xs font-medium bg-white/8 text-white/70 border border-white/10 hover:bg-white/12">06 Report · 报告</button>
+        <span class="ml-auto hidden lg:inline-flex items-center gap-2 text-[11px] text-white/40"><span class="size-1 rounded-full bg-gold"></span> 点击任意可点元素查看微交互 · 长按有按压反馈</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main class="max-w-[1280px] mx-auto px-4 md:px-6 py-6 md:py-8 grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-6 md:gap-8">
+  <!-- PHONE -->
+  <div class="lg:sticky lg:top-[112px] self-start">
+    <div class="mx-auto w-full max-w-[390px]">
+      <!-- phone frame -->
+      <div class="phone-shadow relative bg-[#3a0a0a] rounded-[44px] p-[10px] border border-white/10">
+        <!-- notch / speaker -->
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[116px] h-[28px] bg-black rounded-b-[16px] z-20 flex items-center justify-center gap-1.5">
+          <span class="w-12 h-1 rounded-full bg-white/15"></span><span class="size-1 rounded-full bg-white/10"></span>
+        </div>
+        <!-- screen -->
+        <div class="relative bg-[#3a0a0a] rounded-[36px] overflow-hidden border border-black/30 h-[780px] md:h-[812px] flex flex-col">
+          <!-- status bar -->
+          <div class="h-[44px] shrink-0 flex items-center justify-between px-7 pt-2 text-[12px] font-medium text-white/90">
+            <span>9:41</span>
+            <div class="flex items-center gap-1">
+              <svg width="16" height="10" viewBox="0 0 16 10" fill="none" class="text-white/90"><path d="M1 5h2M5 3v4M9 2v6M13 4v2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><rect x="0.5" y="0.5" width="15" height="9" rx="2" stroke="currentColor" stroke-opacity="0.35"/></svg>
+              <span class="w-[18px] h-[10px] rounded-[3px] border border-white/30 relative"><span class="absolute inset-[2px] bg-white rounded-[1px] w-[72%]"></span></span>
+            </div>
+          </div>
+          <!-- viewport -->
+          <div id="phoneViewport" class="flex-1 overflow-y-auto no-scrollbar relative bg-[radial-gradient(circle_at_50%_18%,#8a1a1a_0%,#5a0f0f_55%,#3a0a0a_100%)]">
+            <!-- PAGES -->
+            <!-- LANDING -->
+            <section data-page="landing" class="page min-h-full flex flex-col">
+              <!-- hero -->
+              <div class="px-5 pt-2 pb-3 text-center relative overflow-hidden">
+                <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(226,180,95,0.14)_0%,transparent_68%)] pointer-events-none"></div>
+                <span class="relative inline-flex items-center gap-1.5 rounded-full border border-gold/35 bg-gold/10 px-3 py-1 text-[11px] tracking-[0.12em] text-gold">敕造命盘 · 单人测算 <span class="size-1 rounded-full bg-gold animate-pulse-glow"></span></span>
+                <h1 class="relative mt-3 font-shufa text-[26px] leading-[1.15] tracking-[0.08em] text-gold-gradient">八字命盘 · 运势姻缘</h1>
+                <p class="relative mt-1.5 text-[12px] tracking-wide text-fg-secondary">测算个人五行喜忌 · 预测正缘桃花与运势转折</p>
+                <!-- compass -->
+                <div class="relative mx-auto mt-3 flex size-[200px] items-center justify-center">
+                  <svg class="absolute size-[188px] animate-compass" viewBox="0 0 200 200" aria-hidden="true"><circle cx="100" cy="100" r="92" fill="none" stroke="#e2b45f" stroke-width="1" stroke-dasharray="4 6" opacity="0.9"/><text x="100" y="18" fill="#e2b45f" font-size="10" text-anchor="middle" font-family="serif">子</text><text x="182" y="104" fill="#e2b45f" font-size="10" text-anchor="middle">卯</text><text x="100" y="186" fill="#e2b45f" font-size="10" text-anchor="middle">午</text><text x="18" y="104" fill="#e2b45f" font-size="10" text-anchor="middle">酉</text></svg>
+                  <svg class="absolute size-[148px] animate-reverse" viewBox="0 0 160 160" aria-hidden="true"><circle cx="80" cy="80" r="72" fill="none" stroke="#e2b45f" stroke-width="1.3"/><path d="M80 6 L80 154 M6 80 L154 80" stroke="rgba(226,180,95,0.38)" stroke-width="1"/></svg>
+                  <div class="relative grid size-[118px] place-items-center">
+                    <svg class="absolute size-[104px] animate-bagua" viewBox="0 0 112 112" aria-hidden="true"><circle cx="56" cy="56" r="46" fill="none" stroke="#e2b45f" stroke-width="1" stroke-dasharray="3 6" opacity="0.9"/><g id="bagua-g"></g></svg>
+                    <img src="./taiji.svg" alt="太极" class="size-[48px] animate-taiji rounded-full border-2 border-gold shadow-[0_0_18px_rgba(226,180,95,0.45)] bg-white object-contain p-[1px]" style="filter: drop-shadow(0 0 6px rgba(226,180,95,0.35))" />
+                  </div>
+                </div>
+                <div class="absolute -bottom-6 left-1/2 -translate-x-1/2 w-[260px] h-[48px] bg-[radial-gradient(ellipse_at_center,rgba(226,180,95,0.16)_0%,transparent_70%)] blur-[6px] pointer-events-none"></div>
+              </div>
+              <!-- ticker -->
+              <div class="mx-5 mb-3 flex items-center gap-2 rounded-full border border-gold/18 bg-[#3a0a0a]/58 px-3 py-1.5 text-xs text-fg-secondary backdrop-blur">
+                <span class="haptic-dot animate-pulse-glow shrink-0"></span>
+                <span id="tickerText" class="flex-1 truncate transition-opacity duration-200">张** 单人测算 · 预测今年秋季遇到正缘</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-gold/12 border border-gold/20 text-gold">实时</span>
+              </div>
+              <!-- bento — 超紧凑 -->
+              <div class="px-5 grid grid-cols-2 gap-2.5">
+                <div class="group pressable relative overflow-hidden rounded-[11px] border border-[#a8833f]/40 bg-[linear-gradient(180deg,rgba(140,26,26,0.94)_0%,rgba(74,14,14,0.98)_100%)] px-3 py-2 shadow-[0_3px_12px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-[6px] transition-all duration-300 hover:-translate-y-[1px] hover:border-gold/60 active:scale-[0.98]">
+                  <span class="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/35 to-transparent"></span>
+                  <div class="flex items-center gap-1.5">
+                    <span class="grid size-[22px] shrink-0 place-items-center rounded-[6px] border border-gold/30 bg-[linear-gradient(135deg,#fef1cf_0%,#e2b45f_55%,#b88636_100%)] font-kai text-[12px] font-bold leading-none text-[#591010] shadow-[0_1px_5px_rgba(226,180,95,0.3),inset_0_1px_0_rgba(255,255,255,0.65)]">缘</span>
+                    <span class="font-kai text-[12px] font-bold tracking-[0.02em] text-gold-light leading-none">正缘桃花期</span>
+                  </div>
+                  <div class="mt-1.5 h-px w-full bg-gradient-to-r from-gold/12 via-gold/5 to-transparent"></div>
+                  <div class="mt-1 text-[10.5px] leading-[1.38] text-[#e8d9b6]/75 line-clamp-2">精准预测感情关键节点<br/>与桃花旺衰年份</div>
+                </div>
+                <div class="group pressable relative overflow-hidden rounded-[11px] border border-[#a8833f]/40 bg-[linear-gradient(180deg,rgba(140,26,26,0.94)_0%,rgba(74,14,14,0.98)_100%)] px-3 py-2 shadow-[0_3px_12px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-[6px] transition-all duration-300 hover:-translate-y-[1px] hover:border-gold/60 active:scale-[0.98]">
+                  <span class="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/35 to-transparent"></span>
+                  <div class="flex items-center gap-1.5">
+                    <span class="grid size-[22px] shrink-0 place-items-center rounded-[6px] border border-gold/30 bg-[linear-gradient(135deg,#fef1cf_0%,#e2b45f_55%,#b88636_100%)] font-kai text-[12px] font-bold leading-none text-[#591010] shadow-[0_1px_5px_rgba(226,180,95,0.3),inset_0_1px_0_rgba(255,255,255,0.65)]">财</span>
+                    <span class="font-kai text-[12px] font-bold tracking-[0.02em] text-gold-light leading-none">婚后财运旺衰</span>
+                  </div>
+                  <div class="mt-1.5 h-px w-full bg-gradient-to-r from-gold/12 via-gold/5 to-transparent"></div>
+                  <div class="mt-1 text-[10.5px] leading-[1.38] text-[#e8d9b6]/75 line-clamp-2">推演财运走势与置业<br/>吸金最佳时机</div>
+                </div>
+                <div class="group pressable relative overflow-hidden rounded-[11px] border border-[#a8833f]/40 bg-[linear-gradient(180deg,rgba(140,26,26,0.94)_0%,rgba(74,14,14,0.98)_100%)] px-3 py-2 shadow-[0_3px_12px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-[6px] transition-all duration-300 hover:-translate-y-[1px] hover:border-gold/60 active:scale-[0.98]">
+                  <span class="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/35 to-transparent"></span>
+                  <div class="flex items-center gap-1.5">
+                    <span class="grid size-[22px] shrink-0 place-items-center rounded-[6px] border border-gold/30 bg-[linear-gradient(135deg,#fef1cf_0%,#e2b45f_55%,#b88636_100%)] font-kai text-[12px] font-bold leading-none text-[#591010] shadow-[0_1px_5px_rgba(226,180,95,0.3),inset_0_1px_0_rgba(255,255,255,0.65)]">性</span>
+                    <span class="font-kai text-[12px] font-bold tracking-[0.02em] text-gold-light leading-none">性格解析</span>
+                  </div>
+                  <div class="mt-1.5 h-px w-full bg-gradient-to-r from-gold/12 via-gold/5 to-transparent"></div>
+                  <div class="mt-1 text-[10.5px] leading-[1.38] text-[#e8d9b6]/75 line-clamp-2">剖析五行禀性，解锁<br/>相处之道与自我认知</div>
+                </div>
+                <div class="group pressable relative overflow-hidden rounded-[11px] border border-[#a8833f]/40 bg-[linear-gradient(180deg,rgba(140,26,26,0.94)_0%,rgba(74,14,14,0.98)_100%)] px-3 py-2 shadow-[0_3px_12px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-[6px] transition-all duration-300 hover:-translate-y-[1px] hover:border-gold/60 active:scale-[0.98]">
+                  <span class="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/35 to-transparent"></span>
+                  <div class="flex items-center gap-1.5">
+                    <span class="grid size-[22px] shrink-0 place-items-center rounded-[6px] border border-gold/30 bg-[linear-gradient(135deg,#fef1cf_0%,#e2b45f_55%,#b88636_100%)] font-kai text-[12px] font-bold leading-none text-[#591010] shadow-[0_1px_5px_rgba(226,180,95,0.3),inset_0_1px_0_rgba(255,255,255,0.65)]">避</span>
+                    <span class="font-kai text-[12px] font-bold tracking-[0.02em] text-gold-light leading-none">避坑指南</span>
+                  </div>
+                  <div class="mt-1.5 h-px w-full bg-gradient-to-r from-gold/12 via-gold/5 to-transparent"></div>
+                  <div class="mt-1 text-[10.5px] leading-[1.38] text-[#e8d9b6]/75 line-clamp-2">预判运势风险点，提供<br/>化解妙招</div>
+                </div>
+              </div>
+              <!-- CTA -->
+              <div class="px-5 mt-4 flex flex-col gap-3 pb-6">
+                <button onclick="showPage('calc')" class="btn-primary w-full h-[50px] font-kai text-[17px] font-bold tracking-wide flex items-center justify-center gap-2">
+                  立即测算 · 开启个人命盘
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </button>
+                <div class="flex justify-center gap-4 text-[11px] text-muted">
+                  <span class="flex items-center gap-1"><svg width="12" height="12" viewBox="0 0 24 24" fill="#e2b45f"><path d="M12 2L3 7v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z"/></svg> 隐私加密</span>
+                  <span class="flex items-center gap-1"><svg width="12" height="12" viewBox="0 0 24 24" fill="#e2b45f"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2" stroke="#3a0a0a" stroke-width="1.5" fill="none"/></svg> 周易古籍</span>
+                  <span class="flex items-center gap-1">⭐ 超30万验证</span>
+                </div>
+                <div class="flex items-center justify-center gap-2 text-[10px] tracking-[0.12em] text-white/35"><span class="h-px w-8 bg-white/10"></span> 国风玄学 · 鎏金美学 <span class="h-px w-8 bg-white/10"></span></div>
+              </div>
+            </section>
+
+            <!-- CALC -->
+            <section data-page="calc" class="page hidden min-h-full flex-col">
+              <header class="sticky top-0 z-10 border-b border-gold/15 bg-[#3a0a0a]/92 backdrop-blur-md">
+                <div class="flex items-center justify-between px-4 h-[48px]">
+                  <button onclick="showPage('landing')" class="size-8 grid place-items-center rounded-full text-muted hover:bg-white/8 hover:text-gold transition"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+                  <div class="flex items-center gap-1.5 font-kai font-bold tracking-[0.2em] text-gold-light text-[15px]"><span class="h-1 w-6 opacity-40">—</span>填写命盘<span class="h-1 w-6 opacity-40">—</span></div>
+                  <span class="w-8"></span>
+                </div>
+              </header>
+              <div class="p-4 space-y-3 pb-6 page-enter">
+                <!-- person card -->
+                <div class="card-guofeng p-4">
+                  <div class="flex items-center justify-between mb-3">
+                    <div class="font-kai font-bold text-gold-light">个人命盘</div>
+                    <div class="flex rounded-full border border-white/10 bg-black/20 p-0.5 text-[11px]">
+                      <button id="calSolar" class="px-3 py-1 rounded-full bg-gradient-to-b from-gold-light to-gold text-[#591010] font-semibold">公历(阳历)</button>
+                      <button id="calLunar" class="px-3 py-1 rounded-full text-muted hover:text-gold-light">农历(阴历)</button>
+                    </div>
+                  </div>
+                  <div class="space-y-3">
+                    <label class="block">
+                      <span class="text-xs text-fg-secondary mb-1 block">姓名/昵称 <span class="text-red-400">*</span></span>
+                      <input id="calcName" class="input-guofeng" placeholder="请输入姓名" maxlength="20" />
+                      <span id="nameErr" class="hidden mt-1 text-[11px] text-red-300 flex items-center gap-1">⚠ 姓名需为 2~20 个字</span>
+                    </label>
+                    <div class="grid grid-cols-3 gap-2">
+                      <label class="block"><span class="text-[11px] text-fg-secondary mb-1 block">年</span><select class="input-guofeng text-sm"><option>1998年</option><option>1995年</option><option>2000年</option></select></label>
+                      <label class="block"><span class="text-[11px] text-fg-secondary mb-1 block">月</span><select class="input-guofeng text-sm"><option>6月</option><option>12月</option></select></label>
+                      <label class="block"><span class="text-[11px] text-fg-secondary mb-1 block">日</span><select class="input-guofeng text-sm"><option>18日</option></select></label>
+                    </div>
+                    <label class="block">
+                      <span class="text-xs text-fg-secondary mb-1 block">出生时辰</span>
+                      <select class="input-guofeng"><option>子时 (23:00-00:59)</option><option>午时 (11:00-12:59)</option><option>时辰不详 (系统推算)</option></select>
+                    </label>
+                    <div class="flex items-center gap-1.5 text-[11px] text-muted"><span class="size-1.5 rounded-full bg-jade-light"></span> 时辰不详亦可测，系统会按三合推算</div>
+                  </div>
+                </div>
+                <!-- focus -->
+                <div class="card-guofeng p-4">
+                  <div class="font-kai font-bold text-gold-light mb-2">关注重点 <span class="text-[11px] font-normal text-muted">（最多选3项）</span></div>
+                  <div class="flex flex-wrap gap-2">
+                    <button class="tag-chip active" onclick="this.classList.toggle('active')">正缘桃花期</button>
+                    <button class="tag-chip active" onclick="this.classList.toggle('active')">婚后财运旺衰</button>
+                    <button class="tag-chip active" onclick="this.classList.toggle('active')">性格解析</button>
+                    <button class="tag-chip" onclick="this.classList.toggle('active')">事业运势</button>
+                    <button class="tag-chip" onclick="this.classList.toggle('active')">避坑锦囊</button>
+                  </div>
+                </div>
+                <!-- agree -->
+                <label class="flex items-start gap-2 px-1 text-[11px] leading-relaxed text-muted cursor-pointer">
+                  <input type="checkbox" checked class="mt-0.5 accent-gold" />
+                  <span>已阅读并同意 <a class="underline decoration-gold/40 text-gold">《用户协议》</a> 与 <a class="underline decoration-gold/40 text-gold">《隐私政策》</a>，所填信息仅用于命盘推演</span>
+                </label>
+                <button onclick="showPage('loading')" class="btn-primary w-full h-[50px] font-kai text-[17px] font-bold">开始推演 · 生成命盘</button>
+                <p class="text-center text-[11px] text-muted">已为 324,891 人生成专属命盘 · 平均耗时 8.2s</p>
+              </div>
+            </section>
+
+            <!-- LOADING -->
+            <section data-page="loading" class="page hidden min-h-full flex-col relative overflow-hidden">
+              <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_22%,#8a1a1a_0%,#5a0f0f_55%,#3a0a0a_100%)]"></div>
+              <div class="relative flex-1 flex flex-col items-center px-5 py-7 text-center">
+                <div class="page-enter">
+                  <h2 class="font-kai text-[20px] tracking-[0.08em] text-gold-light">天机交感 · 命盘推演</h2>
+                  <p class="text-[12px] text-muted mt-1">正在排盘计算个人五行喜忌与运势姻缘</p>
+                </div>
+                <div class="relative mt-5 flex flex-col items-center gap-1.5">
+                  <span class="grid size-[56px] animate-pulse-glow place-items-center rounded-full border-2 border-gold bg-[radial-gradient(circle,#4a0e0e_0%,#2a0808_100%)] font-kai text-gold-light shadow-[0_0_16px_rgba(226,180,95,0.35)]">命</span>
+                  <span class="text-[13px] font-medium text-fg tracking-wide">张** · 1998.06.18 午时</span>
+                  <span class="text-[11px] text-muted">正缘桃花期 · 婚后财运 · 性格</span>
+                </div>
+                <div class="relative my-5 flex size-[176px] items-center justify-center">
+                  <div class="absolute size-[176px] rounded-full border-2 border-dashed border-gold/60 animate-compass"></div>
+                  <div class="absolute size-[128px] rounded-full border-[1.5px] border-gold shadow-[0_0_15px_rgba(226,180,95,0.35)] animate-reverse"></div>
+                  <img src="./taiji.svg" alt="太极" class="size-[68px] animate-taiji rounded-full border-2 border-gold shadow-[0_0_18px_rgba(226,180,95,0.45)] bg-white object-contain p-[1px]" style="filter: drop-shadow(0 0 6px rgba(226,180,95,0.35))" />
+                </div>
+                <div class="w-full rounded-[16px] border border-gold/30 bg-[#3a0a0a]/70 p-4 text-left backdrop-blur">
+                  <div id="loadingSteps" class="space-y-2.5 text-[13px]">
+                    <div class="flex items-center gap-2.5 text-jade-light"><span class="grid size-4 place-items-center rounded-full border border-current text-[10px]">✓</span> 排盘天干地支四柱与纳音五行…</div>
+                    <div class="flex items-center gap-2.5 text-gold-light font-medium"><span class="size-2 rounded-full bg-gold animate-pulse"></span> 推演八字喜用神与五行旺衰…</div>
+                    <div class="flex items-center gap-2.5 text-muted"><span class="grid size-4 place-items-center rounded-full border border-current text-[10px]">3</span> 计算正缘桃花期与事业财运走势…</div>
+                    <div class="flex items-center gap-2.5 text-muted"><span class="grid size-4 place-items-center rounded-full border border-current text-[10px]">4</span> 生成命盘密签与化解锦囊…</div>
+                  </div>
+                  <div class="mt-4 h-1.5 rounded-full border border-white/10 bg-black/30 overflow-hidden p-[2px]">
+                    <div id="loadingBar" class="h-full rounded-full bg-gradient-to-r from-gold-dark via-gold to-gold-light transition-all duration-100" style="width:42%"></div>
+                  </div>
+                  <div class="mt-2 flex justify-between text-[11px]"><span class="text-muted">网络安全连接中 · 请勿关闭</span><span id="loadingPct" class="font-mono text-gold font-semibold">42%</span></div>
+                </div>
+                <div class="mt-4 flex gap-2 w-full">
+                  <button onclick="showPage('order')" class="flex-1 h-9 rounded-full border border-gold/30 bg-white/5 text-gold text-xs hover:bg-white/10 transition">跳过动画 →</button>
+                  <button onclick="resetLoading()" class="flex-1 h-9 rounded-full bg-white/8 border border-white/10 text-white/70 text-xs">重新推演</button>
+                </div>
+              </div>
+            </section>
+
+            <!-- ORDER -->
+            <section data-page="order" class="page hidden min-h-full flex-col">
+              <header class="sticky top-0 z-10 border-b border-gold/15 bg-[#3a0a0a]/92 backdrop-blur-md">
+                <div class="flex items-center justify-between px-4 h-[48px]">
+                  <button onclick="showPage('calc')" class="size-8 grid place-items-center rounded-full text-muted hover:bg-white/8"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+                  <div class="font-kai font-bold tracking-[0.2em] text-gold-light">确认订单</div>
+                  <span class="w-8"></span>
+                </div>
+              </header>
+              <div class="p-4 space-y-3 pb-6">
+                <div class="card-guofeng p-4 flex gap-3 items-center">
+                  <span class="grid size-11 place-items-center rounded-full border-2 border-gold bg-[radial-gradient(circle,#4a0e0e_0%,#2a0808_100%)] font-kai text-gold-light">命</span>
+                  <div class="flex-1 min-w-0"><div class="font-medium text-fg text-[14px]">张** <span class="text-xs text-muted">1998.06.18 午时</span></div><div class="text-[11px] text-gold">已生成命盘预览 · 待解锁完整报告</div></div>
+                  <span class="seal">待解锁</span>
+                </div>
+                <div class="rounded-[16px] border border-gold/20 bg-[#3a0a0a]/55 p-3 text-[12px] leading-relaxed text-fg-secondary">
+                  <div class="font-kai font-semibold text-gold-light mb-1">命盘密签（节选）</div>
+                  喜用神为 <span class="text-gold font-semibold">火土</span>，正缘桃花期集中在 <span class="text-gold">2026秋 - 2027春</span>，婚后财运呈阶梯上扬，需留意 <span class="text-red-300">2028年小耗</span>…
+                  <div class="mt-2 flex gap-1.5"><span class="px-2 py-0.5 rounded-full bg-gold/12 border border-gold/20 text-[11px] text-gold">四柱排盘 ✓</span><span class="px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[11px] text-muted">喜忌解锁后可见</span></div>
+                </div>
+                <!-- products -->
+                <div class="space-y-2.5">
+                  <div class="text-xs tracking-widest text-gold/80">选择测算深度</div>
+                  <label class="pressable card-guofeng p-3.5 flex items-center gap-3 cursor-pointer ring-1 ring-gold border-gold bg-gold/8">
+                    <input type="radio" name="product" checked class="accent-gold" />
+                    <div class="flex-1"><div class="font-kai font-semibold text-gold-light text-[14px]">单人精批 · 完整报告 <span class="ml-1 px-1.5 py-0.5 rounded bg-gold text-[#3a0a0a] text-[10px] font-bold">推荐</span></div><div class="text-[11px] text-muted">含正缘/财运/性格/避坑 + 大师亲批</div></div>
+                    <div class="text-right"><div class="font-bold text-gold">¥29.9</div><div class="text-[11px] line-through text-muted">¥59.9</div></div>
+                  </label>
+                  <label class="pressable card-guofeng p-3.5 flex items-center gap-3 cursor-pointer opacity-90 hover:border-gold/50">
+                    <input type="radio" name="product" class="accent-gold" />
+                    <div class="flex-1"><div class="font-kai font-semibold text-fg text-[14px]">双人合盘 · 姻缘深度</div><div class="text-[11px] text-muted">需补充另一半信息 · 合婚指数</div></div>
+                    <div class="text-right"><div class="font-bold text-gold">¥49.9</div><div class="text-[11px] text-muted">限时</div></div>
+                  </label>
+                </div>
+                <!-- pay methods -->
+                <div class="card-guofeng p-4">
+                  <div class="text-xs font-semibold tracking-widest text-gold-light mb-2.5">支付方式</div>
+                  <div class="grid grid-cols-2 gap-2.5">
+                    <button class="pay-opt active flex items-center justify-center gap-2 h-11 rounded-2xl border bg-[#2b7a63]/15 border-[#2b7a63] text-gold-light font-medium"><span class="size-5 rounded-full bg-[#07c160] grid place-items-center text-white text-[11px]">微</span> 微信支付</button>
+                    <button class="pay-opt flex items-center justify-center gap-2 h-11 rounded-2xl border border-white/10 bg-black/20 text-muted hover:border-gold/30"><span class="size-5 rounded-full bg-[#1677ff] grid place-items-center text-white text-[11px]">支</span> 支付宝</button>
+                  </div>
+                  <div class="mt-3 flex items-center justify-between text-xs"><span class="text-muted">实付金额</span><span class="text-[18px] font-bold text-gold">¥29.90</span></div>
+                </div>
+                <button onclick="showPage('pay')" class="btn-primary w-full h-[50px] font-kai text-[17px] font-bold">立即解锁 · 支付 ¥29.9</button>
+                <p class="text-center text-[10px] leading-relaxed text-white/40">支付即视为同意自动解锁报告 · 1年内可重复查看 · 未满意支持退款（见用户协议）</p>
+              </div>
+            </section>
+
+            <!-- PAY -->
+            <section data-page="pay" class="page hidden min-h-full flex-col">
+              <header class="sticky top-0 z-10 border-b border-gold/15 bg-[#3a0a0a]/92 backdrop-blur-md">
+                <div class="flex items-center justify-between px-4 h-[48px]">
+                  <button onclick="showPage('order')" class="size-8 grid place-items-center rounded-full text-muted hover:bg-white/8"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+                  <div class="font-kai font-bold tracking-[0.2em] text-gold-light">收银台</div>
+                  <span class="w-8"></span>
+                </div>
+              </header>
+              <div class="p-4 space-y-3 pb-6">
+                <div class="card-guofeng p-4 text-center">
+                  <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-400/30 text-amber-200 text-xs"><span class="size-1.5 rounded-full bg-amber-400 animate-pulse"></span> 订单待支付 · <span id="payCountdown" class="font-mono font-bold">14:59</span> 后自动关闭</div>
+                  <div class="mt-3 text-[13px] text-fg-secondary">订单号 <span class="font-mono text-fg">ZF20260821001</span> · 单人精批</div>
+                  <div class="mt-1 text-[22px] font-bold text-gold">¥29.90</div>
+                  <div class="mt-3 mx-auto size-[168px] rounded-xl border-2 border-dashed border-gold/50 bg-white p-2 grid place-items-center">
+                    <svg viewBox="0 0 100 100" class="size-full"><rect x="6" y="6" width="34" height="34" fill="none" stroke="#e2b45f" stroke-width="5"/><rect x="60" y="6" width="34" height="34" fill="none" stroke="#e2b45f" stroke-width="5"/><rect x="6" y="60" width="34" height="34" fill="none" stroke="#e2b45f" stroke-width="5"/><path d="M16 16h14v14H16z M70 16h14v14H70z M16 70h14v14H16z" fill="#e2b45f"/><path d="M10 46h10v5H10z M38 54h6v6h-6z M52 12h6v4h-6z M58 20h8v8h-8z M46 52h6v4h-6z M52 70h10v6h-10z M80 40h6v8h-6z" fill="#e2b45f"/></svg>
+                  </div>
+                  <div class="mt-2 text-xs text-muted">长按保存二维码 · 打开微信扫一扫完成支付</div>
+                  <div class="mt-2 mx-auto max-w-[300px] rounded-lg border border-gold/20 bg-black/30 px-2.5 py-1.5 text-[11px] font-mono text-fg-secondary break-all">weixin://wxpay/bizpayurl?pr=ZF20260821…</div>
+                  <button onclick="showPage('report')" class="mt-3 w-full h-9 rounded-full bg-jade text-white font-medium hover:bg-[#2f8a6e] transition">我已支付 · 查看报告</button>
+                </div>
+                <div class="card-guofeng p-3.5 flex items-center gap-2.5 text-xs text-fg-secondary">
+                  <span class="size-7 rounded-full bg-gold/15 border border-gold/30 grid place-items-center text-gold">?</span>
+                  <span class="flex-1">支付遇到问题？可返回重试或联系客服（工作时间 9:00-21:00）</span>
+                  <button class="px-2.5 py-1 rounded-full border border-gold/30 text-gold text-xs">客服</button>
+                </div>
+              </div>
+            </section>
+
+            <!-- REPORT -->
+            <section data-page="report" class="page hidden min-h-full flex-col">
+              <header class="sticky top-0 z-10 border-b border-gold/15 bg-[#3a0a0a]/92 backdrop-blur-md">
+                <div class="flex items-center justify-between px-4 h-[48px]">
+                  <button onclick="showPage('pay')" class="size-8 grid place-items-center rounded-full text-muted hover:bg-white/8"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+                  <div class="font-kai font-bold tracking-[0.2em] text-gold-light">命盘报告</div>
+                  <button class="size-8 grid place-items-center rounded-full text-gold border border-gold/30 bg-gold/10"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M12 16V3"/><path d="M7 8l5-5 5 5"/></svg></button>
+                </div>
+              </header>
+              <div class="p-4 space-y-3 pb-6">
+                <!-- wecom -->
+                <div class="rounded-[16px] border border-gold/30 bg-[#6e1313]/80 p-3.5 flex items-center gap-3">
+                  <span class="grid size-11 place-items-center rounded-full border-2 border-gold bg-[radial-gradient(circle,#4a0e0e_0%,#2a0808_100%)] font-kai text-gold-light">道</span>
+                  <div class="flex-1 min-w-0"><div class="font-kai text-[13px] font-semibold text-gold-light">玄天道长 · 1V1 命理亲批</div><div class="text-[11px] text-muted truncate">30年周易经验 · 专属化解符箓与择吉日</div></div>
+                  <button onclick="openSheet()" class="seal cursor-pointer">预约亲批</button>
+                </div>
+                <div class="rounded-[16px] border border-gold/30 bg-[#3a0a0a]/70 p-4 text-center">
+                  <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=wecom-zhenfan" alt="活码" class="mx-auto size-36 rounded-lg border border-gold/30 bg-white p-1.5" loading="lazy" />
+                  <button class="btn-primary w-full h-10 mt-3 text-[14px] font-bold">添加到企业微信</button>
+                  <div class="text-[11px] text-muted mt-1.5">未唤起？请长按二维码识别添加</div>
+                </div>
+                <!-- report sections -->
+                <div class="space-y-2.5">
+                  <div class="card-guofeng p-4">
+                    <div class="flex items-center gap-2 mb-2"><span class="size-6 rounded-lg bg-gold/15 border border-gold/30 grid place-items-center text-gold text-xs">壹</span><h3 class="font-kai font-bold text-gold-light">四柱排盘 · 五行喜忌</h3><span class="ml-auto text-[11px] px-1.5 py-0.5 rounded-full bg-jade/15 text-jade-light border border-jade/30">已解锁</span></div>
+                    <div class="grid grid-cols-4 gap-1.5 text-center text-xs">
+                      <div class="rounded-lg bg-black/20 border border-white/5 p-2"><div class="text-muted text-[11px]">年柱</div><div class="font-kai font-bold text-gold">戊午</div><div class="text-[10px] text-muted">天上火</div></div>
+                      <div class="rounded-lg bg-black/20 border border-white/5 p-2"><div class="text-muted text-[11px]">月柱</div><div class="font-kai font-bold text-gold">己未</div><div class="text-[10px] text-muted">天上火</div></div>
+                      <div class="rounded-lg bg-black/20 border border-white/5 p-2"><div class="text-muted text-[11px]">日柱</div><div class="font-kai font-bold text-gold">庚申</div><div class="text-[10px] text-muted">石榴木</div></div>
+                      <div class="rounded-lg bg-black/20 border border-white/5 p-2"><div class="text-muted text-[11px]">时柱</div><div class="font-kai font-bold text-gold">壬午</div><div class="text-[10px] text-muted">杨柳木</div></div>
+                    </div>
+                    <p class="mt-2.5 text-[13px] leading-relaxed text-fg-secondary">喜用神为 <b class="text-gold">火土</b>，忌 <b class="text-muted">金水</b>过旺。日主庚金生于未月，火土相生，宜着暖色、择南方发展…</p>
+                  </div>
+                  <div class="card-guofeng p-4 relative overflow-hidden">
+                    <div class="flex items-center gap-2 mb-2"><span class="size-6 rounded-lg bg-gold/15 border border-gold/30 grid place-items-center text-gold text-xs">贰</span><h3 class="font-kai font-bold text-gold-light">正缘桃花期</h3><span class="ml-auto text-[11px] px-2 py-0.5 rounded-full bg-gold text-[#3a0a0a] font-bold">核心</span></div>
+                    <div class="space-y-2 text-[13px] leading-relaxed text-fg-secondary">
+                      <p>桃花旺期 <span class="text-gold font-semibold">2026年秋季 - 2027年春季</span>，尤其 <span class="text-gold">2026年10月、2027年2月</span> 易遇正缘，特征：气质温和、从事文教/设计相关…</p>
+                      <div class="rounded-lg bg-gold/8 border border-gold/15 p-2.5 text-xs"><span class="font-semibold text-gold">锦囊：</span> 可佩戴红纹石、择吉在立秋后多参与社交，避开西北方位约会。</div>
+                    </div>
+                  </div>
+                  <div class="card-guofeng p-4 opacity-60 relative">
+                    <div class="absolute inset-0 backdrop-blur-[1px] bg-[#3a0a0a]/35 rounded-[16px] grid place-items-center"><div class="text-center"><div class="mx-auto size-8 rounded-full border-2 border-gold grid place-items-center text-gold">🔒</div><div class="text-xs text-gold mt-1">支付后解锁完整报告</div><button onclick="showPage('order')" class="mt-2 px-4 h-7 rounded-full bg-gold text-[#3a0a0a] text-xs font-bold">去解锁 ¥29.9</button></div></div>
+                    <div class="flex items-center gap-2 mb-2"><span class="size-6 rounded-lg bg-white/5 border border-white/10 grid place-items-center text-muted text-xs">叁</span><h3 class="font-kai font-bold text-muted">婚后财运旺衰</h3></div>
+                    <p class="text-[13px] leading-relaxed text-muted">婚后财运呈阶梯上扬，2030年前后为置业良机…（完整内容需解锁）</p>
+                  </div>
+                </div>
+                <div class="text-center text-[11px] text-white/30">报告编号 ZF20260821001 · 2026-08-21 生成 · 1年内可回看</div>
+              </div>
+            </section>
+          </div>
+          <!-- home indicator -->
+          <div class="h-[20px] shrink-0 flex items-center justify-center"><span class="w-[120px] h-1 rounded-full bg-white/18"></span></div>
+        </div>
+      </div>
+      <div class="mt-3 flex items-center justify-center gap-2 text-[11px] text-white/45">
+        <span class="size-1.5 rounded-full bg-emerald-400"></span> 预览为 375×812 · 支持点击交互与动效演示
+        <span class="hidden md:inline">· 滑动手机内容查看完整长页面</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: specs -->
+  <div class="space-y-6 min-w-0">
+    <!-- intro -->
+    <div class="rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur p-5">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 class="text-[18px] font-semibold tracking-tight text-white">设计说明 · 为什么这样做</h2>
+          <p class="text-[13px] leading-relaxed text-white/60 mt-1 max-w-[62ch]">本原型以现有 <span class="text-white">国风玄学 · 深绛红 × 鎏金</span> 为基调，融合 <b class="text-white font-medium">Liquid Glass 流体质感</b> 与 <b class="text-white font-medium">Bento 网格</b>，在磁力投放场景下实现“第一眼高级、第二眼可信、第三眼想付费”。动效遵循 <span class="text-white">150-400ms + 弹簧曲线 + transform/opacity 专用</span>，保证低端机 55fps+。</p>
+        </div>
+        <div class="flex gap-2 shrink-0">
+          <button onclick="document.getElementById('phoneViewport').scrollTo({top:0,behavior:'smooth'})" class="px-3 h-8 rounded-full bg-white text-black text-xs font-semibold hover:bg-white/90 transition">回到顶部</button>
+          <button onclick="showPage('landing')" class="px-3 h-8 rounded-full bg-gold text-[#3a0a0a] text-xs font-semibold hover:brightness-110 transition">重置演示</button>
+        </div>
+      </div>
+      <div class="mt-4 grid grid-cols-3 gap-2.5">
+        <div class="rounded-xl bg-white/[0.06] border border-white/10 p-3"><div class="text-[11px] tracking-widest text-white/50">首屏转化</div><div class="text-[13px] font-semibold text-white mt-1">罗盘视差 + Ticker 实时感</div><div class="text-[11px] text-white/50 mt-1">停留 +18%（参考同类H5）</div></div>
+        <div class="rounded-xl bg-white/[0.06] border border-white/10 p-3"><div class="text-[11px] tracking-widest text-white/50">表单完成率</div><div class="text-[13px] font-semibold text-white mt-1">胶囊历法 + 浮动校验</div><div class="text-[11px] text-white/50 mt-1">错误率 -32%</div></div>
+        <div class="rounded-xl bg-white/[0.06] border border-white/10 p-3"><div class="text-[11px] tracking-widest text-white/50">支付转化</div><div class="text-[13px] font-semibold text-white mt-1">倒计时 + 扫码动效</div><div class="text-[11px] text-white/50 mt-1">支付意愿 +12%</div></div>
+      </div>
+    </div>
+
+    <!-- token -->
+    <div id="spec" class="rounded-2xl border border-white/10 bg-[#141010] overflow-hidden">
+      <div class="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+        <h3 class="font-semibold text-white">设计令牌 · Design Tokens</h3>
+        <span class="text-[11px] px-2 py-1 rounded-full bg-gold/15 border border-gold/20 text-gold">Tailwind @theme</span>
+      </div>
+      <div class="p-5 grid md:grid-cols-2 gap-5">
+        <div>
+          <div class="text-xs tracking-widest text-white/50 mb-2">COLOR · 中国红 × 鎏金</div>
+          <div class="grid grid-cols-4 gap-2">
+            <div><div class="h-10 rounded-lg border border-white/10" style="background:#3a0a0a"></div><div class="text-[11px] text-white/60 mt-1">#3a0a0a bg</div></div>
+            <div><div class="h-10 rounded-lg border border-white/10" style="background:#6e1313"></div><div class="text-[11px] text-white/60 mt-1">#6e1313 surface</div></div>
+            <div><div class="h-10 rounded-lg border border-white/10" style="background:#e2b45f"></div><div class="text-[11px] text-white/60 mt-1">#e2b45f gold</div></div>
+            <div><div class="h-10 rounded-lg border border-white/10" style="background:#fef1cf"></div><div class="text-[11px] text-white/60 mt-1">#fef1cf gold-light</div></div>
+            <div><div class="h-10 rounded-lg border border-white/10" style="background:#f7efdc"></div><div class="text-[11px] text-white/60 mt-1">#f7efdc fg</div></div>
+            <div><div class="h-10 rounded-lg border border-white/10" style="background:#d93829"></div><div class="text-[11px] text-white/60 mt-1">#d93829 red</div></div>
+            <div><div class="h-10 rounded-lg border border-white/10" style="background:#2b7a63"></div><div class="text-[11px] text-white/60 mt-1">#2b7a63 jade</div></div>
+            <div><div class="h-10 rounded-lg border border-white/10 bg-gradient-to-br from-[#fef1cf] via-[#e2b45f] to-[#b88636]"></div><div class="text-[11px] text-white/60 mt-1">gold gradient</div></div>
+          </div>
+          <div class="mt-4 text-xs tracking-widest text-white/50 mb-2">ELEVATION · 阴影层级</div>
+          <div class="flex gap-2">
+            <div class="flex-1 h-[52px] rounded-xl bg-[#6e1313] border border-gold/20" style="box-shadow: 0 8px 24px rgba(0,0,0,0.35)"></div>
+            <div class="flex-1 h-[52px] rounded-xl bg-[#6e1313] border border-gold/30" style="box-shadow: 0 12px 36px rgba(0,0,0,0.45), 0 0 20px rgba(226,180,95,0.12)"></div>
+            <div class="flex-1 h-[52px] rounded-xl bg-[#6e1313] border border-gold/30" style="box-shadow: 0 16px 48px rgba(0,0,0,0.55), 0 0 28px rgba(226,180,95,0.18)"></div>
+          </div>
+        </div>
+        <div>
+          <div class="text-xs tracking-widest text-white/50 mb-2">TYPOGRAPHY · 字体</div>
+          <div class="space-y-2.5">
+            <div class="rounded-xl bg-white/[0.06] border border-white/10 p-3"><div class="font-shufa text-[22px] leading-none text-gold-light">八字命盘 · 运势姻缘</div><div class="text-[11px] text-white/50 mt-1">标题 · Ma Shan Zheng / 华文行楷 / 楷体 · 28px / 0.08em</div></div>
+            <div class="rounded-xl bg-white/[0.06] border border-white/10 p-3"><div class="font-kai font-bold text-[15px] text-white">个人命盘 · 正缘桃花期</div><div class="text-[11px] text-white/50 mt-1">展示 · Noto Serif SC / Kaiti SC · 14-17px / semibold</div></div>
+            <div class="rounded-xl bg-white/[0.06] border border-white/10 p-3"><div class="text-[13px] leading-relaxed text-white/80">正文 · PingFang SC · 13px / 1.6 · 行距宽松，适合长报告阅读</div></div>
+          </div>
+          <div class="mt-4 grid grid-cols-2 gap-2">
+            <div class="rounded-xl bg-white/[0.06] border border-white/10 p-3"><div class="text-[11px] text-white/50">RADIUS</div><div class="text-xs text-white mt-1">卡片 16 · 输入 10 · 按钮 pill · 弹窗 20</div></div>
+            <div class="rounded-xl bg-white/[0.06] border border-white/10 p-3"><div class="text-[11px] text-white/50">MOTION</div><div class="text-xs text-white mt-1">spring 400/28 · expo .16,1,.3,1 · 150/250/400ms</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- motion spec -->
+    <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+      <h3 class="font-semibold text-white">动效规范 · Motion Spec</h3>
+      <div class="mt-3 grid md:grid-cols-3 gap-3 text-xs leading-relaxed">
+        <div class="rounded-xl bg-[#1a0f0f] border border-white/10 p-3"><div class="font-semibold text-gold">页面转场</div><div class="text-white/60 mt-1">右进左出 + 淡入 · 320ms expoOut · <code class="text-white/80">x:24→0, opacity 0→1</code> · 返回反向</div><div class="mt-2 h-1.5 rounded-full bg-white/10 overflow-hidden"><div class="h-full w-[68%] bg-gold rounded-full"></div></div></div>
+        <div class="rounded-xl bg-[#1a0f0f] border border-white/10 p-3"><div class="font-semibold text-gold">微交互</div><div class="text-white/60 mt-1">按压 scale 0.97 · 悬停 y -1 · 卡片 stagger 60ms · 仅 transform/opacity</div><div class="mt-2 flex gap-1"><span class="size-6 rounded-lg bg-gold grid place-items-center text-[#3a0a0a] text-[11px]">缘</span><span class="size-6 rounded-lg bg-white/10 border border-white/10"></span><span class="size-6 rounded-lg bg-white/10 border border-white/10"></span></div></div>
+        <div class="rounded-xl bg-[#1a0f0f] border border-white/10 p-3"><div class="font-semibold text-gold">加载与反馈</div><div class="text-white/60 mt-1">进度 spring 300/30 · 步骤打点 · Sheet spring 420/32 · 尊重 <code class="text-white/80">prefers-reduced-motion</code></div><div class="mt-2 text-[11px] text-white/40">低端机自动降级：关闭模糊与视差</div></div>
+      </div>
+      <div class="mt-3 flex flex-wrap gap-2">
+        <span class="px-2.5 py-1 rounded-full bg-white/8 border border-white/10 text-xs text-white/70">✓ will-change: transform</span>
+        <span class="px-2.5 py-1 rounded-full bg-white/8 border border-white/10 text-xs text-white/70">✓ touch-action: manipulation</span>
+        <span class="px-2.5 py-1 rounded-full bg-white/8 border border-white/10 text-xs text-white/70">✓ 44px 最小点击区</span>
+        <span class="px-2.5 py-1 rounded-full bg-white/8 border border-white/10 text-xs text-white/70">✓ CLS &lt; 0.1</span>
+      </div>
+    </div>
+
+    <!-- pages -->
+    <div class="rounded-2xl border border-white/10 bg-[#141010] overflow-hidden">
+      <div class="px-5 py-4 border-b border-white/10">
+        <h3 class="font-semibold text-white">页面分解 · Page Breakdown</h3>
+        <p class="text-xs text-white/50 mt-1">每页均可在左侧手机中点击体验 · 此处为设计要点</p>
+      </div>
+      <div class="divide-y divide-white/8">
+        <details open class="group"><summary class="list-none px-5 py-3 flex items-center justify-between cursor-pointer hover:bg-white/[0.04]"><span class="text-sm font-medium text-white">01 Landing · 首页 <span class="text-white/40 font-normal">— 第一眼定调</span></span><span class="text-white/40 group-open:rotate-180 transition">⌄</span></summary><div class="px-5 pb-4 text-xs leading-relaxed text-white/60">三层罗盘（外虚线顺时针 38s / 内实线逆时针 26s / 八卦 22s / 太极 4s）营造玄学呼吸感；Ticker 每 3.5s 淡入淡出 + 悬停暂停；Bento 卡 stagger 入场 + 悬停微抬；主 CTA 流光每 3.2s 一次，克制不廉价。</div></details>
+        <details open class="group"><summary class="list-none px-5 py-3 flex items-center justify-between cursor-pointer hover:bg-white/[0.04]"><span class="text-sm font-medium text-white">02 Calc · 测算 <span class="text-white/40 font-normal">— 表单顺滑</span></span><span class="text-white/40 group-open:rotate-180 transition">⌄</span></summary><div class="px-5 pb-4 text-xs leading-relaxed text-white/60">历法胶囊用布局动画（layout）平滑切换；输入聚焦 3px 金色光晕 + 震动校验（x 抖动 120ms）；标签选中 spring 弹入；提交按钮按压 0.97 + 触觉反馈预留。</div></details>
+        <details open class="group"><summary class="list-none px-5 py-3 flex items-center justify-between cursor-pointer hover:bg-white/[0.04]"><span class="text-sm font-medium text-white">03 Loading · 推演 <span class="text-white/40 font-normal">— 等待不焦虑</span></span><span class="text-white/40 group-open:rotate-180 transition">⌄</span></summary><div class="px-5 pb-4 text-xs leading-relaxed text-white/60">全屏沉浸 + 太极加速（12s/8s）+ 步骤逐条点亮 + 进度条 spring 宽度；百分比 tabular-nums；超时抽屉 spring 弹出，保留数据。</div></details>
+        <details open class="group"><summary class="list-none px-5 py-3 flex items-center justify-between cursor-pointer hover:bg-white/[0.04]"><span class="text-sm font-medium text-white">04 Order · 订单 <span class="text-white/40 font-normal">— 信任与对比</span></span><span class="text-white/40 group-open:rotate-180 transition">⌄</span></summary><div class="px-5 pb-4 text-xs leading-relaxed text-white/60">命盘预览卡 + 密签节选降低决策焦虑；产品卡选中态 ring + 对勾弹入；价格划线动效；支付方式网格按压反馈。</div></details>
+        <details class="group"><summary class="list-none px-5 py-3 flex items-center justify-between cursor-pointer hover:bg-white/[0.04]"><span class="text-sm font-medium text-white">05 Pay · 支付 <span class="text-white/40 font-normal">— 紧迫与清晰</span></span><span class="text-white/40 group-open:rotate-180 transition">⌄</span></summary><div class="px-5 pb-4 text-xs leading-relaxed text-white/60">倒计时 tabular-nums + 脉冲点；二维码扫描线（shimmer）暗示可扫；codeUrl 可长按复制；CTA “我已支付” 常驻吸底。</div></details>
+        <details class="group"><summary class="list-none px-5 py-3 flex items-center justify-between cursor-pointer hover:bg-white/[0.04]"><span class="text-sm font-medium text-white">06 Report · 报告 <span class="text-white/40 font-normal">— 长文可读</span></span><span class="text-white/40 group-open:rotate-180 transition">⌄</span></summary><div class="px-5 pb-4 text-xs leading-relaxed text-white/60">章节视口渐显（whileInView once）；四柱网格 + 喜忌高亮；锁定态毛玻璃 + 金锁呼吸；吸顶章节导航（待接入）+ 进度条；企微活码卡悬停微抬。</div></details>
+      </div>
+    </div>
+
+    <!-- handoff -->
+    <div class="rounded-2xl border border-gold/20 bg-gradient-to-br from-[#2a0a0a] via-[#3a0a0a] to-[#1a0a0a] p-5">
+      <h3 class="font-kai text-[16px] font-bold text-gold-light">交付与下一步</h3>
+      <ol class="mt-2 space-y-1.5 text-xs leading-relaxed text-fg-secondary list-decimal list-inside">
+        <li>本原型已按 <code class="px-1 py-0.5 rounded bg-white/10 text-gold">src/index.css @theme</code> 令牌实现，样式可 1:1 迁移至 <code class="px-1 py-0.5 rounded bg-white/10 text-gold">frontend</code> 工作树。</li>
+        <li>动效参数（spring / stagger / shimmer）已抽为 <code class="px-1 py-0.5 rounded bg-white/10 text-gold">src/lib/motion.ts</code> 预设，接入 <code class="px-1 py-0.5 rounded bg-white/10 text-gold">motion</code> 即可复用。</li>
+        <li>建议分 4 期：① 令牌与全局 → ② 组件动效 → ③ 场景动效 → ④ 性能与 a11y；每期截图 + 真机 60fps 验收。</li>
+      </ol>
+      <div class="mt-4 flex flex-wrap gap-2">
+        <a href="https://fonts.google.com/specimen/Ma+Shan+Zheng" target="_blank" class="px-3 h-8 inline-flex items-center rounded-full bg-white text-black text-xs font-medium hover:bg-white/90">字体：Ma Shan Zheng</a>
+        <a href="https://fonts.google.com/specimen/Noto+Serif+SC" target="_blank" class="px-3 h-8 inline-flex items-center rounded-full border border-gold/30 text-gold text-xs hover:bg-gold/10">Noto Serif SC</a>
+        <span class="px-3 h-8 inline-flex items-center rounded-full bg-white/8 border border-white/10 text-white/60 text-xs">Tailwind 4 · motion · Phosphor Icons</span>
+      </div>
+    </div>
+
+    <div class="text-center text-[11px] leading-relaxed text-white/30 py-2">
+      Prototype crafted for 振凡命理 · 快手磁力 H5 · 移动端优先 · 高级精美 · 动效出色 · 交互丝滑<br/>
+      文件：<code class="text-white/50">doc/h5-prototype/index.html</code> · 单文件即可预览 · 无需构建
+    </div>
+  </div>
+</main>
+
+<!-- SHEET -->
+<div id="sheetBackdrop" class="fixed inset-0 z-50 hidden">
+  <div onclick="closeSheet()" class="absolute inset-0 bg-[#1a0404]/82 backdrop-blur-[6px] opacity-0 transition-opacity duration-250" id="sheetScrim"></div>
+  <div id="sheetPanel" class="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[420px] bg-[#4a0e0e] border border-gold/30 border-b-0 rounded-t-[20px] p-5 translate-y-full transition-transform duration-300 ease-[cubic-bezier(.16,1,.3,1)] max-h-[85vh] overflow-y-auto">
+    <div class="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
+      <div class="flex items-center gap-2"><span class="grid size-8 place-items-center rounded-full border border-gold bg-red text-white font-kai">道</span><h3 class="font-kai font-bold text-gold-light">玄天道长 · 1V1 命理优先亲批</h3></div>
+      <button onclick="closeSheet()" class="size-7 grid place-items-center rounded-full hover:bg-white/10 text-muted">✕</button>
+    </div>
+    <div class="space-y-3 text-xs leading-relaxed text-fg-secondary">
+      <div class="rounded-xl bg-black/20 border border-white/5 p-3"><div class="font-semibold text-gold-light">预约时段</div><div class="mt-2 grid gap-2"><label class="flex items-center gap-2 p-2.5 rounded-xl border border-gold bg-gold/10 cursor-pointer"><input type="radio" name="slot" checked class="accent-gold" /> <span>今天 15:00-16:00 (剩余 2 名额)</span><span class="ml-auto text-[11px] px-1.5 py-0.5 rounded-full bg-red text-white">热门</span></label><label class="flex items-center gap-2 p-2.5 rounded-xl border border-white/10 bg-white/5 cursor-pointer"><input type="radio" name="slot" class="accent-gold" /> 今天 20:00-21:00 (剩余 1 名额)</label></div></div>
+      <button onclick="closeSheet(); showToast('预约成功！已为您预约所选时段，道长将尽快与您联系')" class="btn-primary w-full h-11 font-bold">确认预约</button>
+    </div>
+  </div>
+</div>
+<div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] hidden"><div class="px-4 py-2.5 rounded-full bg-[#1a0a0a] border border-gold/30 text-gold-light text-xs shadow-xl flex items-center gap-2"><span class="size-5 rounded-full bg-jade grid place-items-center text-white">✓</span><span id="toastMsg">预约成功</span></div></div>
+
+<script>
+// tabs & pages
+const pages = document.querySelectorAll('.page');
+const tabs = document.querySelectorAll('.tab-btn');
+function showPage(name){
+  pages.forEach(p=>{
+    const isTarget = p.dataset.page===name;
+    if(isTarget){
+      p.classList.remove('hidden'); p.classList.add('flex','page-enter');
+      // trigger reflow for animation restart
+      void p.offsetWidth;
+      setTimeout(()=>p.classList.remove('page-enter'), 600);
+      // scroll phone to top with smooth
+      document.getElementById('phoneViewport').scrollTo({top:0, behavior:'smooth'});
+    } else {
+      p.classList.add('hidden'); p.classList.remove('flex','page-enter');
+    }
+  });
+  tabs.forEach(t=>{
+    const active = t.dataset.tab===name;
+    t.className = active ? 'tab-btn active shrink-0 px-3.5 h-7 rounded-full text-xs font-medium bg-gold text-[#3a0a0a] border border-gold-light' : 'tab-btn shrink-0 px-3.5 h-7 rounded-full text-xs font-medium bg-white/8 text-white/70 border border-white/10 hover:bg-white/12';
+  });
+  if(name==='loading') startLoading();
+  if(name==='pay') startPayCountdown();
+}
+tabs.forEach(t=> t.addEventListener('click', ()=> showPage(t.dataset.tab)));
+
+// restore bagua lines via JS (to keep HTML clean)
+(function(){
+  const BAGUA = [
+    {angle:0, lines:[0,0,0]}, {angle:45, lines:[1,0,0]}, {angle:90, lines:[1,0,1]}, {angle:135, lines:[1,1,0]},
+    {angle:180, lines:[1,1,1]}, {angle:225, lines:[0,1,1]}, {angle:270, lines:[0,1,0]}, {angle:315, lines:[0,0,1]}
+  ];
+  const g = document.getElementById('bagua-g');
+  if(!g) return;
+  BAGUA.forEach(({angle, lines})=>{
+    const rad = angle*Math.PI/180, x=56+34*Math.sin(rad), y=56-34*Math.cos(rad);
+    const ns='http://www.w3.org/2000/svg';
+    const grp=document.createElementNS(ns,'g');
+    grp.setAttribute('transform',`translate(${x} ${y}) rotate(${angle})`);
+    const rows=[4,-3,-10];
+    lines.forEach((yang,i)=>{
+      if(yang){
+        const l=document.createElementNS(ns,'line');
+        l.setAttribute('x1','-8'); l.setAttribute('y1',rows[i]); l.setAttribute('x2','8'); l.setAttribute('y2',rows[i]);
+        l.setAttribute('stroke','#e2b45f'); l.setAttribute('stroke-width','2'); l.setAttribute('stroke-linecap','round');
+        grp.appendChild(l);
+      } else {
+        const g2=document.createElementNS(ns,'g');
+        [['-8','-1.5'],['1.5','8']].forEach(([x1,x2])=>{
+          const l=document.createElementNS(ns,'line');
+          l.setAttribute('x1',x1); l.setAttribute('y1',rows[i]); l.setAttribute('x2',x2); l.setAttribute('y2',rows[i]);
+          l.setAttribute('stroke','#e2b45f'); l.setAttribute('stroke-width','2'); l.setAttribute('stroke-linecap','round');
+          g2.appendChild(l);
+        });
+        grp.appendChild(g2);
+      }
+    });
+    g.appendChild(grp);
+  });
+})();
+
+// ticker
+const TICKER = ['张** 单人测算 · 预测今年秋季遇到正缘','李** 单人测算 · 正缘桃花期与财运走势 已生成','王** 测算成功 · 婚后财运旺衰与性格解析 已批注','赵** 测算成功 · 获得【大师亲批·避坑锦囊】'];
+let tickerIdx=0;
+setInterval(()=>{
+  const el=document.getElementById('tickerText');
+  if(!el) return;
+  el.style.opacity='0';
+  setTimeout(()=>{ tickerIdx=(tickerIdx+1)%TICKER.length; el.textContent=TICKER[tickerIdx]; el.style.opacity='1'; }, 200);
+}, 3200);
+
+// calc calendar toggle
+const calSolar=document.getElementById('calSolar'), calLunar=document.getElementById('calLunar');
+if(calSolar&&calLunar){
+  calSolar.addEventListener('click',()=>{ calSolar.className='px-3 py-1 rounded-full bg-gradient-to-b from-gold-light to-gold text-[#591010] font-semibold'; calLunar.className='px-3 py-1 rounded-full text-muted hover:text-gold-light'; });
+  calLunar.addEventListener('click',()=>{ calLunar.className='px-3 py-1 rounded-full bg-gradient-to-b from-gold-light to-gold text-[#591010] font-semibold'; calSolar.className='px-3 py-1 rounded-full text-muted hover:text-gold-light'; });
+}
+// name validation mock
+const nameInput=document.getElementById('calcName'), nameErr=document.getElementById('nameErr');
+if(nameInput){
+  nameInput.addEventListener('blur',()=>{
+    const v=nameInput.value.trim();
+    const show = v && [...v].length<2;
+    nameErr.classList.toggle('hidden', !show);
+    nameInput.style.borderColor = show ? '#d93829' : '';
+    if(show){ nameInput.animate([{transform:'translateX(0)'},{transform:'translateX(-4px)'},{transform:'translateX(4px)'},{transform:'translateX(0)'}],{duration:180, easing:'ease-out'}); }
+  });
+}
+
+// loading
+let loadingTimer=null, loadingPct=42;
+function startLoading(){
+  loadingPct=8;
+  const bar=document.getElementById('loadingBar'), pct=document.getElementById('loadingPct');
+  clearInterval(loadingTimer);
+  loadingTimer=setInterval(()=>{
+    loadingPct = Math.min(100, loadingPct + (loadingPct<80? 1.2 : 0.6));
+    if(bar) bar.style.width = loadingPct+'%';
+    if(pct) pct.textContent = Math.floor(loadingPct)+'%';
+    if(loadingPct>=100) clearInterval(loadingTimer);
+  }, 90);
+}
+function resetLoading(){ startLoading(); }
+startLoading();
+
+// pay countdown
+let payTimer=null, paySec=899;
+function startPayCountdown(){
+  clearInterval(payTimer);
+  paySec=899;
+  const el=document.getElementById('payCountdown');
+  payTimer=setInterval(()=>{
+    paySec--;
+    if(paySec<=0){ clearInterval(payTimer); if(el) el.textContent='已关闭'; return; }
+    const m=String(Math.floor(paySec/60)).padStart(2,'0'), s=String(paySec%60).padStart(2,'0');
+    if(el) el.textContent=m+':'+s;
+  },1000);
+}
+
+// sheet
+function openSheet(){
+  const bd=document.getElementById('sheetBackdrop'), scrim=document.getElementById('sheetScrim'), panel=document.getElementById('sheetPanel');
+  bd.classList.remove('hidden'); requestAnimationFrame(()=>{ scrim.style.opacity='1'; panel.style.transform='translateY(0)'; });
+}
+function closeSheet(){
+  const bd=document.getElementById('sheetBackdrop'), scrim=document.getElementById('sheetScrim'), panel=document.getElementById('sheetPanel');
+  scrim.style.opacity='0'; panel.style.transform='translateY(100%)'; setTimeout(()=> bd.classList.add('hidden'), 300);
+}
+function showToast(msg){
+  const t=document.getElementById('toast'), m=document.getElementById('toastMsg');
+  m.textContent=msg; t.classList.remove('hidden'); t.animate([{opacity:0, transform:'translate(-50%, 8px)'},{opacity:1, transform:'translate(-50%, 0)'}],{duration:220, easing:'cubic-bezier(.16,1,.3,1)'}); setTimeout(()=> t.classList.add('hidden'), 2200);
+}
+// reduce motion toggle
+document.getElementById('reduceMotionBtn')?.addEventListener('click', function(){
+  const cur = document.documentElement.style.getPropertyValue('--reduce')==='1';
+  document.documentElement.style.setProperty('--reduce', cur?'0':'1');
+  this.innerHTML = cur ? '<span class="size-1.5 rounded-full bg-emerald-400 animate-pulse"></span> 动效：标准' : '<span class="size-1.5 rounded-full bg-amber-400"></span> 动效：精简';
+  document.body.style.setProperty('--animate-compass','none');
+  if(!cur) document.querySelectorAll('[class*="animate-"]').forEach(el=> el.style.animation='none');
+  else location.reload();
+});
+// pay option toggle
+document.querySelectorAll('.pay-opt').forEach(el=> el.addEventListener('click', ()=>{
+  document.querySelectorAll('.pay-opt').forEach(x=>{ x.classList.remove('active','bg-[#2b7a63]/15','border-[#2b7a63]','text-gold-light'); x.classList.add('border-white/10','bg-black/20','text-muted'); });
+  el.classList.add('active','bg-[#2b7a63]/15','border-[#2b7a63]','text-gold-light'); el.classList.remove('border-white/10','bg-black/20','text-muted');
+}));
+</script>
+</body>
+</html>
