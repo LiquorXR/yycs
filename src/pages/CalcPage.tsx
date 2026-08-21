@@ -114,29 +114,22 @@ function CalcLoading({
         </span>
       </div>
 
-      {/* 太极罗盘 */}
-      <div className="relative mx-auto my-2.5 flex size-[180px] items-center justify-center">
+      {/* 太极罗盘 — 严格原型 176/128/68 */}
+      <div className="relative mx-auto my-5 flex size-[176px] items-center justify-center">
         <div
           aria-hidden="true"
-          className="absolute size-[180px] animate-compass-fast rounded-full border-2 border-dashed border-border-gold"
+          className="absolute size-[176px] animate-compass rounded-full border-2 border-dashed border-gold/60"
         />
         <div
           aria-hidden="true"
-          className="absolute size-[130px] animate-reverse-fast rounded-full border-[1.5px] border-gold shadow-[0_0_15px_rgba(226,180,95,0.4)]"
+          className="absolute size-[128px] animate-reverse rounded-full border-[1.5px] border-gold shadow-[0_0_15px_rgba(226,180,95,0.4)]"
         />
-        <div
-          className="relative size-[70px] animate-taiji rounded-full border-2 border-gold shadow-[0_0_20px_rgba(226,180,95,0.5)]"
-          style={{ background: 'conic-gradient(#f8ebdb 0deg 180deg, #100806 180deg 360deg)' }}
-        >
-          <span
-            aria-hidden="true"
-            className="absolute top-0 left-[25%] size-[35px] rounded-full bg-[#f8ebdb] shadow-[inset_0_0_0_6px_#100806]"
-          />
-          <span
-            aria-hidden="true"
-            className="absolute bottom-0 left-[25%] size-[35px] rounded-full bg-[#100806] shadow-[inset_0_0_0_6px_#f8ebdb]"
-          />
-        </div>
+        <img
+          src="/taiji.svg"
+          alt="太极"
+          className="size-[68px] animate-taiji rounded-full border-2 border-gold bg-white object-contain p-[1px] shadow-[0_0_18px_rgba(226,180,95,0.45)]"
+          style={{ filter: 'drop-shadow(0 0 6px rgba(226,180,95,0.35))' }}
+        />
       </div>
 
       {/* 实时演算状态日志 */}
@@ -556,17 +549,16 @@ function CalcPage() {
 
   return (
     <main className={`fx-paper fx-cloud min-h-screen ${result ? 'pb-28' : 'pb-6'}`}>
-      {/* 顶部导航 */}
-      <div className="border-b border-border px-5 pt-3 pb-2">
-        <div className="flex items-center justify-between">
+      <header className="sticky top-0 z-10 border-b border-gold/15 bg-[#3a0a0a]/92 backdrop-blur-md">
+        <div className="flex items-center justify-between px-4 h-[48px]">
           <Link
             to="/"
             aria-label="返回首页"
-            className="flex items-center gap-1 text-[13px] text-muted transition-colors hover:text-gold"
+            className="grid size-8 place-items-center rounded-full text-muted transition-colors hover:bg-white/8 hover:text-gold"
           >
             <svg
               viewBox="0 0 24 24"
-              className="size-4"
+              className="size-[18px]"
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
@@ -576,14 +568,18 @@ function CalcPage() {
             >
               <path d="M15 18l-6-6 6-6" />
             </svg>
-            <span>返回</span>
           </Link>
-          <h2 className="font-kai text-[17px] text-gold-light">生辰八字排盘</h2>
+          <div className="flex items-center gap-1.5 font-kai text-[15px] font-bold tracking-[0.2em] text-gold-light">
+            <span className="h-px w-6 bg-gold/40" aria-hidden="true" />
+            填写命盘
+            <span className="h-px w-6 bg-gold/40" aria-hidden="true" />
+          </div>
+          <span className="w-8" aria-hidden="true" />
         </div>
-      </div>
+      </header>
 
       <form
-        className="flex flex-col gap-4 px-5 pt-4"
+        className="flex flex-col gap-3 p-4 pb-6 page-enter"
         onSubmit={(e) => {
           e.preventDefault()
           void handleSubmit()
@@ -601,11 +597,11 @@ function CalcPage() {
           birthError={errors.birth}
         />
 
-        {/* 核心关注维度 */}
+        {/* 关注重点 — 严格原型 */}
         <section className="rounded-[16px] border border-border-gold bg-surface-card p-4">
-          <p className="mb-2 text-xs font-medium text-gold-light">
-            核心关注维度 (可多选)
-          </p>
+          <div className="mb-2 font-kai text-[13px] font-bold text-gold-light">
+            关注重点 <span className="text-[11px] font-normal text-muted">（最多选3项）</span>
+          </div>
           <div className="flex flex-wrap gap-2">
             {FOCUS_TAGS.map((tag) => (
               <button
@@ -621,6 +617,16 @@ function CalcPage() {
           </div>
         </section>
 
+        {/* 协议 */}
+        <label className="flex items-start gap-2 px-1 text-[11px] leading-relaxed text-muted">
+          <input type="checkbox" defaultChecked className="mt-0.5 accent-gold" />
+          <span>
+            已阅读并同意 <span className="text-gold underline decoration-gold/40">《用户协议》</span> 与{' '}
+            <span className="text-gold underline decoration-gold/40">《隐私政策》</span>，
+            所填信息仅用于命盘推演
+          </span>
+        </label>
+
         {submitError ? (
           <p
             className="rounded-lg border border-red/25 bg-red/10 px-4 py-3 text-sm text-red-light"
@@ -630,8 +636,8 @@ function CalcPage() {
           </p>
         ) : null}
 
-        <button type="submit" className="btn-guofeng-primary" disabled={showLoading}>
-          <span>天机交感 · 开启命盘推演</span>
+        <button type="submit" className="btn-guofeng-primary h-[50px] font-kai text-[17px] font-bold" disabled={showLoading}>
+          <span>开始推演 · 生成命盘</span>
           <svg
             width="18"
             height="18"
@@ -644,6 +650,7 @@ function CalcPage() {
             <path d="M5 12h14M12 5l7 7-7 7" />
           </svg>
         </button>
+        <p className="text-center text-[11px] text-muted">已为 324,891 人生成专属命盘 · 平均耗时 8.2s</p>
       </form>
 
       {result ? <div className="px-5">

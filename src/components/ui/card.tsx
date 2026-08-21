@@ -5,7 +5,7 @@ function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn(
-        'rounded-2xl border border-border-gold bg-surface-card shadow-card backdrop-blur-sm',
+        'rounded-2xl border border-border-gold bg-surface-card shadow-card backdrop-blur-sm will-change-transform transition-[transform,box-shadow,border-color] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]',
         className,
       )}
       {...props}
