@@ -43,6 +43,7 @@ VALID_PROFILE = {
     "birth": "1995-08-15",
     "birthHour": "子",
     "isLunar": False,
+    "agreedPrivacyVersion": "v1.0",
 }
 
 

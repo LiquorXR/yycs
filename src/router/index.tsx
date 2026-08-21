@@ -4,6 +4,7 @@ import CalcPage from '../pages/CalcPage'
 import OrderPage from '../pages/OrderPage'
 import PayPage from '../pages/PayPage'
 import ReportPage from '../pages/ReportPage'
+import PrivacyPage from '../pages/PrivacyPage'
 import ScrollToTop from '../components/ScrollToTop'
 
 const router = createBrowserRouter([
@@ -15,6 +16,7 @@ const router = createBrowserRouter([
       { path: '/order', element: <OrderPage /> },
       { path: '/pay/:orderNo', element: <PayPage /> },
       { path: '/report/:orderNo', element: <ReportPage /> },
+      { path: '/privacy', element: <PrivacyPage /> },
     ],
   },
 ])

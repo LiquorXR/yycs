@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import SiteFooter from '@/components/SiteFooter'
 
 /* ---------------- 罗盘八卦交互动画 ---------------- */
 
@@ -15,106 +16,138 @@ const BAGUA: { angle: number; lines: [boolean, boolean, boolean] }[] = [
   { angle: 315, lines: [false, false, true] }, // 艮 · 西北
 ]
 
+/** 12 地支 */
+const DIZHI = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'] as const
+
 function Compass() {
   return (
-    <div className="relative mx-auto mt-3 flex size-[200px] items-center justify-center">
+    <div className="relative mx-auto mt-4 flex size-[232px] items-center justify-center [perspective:800px] animate-float-y [animation-duration:5.2s]">
+      {/* 环境光晕 */}
+      <div aria-hidden="true" className="compass-ring-glow absolute inset-0 animate-pulse-glow-slow" />
+      {/* 外层金属立体底盘 */}
+      <div aria-hidden="true" className="compass-metal absolute size-[220px] rounded-full" />
+      {/* 外层鎏金光泽扫光 */}
+      <div
+        aria-hidden="true"
+        className="absolute size-[220px] rounded-full opacity-[0.18] animate-compass"
+        style={{
+          background: 'conic-gradient(from 0deg at 50% 50%, transparent 0deg, rgba(255,255,255,0.55) 22deg, transparent 44deg, transparent 180deg, rgba(226,180,95,0.5) 200deg, transparent 220deg)',
+        }}
+      />
+      {/* 外刻度环 + 12地支 + 24山细刻 */}
       <svg
-        className="absolute size-[188px] animate-compass"
+        className="absolute size-[220px] animate-compass"
         viewBox="0 0 200 200"
         aria-hidden="true"
       >
-        <circle
-          cx="100"
-          cy="100"
-          r="92"
-          fill="none"
-          stroke="#e2b45f"
-          strokeWidth="1"
-          strokeDasharray="4 6"
-          opacity={0.9}
-        />
-        <text x="100" y="18" fill="#e2b45f" fontSize="10" textAnchor="middle" fontFamily="serif">
-          子
-        </text>
-        <text x="182" y="104" fill="#e2b45f" fontSize="10" textAnchor="middle">
-          卯
-        </text>
-        <text x="100" y="186" fill="#e2b45f" fontSize="10" textAnchor="middle">
-          午
-        </text>
-        <text x="18" y="104" fill="#e2b45f" fontSize="10" textAnchor="middle">
-          酉
-        </text>
+        <defs>
+          <radialGradient id="goldStroke" cx="50%" cy="0%" r="140%">
+            <stop offset="0%" stopColor="#fef1cf" />
+            <stop offset="38%" stopColor="#e2b45f" />
+            <stop offset="72%" stopColor="#b88636" />
+            <stop offset="100%" stopColor="#7f6429" />
+          </radialGradient>
+          <filter id="tickGlow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="1" stdDeviation="1.2" floodColor="#000" floodOpacity="0.55" />
+            <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#e2b45f" floodOpacity="0.28" />
+          </filter>
+        </defs>
+        {/* 主虚线外环 */}
+        <circle cx="100" cy="100" r="89" fill="none" stroke="url(#goldStroke)" strokeWidth="1.15" strokeDasharray="3.5 7" opacity={0.96} filter="url(#tickGlow)" />
+        {/* 内细线 */}
+        <circle cx="100" cy="100" r="84.5" fill="none" stroke="rgba(226,180,95,0.32)" strokeWidth="0.7" />
+        {/* 24山刻度 */}
+        {Array.from({ length: 24 }).map((_, i) => {
+          const ang = i * 15
+          const rad = (ang * Math.PI) / 180
+          const isMain = i % 2 === 0
+          const r1 = isMain ? 84.5 : 86
+          const r2 = isMain ? 76 : 80
+          const x1 = 100 + r1 * Math.sin(rad)
+          const y1 = 100 - r1 * Math.cos(rad)
+          const x2 = 100 + r2 * Math.sin(rad)
+          const y2 = 100 - r2 * Math.cos(rad)
+          return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} className="compass-tick" strokeWidth={isMain ? 1.15 : 0.7} opacity={isMain ? 0.95 : 0.55} />
+        })}
+        {/* 12地支文字 */}
+        {DIZHI.map((z, i) => {
+          const ang = i * 30
+          const rad = (ang * Math.PI) / 180
+          const r = 97
+          const x = 100 + r * Math.sin(rad)
+          const y = 100 - r * Math.cos(rad)
+          return (
+            <text key={z} x={x} y={y} textAnchor="middle" dominantBaseline="central" className="compass-label" style={{ transform: `rotate(${ang}deg)`, transformOrigin: `${x}px ${y}px` }}>
+              {z}
+            </text>
+          )
+        })}
+        {/* 四正方位点缀 */}
+        {([0,90,180,270] as const).map((a) => {
+          const rad = (a * Math.PI)/180
+          const x = 100 + 69 * Math.sin(rad)
+          const y = 100 - 69 * Math.cos(rad)
+          return <circle key={a} cx={x} cy={y} r={1.35} fill="#e2b45f" opacity={0.95} />
+        })}
       </svg>
 
+      {/* 中层十字 + 双环 */}
       <svg
-        className="absolute size-[148px] animate-reverse"
+        className="absolute size-[170px] animate-reverse"
         viewBox="0 0 160 160"
         aria-hidden="true"
       >
-        <circle cx="80" cy="80" r="72" fill="none" stroke="#e2b45f" strokeWidth="1.3" />
-        <path
-          d="M80 6 L80 154 M6 80 L154 80"
-          stroke="rgba(226,180,95,0.38)"
-          strokeWidth="1"
-        />
+        <defs>
+          <linearGradient id="midGold" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#fef1cf" stopOpacity="0.95" />
+            <stop offset="52%" stopColor="#e2b45f" />
+            <stop offset="100%" stopColor="#8c6b2e" />
+          </linearGradient>
+        </defs>
+        <circle cx="80" cy="80" r="71.5" fill="none" stroke="url(#midGold)" strokeWidth="1.05" opacity={0.92} />
+        <circle cx="80" cy="80" r="66" fill="none" stroke="rgba(226,180,95,0.18)" strokeWidth="0.6" strokeDasharray="1.5 4" />
+        <path d="M80 9 L80 151 M9 80 L151 80" stroke="rgba(226,180,95,0.34)" strokeWidth="0.9" />
+        <path d="M80 22 L80 138 M22 80 L138 80" stroke="rgba(226,180,95,0.14)" strokeWidth="0.6" />
+        {/* 斜十字 */}
+        <path d="M28 28 L132 132 M132 28 L28 132" stroke="rgba(226,180,95,0.11)" strokeWidth="0.55" />
+        {/* 四象小点 */}
+        {[45,135,225,315].map((a) => {
+          const rad=(a*Math.PI)/180
+          const x=80+55*Math.sin(rad)
+          const y=80-55*Math.cos(rad)
+          return <circle key={a} cx={x} cy={y} r={1.1} fill="#fef1cf" opacity={0.9} />
+        })}
       </svg>
 
-      <div className="relative grid size-[118px] place-items-center">
+      {/* 八卦环 */}
+      <div className="relative grid size-[130px] place-items-center">
         <svg
-          className="absolute size-[104px] animate-bagua"
+          className="absolute size-[120px] animate-bagua"
           viewBox="0 0 112 112"
           aria-hidden="true"
         >
-          <circle
-            cx="56"
-            cy="56"
-            r="46"
-            fill="none"
-            stroke="#e2b45f"
-            strokeWidth="1"
-            strokeDasharray="3 6"
-            opacity={0.9}
-          />
+          <defs>
+            <filter id="baguaGlow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="2" stdDeviation="2.2" floodColor="#000" floodOpacity="0.5" />
+              <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#e2b45f" floodOpacity="0.22" />
+            </filter>
+          </defs>
+          <circle cx="56" cy="56" r="48.5" fill="none" stroke="rgba(226,180,95,0.95)" strokeWidth="1.05" strokeDasharray="2.5 5.5" opacity={0.92} filter="url(#baguaGlow)" />
+          <circle cx="56" cy="56" r="44" fill="none" stroke="rgba(226,180,95,0.16)" strokeWidth="0.6" />
           {BAGUA.map(({ angle, lines }) => {
             const rad = (angle * Math.PI) / 180
-            const x = 56 + 34 * Math.sin(rad)
-            const y = 56 - 34 * Math.cos(rad)
+            const x = 56 + 35.5 * Math.sin(rad)
+            const y = 56 - 35.5 * Math.cos(rad)
             const rows = [4, -3, -10]
             return (
-              <g key={angle} transform={`translate(${x} ${y}) rotate(${angle})`}>
+              <g key={angle} transform={`translate(${x} ${y}) rotate(${angle})`} filter="url(#baguaGlow)">
                 {lines.map((yang, i) =>
                   yang ? (
-                    <line
-                      key={i}
-                      x1="-8"
-                      y1={rows[i]}
-                      x2="8"
-                      y2={rows[i]}
-                      stroke="#e2b45f"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                    />
+                    <line key={i} x1="-9" y1={rows[i]} x2="9" y2={rows[i]} stroke="#f3d68a" strokeWidth="2.1" strokeLinecap="round" opacity={0.98} />
                   ) : (
                     <g key={i}>
-                      <line
-                        x1="-8"
-                        y1={rows[i]}
-                        x2="-1.5"
-                        y2={rows[i]}
-                        stroke="#e2b45f"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                      />
-                      <line
-                        x1="1.5"
-                        y1={rows[i]}
-                        x2="8"
-                        y2={rows[i]}
-                        stroke="#e2b45f"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                      />
+                      <line x1="-9" y1={rows[i]} x2="-1.6" y2={rows[i]} stroke="#f3d68a" strokeWidth="2.1" strokeLinecap="round" />
+                      <line x1="1.6" y1={rows[i]} x2="9" y2={rows[i]} stroke="#f3d68a" strokeWidth="2.1" strokeLinecap="round" />
                     </g>
                   ),
                 )}
@@ -123,13 +156,28 @@ function Compass() {
           })}
         </svg>
 
-        <img
-          src="/taiji.svg"
-          alt="太极"
-          aria-hidden="true"
-          className="size-[48px] animate-taiji rounded-full border-2 border-gold bg-white object-contain p-[1px] shadow-[0_0_18px_rgba(226,180,95,0.45)]"
-          style={{ filter: 'drop-shadow(0 0 6px rgba(226,180,95,0.35))' }}
-        />
+        {/* 内盘立体托 */}
+        <div className="absolute size-[72px] rounded-full bg-[radial-gradient(circle_at_32%_28%,#fff7dd_0%,#fef1cf_14%,#e2b45f_38%,#9a7a33_72%,#5a3f14_100%)] p-[1.5px] shadow-[0_2px_0_#7f6429,0_8px_20px_rgba(0,0,0,0.45),0_0_16px_rgba(226,180,95,0.3)]">
+          <div className="size-full rounded-full bg-[radial-gradient(circle_at_30%_28%,#ffffff_0%,#fef1cf_18%,#f3d68a_34%,#ffffff_100%)] p-[2px]">
+            <img
+              src="/taiji.svg"
+              alt="太极"
+              aria-hidden="true"
+              className="size-full animate-taiji rounded-full object-contain shadow-[inset_0_1px_3px_rgba(0,0,0,0.25)]"
+              style={{ filter: 'contrast(1.04) saturate(1.06) drop-shadow(0 1px 1px rgba(0,0,0,0.22))' }}
+            />
+          </div>
+          {/* 高光 */}
+          <span aria-hidden="true" className="pointer-events-none absolute left-[14%] top-[16%] h-[22%] w-[28%] rounded-[50%] bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.88)_0%,transparent_68%)] blur-[0.6px]" />
+        </div>
+
+        {/* 绕转粒子 */}
+        <span aria-hidden="true" className="absolute size-[64px] animate-compass rounded-full border border-gold/0 [animation-duration:9s]">
+          <span className="absolute left-1/2 top-0 size-[3.5px] -translate-x-1/2 -translate-y-[3px] rounded-full bg-gold-light shadow-[0_0_7px_rgba(226,180,95,0.9),0_0_12px_rgba(226,180,95,0.5)]" />
+        </span>
+        <span aria-hidden="true" className="absolute size-[76px] animate-reverse rounded-full border border-gold/0 [animation-duration:13s]">
+          <span className="absolute left-1/2 bottom-0 size-[2.5px] -translate-x-1/2 translate-y-[2px] rounded-full bg-gold/90 shadow-[0_0_6px_rgba(226,180,95,0.75)]" />
+        </span>
       </div>
     </div>
   )
@@ -209,7 +257,7 @@ const FEATURES = [
   {
     icon: '缘',
     title: '正缘桃花期',
-    desc: '精准预测感情关键节点与桃花旺衰年份',
+    desc: '预测感情关键节点与桃花旺衰年份',
   },
   {
     icon: '财',
@@ -219,7 +267,7 @@ const FEATURES = [
   {
     icon: '性',
     title: '性格解析',
-    desc: '剖析五行禀性，解锁相处之道与自我认知',
+    desc: '剖析五行，解相处之道与自我认知',
   },
   {
     icon: '避',
@@ -233,22 +281,40 @@ const FEATURES = [
 function LandingPage() {
   return (
     <main className="fx-paper fx-cloud flex min-h-screen flex-col pb-6">
+      {/* 顶部滚动免责提示栏 */}
+      <div className="sticky top-0 z-30 overflow-hidden border-b border-gold/12 bg-[#1a0505]/92 backdrop-blur-md supports-[backdrop-filter]:bg-[#1a0505]/80">
+        <div className="flex select-none items-center gap-1 py-[6px] text-[10px] leading-none tracking-wide text-gold/90">
+          <span className="ml-2 inline-flex shrink-0 items-center gap-1 rounded-full bg-gold/12 px-1.5 py-0.5 text-[9px] font-bold tracking-[0.08em] text-gold-light">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 2l7 4v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-4z" />
+              <path d="M9 12l2 2 4-4" />
+            </svg>
+            声明
+          </span>
+          <div className="relative flex flex-1 overflow-hidden">
+            <div className="flex animate-[marquee_18s_linear_infinite] whitespace-nowrap will-change-transform hover:[animation-play-state:paused] motion-reduce:animate-none">
+              <span className="mx-4">本页面内容仅供娱乐参考，不适用于18周岁以下未成年人。您的数据安全由阿里云提供全面技术保障，我们严格遵循相关法律法规及用户协议，对您的个人信息实施全方位防护，请您放心使用。</span>
+              <span className="mx-4" aria-hidden="true">本页面内容仅供娱乐参考，不适用于18周岁以下未成年人。您的数据安全由阿里云提供全面技术保障，我们严格遵循相关法律法规及用户协议，对您的个人信息实施全方位防护，请您放心使用。</span>
+            </div>
+          </div>
+        </div>
+      </div>
       {/* 顶部高光云纹护栏 — 严格对齐原型 */}
-      <section className="relative overflow-hidden bg-[radial-gradient(circle_at_50%_0%,rgba(226,180,95,0.14)_0%,transparent_68%)] px-5 pt-2 pb-3 text-center">
-        <span className="relative mb-3 inline-flex items-center gap-1.5 rounded-full border border-gold/35 bg-gold/10 px-3 py-1 text-[11px] tracking-[0.12em] text-gold">
+      <section className="relative overflow-hidden bg-[radial-gradient(circle_at_50%_0%,rgba(226,180,95,0.16)_0%,transparent_68%)] px-5 pt-3 pb-4 text-center">
+        <span className="relative mb-3 inline-flex items-center gap-1.5 rounded-full border border-gold/35 bg-gold/10 px-3 py-1 text-[11px] tracking-[0.12em] text-gold shadow-[0_2px_10px_rgba(226,180,95,0.18)]">
           敕造命盘 · 单人测算 <span className="size-1 rounded-full bg-gold animate-pulse-glow" aria-hidden="true" />
         </span>
-        <h1 className="relative mt-3 font-shufa text-[26px] font-bold leading-[1.15] tracking-[0.08em] text-gold-gradient">
+        <h1 className="title-gold-3d relative mt-3 font-shufa text-[30px] font-bold leading-[1.08] tracking-[0.08em]">
           八字命盘 · 运势姻缘
         </h1>
-        <p className="relative mt-1.5 text-[12px] tracking-wide text-fg-secondary">
+        <p className="relative mt-1.5 text-[12px] tracking-[0.06em] text-fg-secondary drop-shadow-[0_1px_4px_rgba(0,0,0,0.45)]">
           测算个人五行喜忌 · 预测正缘桃花与运势转折
         </p>
 
         <Compass />
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute -bottom-6 left-1/2 h-[48px] w-[260px] -translate-x-1/2 bg-[radial-gradient(ellipse_at_center,rgba(226,180,95,0.16)_0%,transparent_70%)] blur-[6px]"
+          className="pointer-events-none absolute -bottom-6 left-1/2 h-[52px] w-[272px] -translate-x-1/2 bg-[radial-gradient(ellipse_at_center,rgba(226,180,95,0.14)_0%,transparent_70%)] blur-[6px]"
         />
       </section>
 
@@ -288,8 +354,14 @@ function LandingPage() {
       {/* 操作区与用户保证 — 严格对齐原型 */}
       <section className="mt-4 flex flex-col gap-3 px-5 pb-6">
         <Link to="/calc" className="block">
-          <button type="button" className="btn-guofeng-primary flex h-[50px] w-full items-center justify-center gap-2 font-kai text-[17px] font-bold tracking-wide">
-            <span>立即测算 · 开启个人命盘</span>
+          <button
+            type="button"
+            className="btn-guofeng-primary flex h-[50px] w-full items-center justify-center gap-2 font-kai text-[17px] !font-bold tracking-wide [font-synthesis:weight]"
+            style={{ fontSynthesis: 'weight', WebkitTextStroke: '0.2px currentColor', paintOrder: 'stroke fill' } as React.CSSProperties}
+          >
+            <span className="font-bold [font-synthesis:weight]" style={{ fontSynthesis: 'weight', WebkitTextStroke: '0.22px currentColor', paintOrder: 'stroke fill' } as React.CSSProperties}>
+              立即测算 · 开启个人命盘
+            </span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
               <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>
@@ -323,6 +395,7 @@ function LandingPage() {
           <span className="h-px w-8 bg-white/10" aria-hidden="true" />
         </div>
       </section>
+      <SiteFooter />
     </main>
   )
 }

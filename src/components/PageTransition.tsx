@@ -1,46 +1,29 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { type ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 
+function useReducedMotion() {
+  if (typeof window === 'undefined') return false
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+
 /**
- * 路由级轻量转场：右进左出 + 淡入，无依赖，仅 transform/opacity
- * 尊重 prefers-reduced-motion，低端机自动降为淡入
+ * 路由级转场 — 轻量淡入 + 模糊 + 轻缩放，GPU 合成，无全屏遮罩
+ * 修复：移除 View Transition API 的全屏快照覆盖，避免首页被背景遮挡
  */
 export default function PageTransition({ children }: { children: ReactNode }) {
   const location = useLocation()
-  const [displayKey, setDisplayKey] = useState(location.pathname)
-  const [phase, setPhase] = useState<'enter' | 'exit'>('enter')
-
-  const reduced =
-    typeof window !== 'undefined' &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches
-
-  useEffect(() => {
-    if (location.pathname === displayKey) return
-    if (reduced) {
-      setDisplayKey(location.pathname)
-      return
-    }
-    setPhase('exit')
-    const t = window.setTimeout(() => {
-      setDisplayKey(location.pathname)
-      setPhase('enter')
-    }, 120)
-    return () => window.clearTimeout(t)
-  }, [location.pathname, displayKey, reduced])
+  const reduced = useReducedMotion()
 
   if (reduced) {
-    return <div key={displayKey} className="fade-in">{children}</div>
+    return (
+      <div key={location.pathname} className="fade-in">
+        {children}
+      </div>
+    )
   }
 
   return (
-    <div
-      key={displayKey}
-      className={
-        phase === 'enter'
-          ? 'animate-[fade-in-up_0.32s_cubic-bezier(0.16,1,0.3,1)_both] will-change-transform'
-          : 'opacity-0 translate-x-[-8px] transition-[transform,opacity] duration-120'
-      }
-    >
+    <div key={location.pathname} className="page-transition-enter will-change-[transform,opacity,filter] [transform:translateZ(0)]">
       {children}
     </div>
   )

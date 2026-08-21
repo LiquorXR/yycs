@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { createProfile, newIdempotencyKey } from '@/api/profiles'
 import BirthDateSelect from '@/components/BirthDateSelect'
+import { PRIVACY_VERSION } from '@/lib/agreement'
 
 const HOURS = [
   { value: '子', label: '子时 (23:00 - 00:59)' },
@@ -422,6 +423,7 @@ function CalcPage() {
   const [showLoading, setShowLoading] = useState(false)
   const [progress, setProgress] = useState(0)
   const [timedOut, setTimedOut] = useState(false)
+  const [agreed, setAgreed] = useState(false)
   const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const abortRef = useRef<AbortController | null>(null)
@@ -493,6 +495,7 @@ function CalcPage() {
             birthHour: person.birthHour || undefined,
             isLunar,
             focusTags,
+            agreedPrivacyVersion: PRIVACY_VERSION,
           },
           newIdempotencyKey(),
           { signal: controller.signal },
@@ -540,6 +543,8 @@ function CalcPage() {
       return
     }
 
+    // 点击即视为同意：自动勾选并继续提交
+    if (!agreed) setAgreed(true)
     await startSubmit()
   }
 
@@ -569,10 +574,8 @@ function CalcPage() {
               <path d="M15 18l-6-6 6-6" />
             </svg>
           </Link>
-          <div className="flex items-center gap-1.5 font-kai text-[15px] font-bold tracking-[0.2em] text-gold-light">
-            <span className="h-px w-6 bg-gold/40" aria-hidden="true" />
+          <div className="font-kai text-[15px] font-bold tracking-[0.2em] text-gold-light">
             填写命盘
-            <span className="h-px w-6 bg-gold/40" aria-hidden="true" />
           </div>
           <span className="w-8" aria-hidden="true" />
         </div>
@@ -600,7 +603,7 @@ function CalcPage() {
         {/* 关注重点 — 严格原型 */}
         <section className="rounded-[16px] border border-border-gold bg-surface-card p-4">
           <div className="mb-2 font-kai text-[13px] font-bold text-gold-light">
-            关注重点 <span className="text-[11px] font-normal text-muted">（最多选3项）</span>
+            关注重点 <span className="text-[11px] font-normal text-muted">（多选项）</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {FOCUS_TAGS.map((tag) => (
@@ -617,13 +620,21 @@ function CalcPage() {
           </div>
         </section>
 
-        {/* 协议 */}
+        {/* 隐私协议 — 方案A：仅隐私，点击即视为同意并自动勾选 */}
         <label className="flex items-start gap-2 px-1 text-[11px] leading-relaxed text-muted">
-          <input type="checkbox" defaultChecked className="mt-0.5 accent-gold" />
+          <input
+            type="checkbox"
+            checked={agreed}
+            onChange={(e) => setAgreed(e.target.checked)}
+            className="mt-0.5 accent-gold"
+            aria-label="已阅读并同意隐私政策"
+          />
           <span>
-            已阅读并同意 <span className="text-gold underline decoration-gold/40">《用户协议》</span> 与{' '}
-            <span className="text-gold underline decoration-gold/40">《隐私政策》</span>，
-            所填信息仅用于命盘推演
+            已阅读并同意{' '}
+            <Link to="/privacy" className="text-gold underline decoration-gold/40 underline-offset-2 hover:text-gold-light">
+              《隐私政策》
+            </Link>
+            ，所填信息仅用于本次命盘推演 · 点击“开始推演”即视为同意
           </span>
         </label>
 

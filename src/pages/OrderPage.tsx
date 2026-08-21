@@ -189,6 +189,10 @@ export default function OrderPage() {
               const disabled = p.status === 0
               const active = selected?.id === p.id
               const isRecommend = p.id === products[0]?.id
+              const displayName = p.name.includes('姻缘测算')
+                ? p.name.replace('姻缘测算完整报告', '单人测算报告').replace('姻缘测算免费版', '单人测算报告（免费版）').replace('姻缘测算', '单人测算报告')
+                : p.name
+              const isSingle = displayName.includes('单人')
               return (
                 <label
                   key={p.id}
@@ -199,9 +203,9 @@ export default function OrderPage() {
                   <input type="radio" name="product" checked={active} disabled={disabled} onChange={() => setSelected(p)} className="accent-gold" aria-hidden="true" />
                   <div className="min-w-0 flex-1">
                     <div className="font-kai text-[14px] font-semibold text-gold-light">
-                      {p.name} {isRecommend ? <span className="ml-1 rounded bg-gold px-1.5 py-0.5 text-[10px] font-bold text-[#3a0a0a]">推荐</span> : null}
+                      {displayName} {isRecommend ? <span className="ml-1 rounded bg-gold px-1.5 py-0.5 text-[10px] font-bold text-[#3a0a0a]">推荐</span> : null}
                     </div>
-                    <div className="truncate text-[11px] text-muted">{p.name.includes('单人') ? '含正缘/财运/性格/避坑 + 大师亲批' : '需补充另一半信息 · 合婚指数'}</div>
+                    <div className="truncate text-[11px] text-muted">{isSingle ? '含正缘/财运/性格/避坑 + 大师亲批' : '需补充另一半信息 · 合婚指数'}</div>
                   </div>
                   <div className="shrink-0 text-right">
                     <div className="font-bold text-gold">{formatPrice(p.price)}</div>
@@ -246,7 +250,13 @@ export default function OrderPage() {
         >
           {submitting ? '提交中…' : `立即解锁 · 支付 ${selected ? formatPrice(selected.price) : '¥29.90'}`}
         </button>
-        <p className="text-center text-[10px] leading-relaxed text-white/40">支付即视为同意自动解锁报告 · 1年内可重复查看 · 未满意支持退款（见用户协议）</p>
+        <p className="text-center text-[10px] leading-relaxed text-white/40">
+          支付即视为同意自动解锁报告 · 1年内可重复查看（见{' '}
+          <Link to="/privacy" className="text-white/60 underline decoration-white/20 underline-offset-2 hover:text-gold">
+            隐私政策
+          </Link>
+          ）
+        </p>
 
         {submitError ? (
           <p className="rounded-lg border border-red/25 bg-red/10 px-4 py-3 text-sm text-red-light" role="alert">

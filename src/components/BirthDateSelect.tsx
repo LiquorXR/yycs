@@ -36,20 +36,63 @@ export default function BirthDateSelect({
   error,
   onChange,
 }: BirthDateSelectProps) {
-  const [year, setYear] = useState('')
-  const [month, setMonth] = useState('')
-  const [day, setDay] = useState('')
+  const getDefaultYear = () => '2000'
+  const [year, setYear] = useState(() => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(birth)
+    if (!m) return getDefaultYear()
+    const y = Number(m[1])
+    const mo = Number(m[2])
+    const d = Number(m[3])
+    if (calendar === '农历') {
+      try {
+        return String(Solar.fromYmd(y, mo, d).getLunar().getYear())
+      } catch {
+        return String(y)
+      }
+    }
+    return String(y)
+  })
+  const [month, setMonth] = useState(() => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(birth)
+    if (!m) return ''
+    const y = Number(m[1])
+    const mo = Number(m[2])
+    const d = Number(m[3])
+    if (calendar === '农历') {
+      try {
+        return String(Solar.fromYmd(y, mo, d).getLunar().getMonth())
+      } catch {
+        return String(mo)
+      }
+    }
+    return String(mo)
+  })
+  const [day, setDay] = useState(() => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(birth)
+    if (!m) return ''
+    const y = Number(m[1])
+    const mo = Number(m[2])
+    const d = Number(m[3])
+    if (calendar === '农历') {
+      try {
+        return String(Solar.fromYmd(y, mo, d).getLunar().getDay())
+      } catch {
+        return String(d)
+      }
+    }
+    return String(d)
+  })
 
   const birthRef = useRef(birth)
   useEffect(() => {
     birthRef.current = birth
   })
 
-  /* 用户操作驱动的 birth 变化由内部状态直接接管，仅在历法切换时按 birth 重算回显 */
+  /* 用户操作驱动的 birth 变化由内部状态直接接管，仅在历法切换时按 birth 重算回显；空值时年份默认 2000 方便首次选择 */
   useEffect(() => {
     const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(birthRef.current)
     if (!m) {
-      setYear('')
+      setYear((prev) => (prev ? prev : '2000'))
       setMonth('')
       setDay('')
       return

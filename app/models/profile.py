@@ -27,4 +27,8 @@ class Profile(Base):
     is_lunar: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     combo_data: Mapped[str | None] = mapped_column(Text, nullable=True, comment="测算因子密文（JSON）")
     preview_report: Mapped[str | None] = mapped_column(Text, nullable=True, comment="预览报告 JSON")
+    agreed_privacy_version: Mapped[str | None] = mapped_column(
+        String(32), nullable=True, comment="已同意的隐私政策版本"
+    )
+    consented_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, comment="同意时间 UTC")
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=utcnow)

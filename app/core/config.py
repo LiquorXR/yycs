@@ -72,5 +72,15 @@ class Settings(BaseSettings):
     # 超时阈值：创建超过该分钟数仍为 CREATED 的订单进入查单补偿
     RECONCILE_STALE_MINUTES: int = 30
 
+    # ===== 隐私政策 =====
+    PRIVACY_VERSION: str = "v1.0"
+    PRIVACY_EFFECTIVE_DATE: str = "2026-08-21"
+    COMPANY_NAME: str = "四川蜀兴振凡传媒有限公司"
+    ICP_NO: str = "蜀ICP备2026047533号"
+    CONTACT_EMAIL: str = "2444107425@qq.com"
+    CONTACT_ADDRESS: str = "四川省绵阳市高新区永兴镇兴业南路18号汇昌.华兴名城6栋一层8号"
+    DATA_RETENTION_DAYS_UNPAID: int = 30
+    DATA_RETENTION_DAYS_PAID: int = 365
+
 
 settings = Settings()

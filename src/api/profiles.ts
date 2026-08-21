@@ -6,6 +6,7 @@ export interface CreateProfileRequest {
   birthHour?: string
   isLunar?: boolean
   focusTags?: string[]
+  agreedPrivacyVersion?: string
 }
 
 export interface PreviewReport {

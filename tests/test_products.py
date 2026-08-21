@@ -13,9 +13,9 @@ def test_list_products(client):
     assert data["pageSize"] == 20
     assert data["total"] >= 2
     names = {item["name"] for item in data["list"]}
-    assert "姻缘测算完整报告" in names
-    assert "姻缘测算免费版" in names
-    paid = [i for i in data["list"] if i["name"] == "姻缘测算完整报告"][0]
+    assert "单人测算报告" in names
+    assert "单人测算报告（免费版）" in names
+    paid = [i for i in data["list"] if i["name"] == "单人测算报告"][0]
     assert paid["price"] == 9900
     assert paid["type"] == 1
     assert paid["freeFlag"] == 0
@@ -52,7 +52,7 @@ def test_get_product(client):
     assert body["code"] == 0
     data = body["data"]
     assert data["id"] == 1
-    assert data["name"] == "姻缘测算完整报告"
+    assert data["name"] == "单人测算报告"
     assert data["price"] == 9900
 
 

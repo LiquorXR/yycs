@@ -106,7 +106,7 @@
     0.62 26.3%, 0.72 30.1%, 0.82 34.1%, 0.9 38.1%, 0.96 41.9%, 1 45.2%, 0.996 47%,
     0.987 48.9%, 0.973 50.8%, 0.953 52.8%, 0.927 54.9%, 0.894 57.1%,
     0.854 59.4%, 0.804 61.8%, 0.745 64.3%, 0.675 66.9%, 0.595 69.6%,
-    0.505 72.4%, 0.407 75.4%, 0.304 78.5%, 0.2 81.8%, 0.1 85.4%, 0.02 89.4%, 0 100%
+    0.505 72.4%, 0.407 75.4%, 0.304 78.5%, 0.2 81.8%, 0.1 85.4%, 0.02 89.4%, 1 100%
   );
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-out-circ: cubic-bezier(0.075, 0.82, 0.165, 1);
@@ -123,6 +123,8 @@
   --animate-float-y: float-y 3.2s ease-in-out infinite; /* 祥云微浮 */
   --animate-shimmer: shimmer 1.6s linear infinite; /* 骨架流光 */
   --animate-fade-in-up: fade-in-up 0.42s var(--ease-out-expo) both; /* 入场 */
+  --animate-page-in: page-in 0.52s var(--ease-out-expo) both; /* 路由入场 */
+  --animate-page-out: page-out 0.28s var(--ease-out-expo) both; /* 路由退场 */
 
   @keyframes compass-rotate {
     from {
@@ -158,24 +160,81 @@
 /* 供 .fade-in 与按钮流光使用的独立关键帧（全局 CSS，始终输出） */
 @keyframes fade-in {
   from {
-    opacity: 0.6;
-    transform: translateY(8px);
+    opacity: 0;
+    transform: translateY(6px);
+    filter: blur(4px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
+    filter: blur(0);
   }
 }
 
 @keyframes fade-in-up {
   from {
     opacity: 0;
-    transform: translateY(14px);
+    transform: translateY(10px) scale(0.985);
+    filter: blur(6px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
+    filter: blur(0);
   }
+}
+
+/* 路由转场 */
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) translateX(10px) scale(0.985);
+    filter: blur(6px) saturate(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) translateX(0) scale(1);
+    filter: blur(0) saturate(1);
+  }
+}
+
+@keyframes page-out {
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    filter: blur(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-10px) scale(0.98);
+    filter: blur(3px);
+  }
+}
+
+/* View Transitions API — 原生共享过渡 */
+::view-transition-old(page),
+::view-transition-new(page) {
+  animation-duration: 0.42s;
+  animation-timing-function: var(--ease-out-expo);
+  /* 保持圆角与阴影在过渡中不裁切 */
+  mix-blend-mode: normal;
+}
+::view-transition-old(page) {
+  animation-name: page-out;
+}
+::view-transition-new(page) {
+  animation-name: page-in;
+}
+/* 回退：无 ViewTransition 时的入场层 */
+.page-transition-enter {
+  animation: page-in 0.52s var(--ease-out-expo) both;
+  will-change: transform, opacity, filter;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+/* 仅在支持 backdrop 的现代浏览器启用页面根的 viewTransitionName 已在组件内联 */
+.page-transition-root {
+  isolation: isolate;
 }
 
 @keyframes shine {
@@ -204,6 +263,15 @@
   }
   50% {
     transform: translateY(-6px);
+  }
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
   }
 }
 
@@ -430,7 +498,8 @@
     border-radius: var(--radius-pill);
     font-family: var(--font-kai);
     font-size: 17px;
-    font-weight: 600;
+    font-weight: 700;
+    font-synthesis: weight;
     letter-spacing: 0.08em;
     cursor: pointer;
     box-shadow:
@@ -494,8 +563,9 @@
     border: 1px solid #fef1cf;
     border-radius: 24px;
     font-family: var(--font-kai);
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 700;
+    font-synthesis: weight;
     letter-spacing: 0.05em;
     cursor: pointer;
     box-shadow: 0 4px 18px rgb(226 180 95 / 0.35);
@@ -525,8 +595,9 @@
     border: 1px solid var(--color-border-gold);
     border-radius: 24px;
     font-family: var(--font-kai);
-    font-size: 15px;
-    font-weight: 600;
+    font-size: 17px;
+    font-weight: 700;
+    font-synthesis: weight;
     letter-spacing: 0.06em;
     cursor: pointer;
     transition:
@@ -818,32 +889,35 @@
     z-index: 1;
   }
 
-  /* 页面淡入过渡（无 fill 保留，避免残留 transform 使 fixed 子元素以页面为容器） */
+    /* 页面淡入过渡（无 fill 保留，避免残留 transform 使 fixed 子元素以页面为容器） */
   .fade-in {
-    animation: fade-in 0.4s var(--ease-out-expo);
+    animation: fade-in 0.36s var(--ease-out-expo);
   }
 
-  /* 通用入场 */
+  /* 通用入场 — 与路由入场错峰，避免双重位移 */
   .page-enter {
-    animation: fade-in-up 0.42s var(--ease-out-expo) both;
+    animation: fade-in 0.38s var(--ease-out-expo) 0.08s both;
   }
 
   .stagger > * {
     opacity: 0;
-    animation: fade-in-up 0.42s var(--ease-out-expo) both;
+    animation: fade-in-up 0.46s var(--ease-spring) both;
   }
 
   .stagger > *:nth-child(1) {
-    animation-delay: 0.04s;
+    animation-delay: 0.06s;
   }
+
   .stagger > *:nth-child(2) {
-    animation-delay: 0.1s;
+    animation-delay: 0.12s;
   }
+
   .stagger > *:nth-child(3) {
-    animation-delay: 0.16s;
+    animation-delay: 0.18s;
   }
+
   .stagger > *:nth-child(4) {
-    animation-delay: 0.22s;
+    animation-delay: 0.24s;
   }
 
   /* 按压反馈 */
@@ -882,6 +956,60 @@
     transform: translateX(-100%);
     animation: shimmer 1.6s linear infinite;
   }
+}
+
+/* ---------- 标题鎏金立体 ---------- */
+.title-gold-3d {
+  background: linear-gradient(135deg, #fef1cf 0%, #ffe9b0 18%, #e2b45f 48%, #c9983a 72%, #8c6b2e 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  /* 弱化立体 — 保留 2级浮雕 + 柔和阴影 */
+  filter:
+    drop-shadow(0 1px 0 #9a7a33)
+    drop-shadow(0 2px 3px rgba(0,0,0,0.38))
+    drop-shadow(0 6px 14px rgba(0,0,0,0.42))
+    drop-shadow(0 0 16px rgba(226,180,95,0.28));
+  /* 内描边 */
+  -webkit-text-stroke: 0.3px rgba(255,241,207,0.38);
+  paint-order: stroke fill;
+}
+
+/* ---------- 高端罗盘 ---------- */
+.compass-metal {
+  background:
+    radial-gradient(ellipse 80% 70% at 30% 20%, rgba(255,255,255,0.18) 0%, transparent 55%),
+    radial-gradient(circle at 50% 50%, #8a1a1a 0%, #5a0f0f 62%, #3a0a0a 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.18),
+    inset 0 -1px 0 rgba(0,0,0,0.5),
+    inset 0 0 22px rgba(0,0,0,0.55),
+    0 0 0 1px rgba(226,180,95,0.9),
+    0 0 0 4px rgba(226,180,95,0.12),
+    0 10px 32px rgba(0,0,0,0.55),
+    0 0 36px rgba(226,180,95,0.18);
+}
+
+.compass-ring-glow {
+  background: radial-gradient(ellipse at center, rgba(226,180,95,0.18) 0%, rgba(226,180,95,0.08) 35%, transparent 70%);
+  filter: blur(10px);
+}
+
+.compass-tick {
+  stroke: #e2b45f;
+  stroke-linecap: round;
+}
+
+.compass-label {
+  fill: #e2b45f;
+  font-family: "Noto Serif SC", serif;
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  paint-order: stroke;
+  stroke: rgba(58,10,10,0.85);
+  stroke-width: 2.2px;
+  stroke-linejoin: round;
 }
 
 /* 动效降级：尊重系统减少动态偏好 */
