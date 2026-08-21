@@ -110,11 +110,6 @@ class WechatPayClient:
             self._platform_keys[path] = cert.public_key()
         return self._platform_keys[path]
 
-    def _load_platform_cert(self):
-        """加载平台证书对象（用于序列号提取）。"""
-        pem = Path(str(self._cfg.WXPAY_PLATFORM_CERT_PATH)).read_bytes()
-        return x509.load_pem_x509_certificate(pem)
-
     def _platform_cert_serial(self) -> str | None:
         """读取平台证书序列号（大写十六进制，无前导零截断与微信一致）。"""
         try:

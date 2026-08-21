@@ -14,7 +14,6 @@ from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
 from app.core.errors import BizError, ErrorCode
-from app.core.response import ok_response
 from app.routers import health, orders, pay, products, profiles
 
 logger = logging.getLogger(__name__)

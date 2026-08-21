@@ -43,13 +43,6 @@ export interface OrderReport {
   } | null
 }
 
-export interface DeliveryInfo {
-  orderNo: string
-  state: string
-  wecomAdded: boolean
-  addedAt: string | null
-}
-
 /**
  * 创建订单（幂等键必填，服务端 24 小时内同键返回首次结果）
  * POST /api/orders
@@ -82,17 +75,6 @@ export async function getOrder(orderNo: string): Promise<OrderDetail> {
 export async function getOrderReport(orderNo: string): Promise<OrderReport> {
   const { data } = await http.get<ApiEnvelope<OrderReport>>(
     `/orders/${orderNo}/report`,
-  )
-  return unwrapData(data)
-}
-
-/**
- * 交付状态/企微添加状态——预留接口
- * GET /api/orders/{orderNo}/delivery
- */
-export async function getDelivery(orderNo: string): Promise<DeliveryInfo> {
-  const { data } = await http.get<ApiEnvelope<DeliveryInfo>>(
-    `/orders/${orderNo}/delivery`,
   )
   return unwrapData(data)
 }
