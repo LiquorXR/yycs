@@ -558,16 +558,11 @@ function ReportPage() {
               </span>
             </div>
 
-            {/* 支付方式 */}
+            {/* 支付方式：仅微信支付 */}
             <div className="pay-methods">
               <span className="pay-option active">
                 <span aria-hidden="true">🟢</span>
                 微信支付
-              </span>
-              <span className="pay-option opacity-60">
-                <span aria-hidden="true">🔵</span>
-                支付宝
-                <span className="text-[10px]">暂未开通</span>
               </span>
             </div>
 
