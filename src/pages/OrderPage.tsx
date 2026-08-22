@@ -99,19 +99,25 @@ export default function OrderPage() {
   }, [products, selected])
 
   const adParams = (() => {
+    const pattern = /^[a-zA-Z0-9_-]{1,64}$/
     const entries = (['ad_id', 'creative_id', 'campaign_id'] as const)
       .map((k) => [k, searchParams.get(k)])
-      .filter(([, v]) => Boolean(v)) as [string, string][]
+      .filter(([, v]) => Boolean(v) && pattern.test(v as string)) as [string, string][]
     return entries.length > 0 ? Object.fromEntries(entries) : undefined
   })()
 
   const handleSubmit = async () => {
     if (!profileId || !selected) return
+    if (payMethod === 'alipay') {
+      setSubmitError('支付宝通道建设中，请选择微信支付')
+      return
+    }
     setSubmitting(true)
     setSubmitError(null)
     try {
+      const paymentMethod = 'h5'
       const res = await createOrder(
-        { profileId, productId: selected.id, paymentMethod: 'auto', adParams },
+        { profileId, productId: selected.id, paymentMethod, adParams },
         newIdempotencyKey(),
       )
       navigate(`/pay/${res.orderNo}`, { state: { payType: res.payType, payUrl: res.payUrl, codeUrl: res.codeUrl } })
@@ -230,10 +236,13 @@ export default function OrderPage() {
             </button>
             <button
               type="button"
-              onClick={() => setPayMethod('alipay')}
-              className={`flex h-11 items-center justify-center gap-2 rounded-2xl border text-[13px] transition-colors [touch-action:manipulation] ${payMethod === 'alipay' ? 'border-[#2b7a63] bg-[#2b7a63]/15 font-medium text-gold-light' : 'border-white/10 bg-black/20 text-muted hover:border-gold/30'}`}
+              disabled
+              title="支付宝通道建设中，敬请期待"
+              aria-disabled="true"
+              className="flex h-11 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-black/20 text-[13px] text-muted opacity-50 cursor-not-allowed [touch-action:manipulation]"
             >
               <span className="grid size-5 place-items-center rounded-full bg-[#1677ff] text-[11px] font-bold text-white">支</span> 支付宝
+              <span className="ml-1 rounded bg-white/10 px-1 py-0.5 text-[10px] leading-none text-muted">建设中</span>
             </button>
           </div>
           <div className="mt-3 flex items-center justify-between text-xs">

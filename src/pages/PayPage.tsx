@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import PageHeader from '@/components/PageHeader'
 import { getOrder, type OrderDetail } from '@/api/orders'
 import { formatPrice } from '@/lib/format'
+import { isSafeCodeUrl, isSafePayUrl } from '@/lib/url'
 
 interface PayState {
   payType: string | null
@@ -100,8 +101,12 @@ export default function PayPage() {
 
   const pay = (location.state as PayState | null) ?? null
   const isPaid = order?.state === 'PAID'
-  const showH5 = pay?.payType === 'h5' && Boolean(pay.payUrl)
-  const showNative = pay?.payType === 'native' && Boolean(pay.codeUrl)
+  // 有效支付信息优先取 location.state，刷新后回退到 order 字段（均需白名单校验）
+  const effectivePayType = pay?.payType ?? order?.payType ?? null
+  const effectivePayUrl = pay?.payUrl ?? order?.payUrl ?? null
+  const effectiveCodeUrl = pay?.codeUrl ?? order?.codeUrl ?? null
+  const showH5 = effectivePayType === 'h5' && isSafePayUrl(effectivePayUrl)
+  const showNative = effectivePayType === 'native' && isSafeCodeUrl(effectiveCodeUrl)
   const showEmpty = !showH5 && !showNative
   const countdownText = `${String(Math.floor(payCountdown / 60)).padStart(2, '0')}:${String(payCountdown % 60).padStart(2, '0')}`
 
@@ -156,7 +161,7 @@ export default function PayPage() {
                 <br />
                 支付成功后自动返回本页查看报告
               </p>
-              <a href={pay!.payUrl!} className="mt-6 w-full max-w-[280px]">
+              <a href={effectivePayUrl!} target="_blank" rel="noopener noreferrer" className="mt-6 w-full max-w-[280px]">
                 <Button size="lg" className="w-full rounded-full text-base font-bold">
                   点击唤起微信支付
                 </Button>
@@ -165,7 +170,7 @@ export default function PayPage() {
             </div>
           ) : showNative ? (
             <div className="mt-4">
-              <NativeQrArea codeUrl={pay!.codeUrl!} />
+              <NativeQrArea codeUrl={effectiveCodeUrl!} />
               <Link to={`/report/${orderNo}`} className="mt-4 block">
                 <button type="button" className="h-9 w-full rounded-full bg-jade text-sm font-medium text-white transition hover:bg-[#2f8a6e] [touch-action:manipulation]">
                   我已支付 · 查看报告

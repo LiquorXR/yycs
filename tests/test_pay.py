@@ -85,8 +85,12 @@ def _configure_wxpay(monkeypatch, tmp_path, with_platform_cert=True):
     return platform_key
 
 
-def _make_callback(platform_key, payload, sign=True, timestamp="1787000000", nonce="1787000000", tamper_amount=None):
+def _make_callback(platform_key, payload, sign=True, timestamp=None, nonce="1787000000", tamper_amount=None):
     """构造微信回调：resource 用 APIv3 密钥 AES-256-GCM 加密，头部用平台私钥签名。"""
+    if timestamp is None:
+        import time as _time
+
+        timestamp = str(int(_time.time()))
     if tamper_amount is not None:
         payload = json.loads(json.dumps(payload))
         payload["amount"]["total"] = tamper_amount
@@ -111,11 +115,16 @@ def _make_callback(platform_key, payload, sign=True, timestamp="1787000000", non
         message = f"{timestamp}\n{nonce}\n{raw}\n"
         signature = platform_key.sign(message.encode("utf-8"), padding.PKCS1v15(), hashes.SHA256())
         sig = base64.b64encode(signature).decode("ascii")
+    # 序列号需与平台证书真实序列号一致，否则新逻辑会直接 FAIL
+    try:
+        expected_serial = wechatpay.client._platform_cert_serial()  # type: ignore[attr-defined]
+    except Exception:
+        expected_serial = None
     headers = {
         "Wechatpay-Timestamp": timestamp,
         "Wechatpay-Nonce": nonce,
         "Wechatpay-Signature": sig,
-        "Wechatpay-Serial": "PLATFORM_SERIAL",
+        "Wechatpay-Serial": expected_serial or "PLATFORM_SERIAL",
     }
     return raw, headers
 
@@ -260,9 +269,10 @@ def test_create_order_h5_fallback_native(client_and_factory, monkeypatch, tmp_pa
     monkeypatch.setattr(wechatpay.client, "create_h5_payment", fail_h5)
     monkeypatch.setattr(wechatpay.client, "create_native_payment", lambda *a, **k: "weixin://wxpay/bizpayurl?pr=TEST")
 
+    profile_id = create_profile(client, _key="pay-fb-profile")["profileId"]
     resp = client.post(
         "/api/orders",
-        json={"profileId": create_profile(client, _key="pay-fb-profile")["profileId"], "productId": 1, "paymentMethod": "auto"},
+        json={"profileId": profile_id, "productId": 1, "paymentMethod": "auto"},
         headers={"Idempotency-Key": "pay-fallback"},
     )
     assert resp.status_code == 200
@@ -270,13 +280,21 @@ def test_create_order_h5_fallback_native(client_and_factory, monkeypatch, tmp_pa
     assert data["payType"] == "native"
     assert data["codeUrl"] == "weixin://wxpay/bizpayurl?pr=TEST"
     assert data["payUrl"] is None
-    # 幂等键命中：重复下单返回同样结果
+    # 幂等键命中：同 payload 重复下单返回同样结果
     again = client.post(
+        "/api/orders",
+        json={"profileId": profile_id, "productId": 1, "paymentMethod": "auto"},
+        headers={"Idempotency-Key": "pay-fallback"},
+    )
+    assert again.json()["data"] == data
+    # 同 Key 不同 payload 应 409 冲突（防计费错乱）
+    conflict = client.post(
         "/api/orders",
         json={"profileId": create_profile(client, _key="pay-fb2-profile")["profileId"], "productId": 1},
         headers={"Idempotency-Key": "pay-fallback"},
     )
-    assert again.json()["data"] == data
+    assert conflict.status_code == 409
+    assert conflict.json()["code"] == 10005
 
 
 def test_create_order_upstream_failure_degrades_to_null(client_and_factory, monkeypatch, tmp_path):

@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import logging
 
-from fastapi import APIRouter, Depends, Header
+from fastapi import APIRouter, Depends, Header, Request
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -18,7 +18,7 @@ from app.db.session import get_db
 from app.models.profile import Profile
 from app.models.report import Report
 from app.services.divination import generate_factors, generate_preview_report, validate_profile_input
-from app.services.idempotency import IDEM_SCOPE_PROFILE, get_idempotent_response, store_idempotent_response
+from app.services.idempotency import IDEM_SCOPE_PROFILE, get_idempotent_response, hash_payload, store_idempotent_response
 from app.services.report import generate_single_report
 from app.services.seq import next_profile_id
 
@@ -67,7 +67,8 @@ def create_profile(
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ) -> dict:
     """提交测算信息：校验 → 生辰加密落库 → 生成预览报告（免费，掩码）。"""
-    cached = get_idempotent_response(db, idempotency_key, IDEM_SCOPE_PROFILE)
+    payload_hash = hash_payload(payload.model_dump())
+    cached = get_idempotent_response(db, idempotency_key, IDEM_SCOPE_PROFILE, payload_hash)
     if cached is not None:
         return ok_response(cached)
 
@@ -108,7 +109,7 @@ def create_profile(
     db.commit()
 
     data = {"profileId": profile_id, "previewReport": _preview_view(preview)}
-    store_idempotent_response(db, idempotency_key, IDEM_SCOPE_PROFILE, data)
+    store_idempotent_response(db, idempotency_key, IDEM_SCOPE_PROFILE, data, payload_hash)
     db.commit()
     return ok_response(data)
 
@@ -138,11 +139,15 @@ def get_preview(profile_id: str, db: Session = Depends(get_db)) -> dict:
 
 
 @router.delete("/api/profiles/{profile_id}")
-def delete_profile(profile_id: str, db: Session = Depends(get_db)) -> dict:
+def delete_profile(profile_id: str, request: Request, db: Session = Depends(get_db)) -> dict:
     """客服删除/匿名化测算档案（PIPL 删除权，行使后无法恢复）。
 
-    仅供客服后台调用，不在 H5 前端暴露；操作将匿名化姓名与生辰密文并清空因子。
+    生产环境已下线（无客服后台，按流程用户付款后直接加企微，删除需人工DB操作），
+    任何调用在 prod 返回 404，避免公网匿名批量删除。
     """
+    if settings.APP_ENV == "prod":
+        logger.warning("prod 禁止删除尝试 profile_id=%s ip=%s", profile_id, request.client.host if request.client else "unknown")
+        raise BizError(ErrorCode.NOT_FOUND, "资源不存在")
     profile = db.query(Profile).filter(Profile.id == profile_id).first()
     if profile is None:
         raise BizError(ErrorCode.NOT_FOUND, "资源不存在")

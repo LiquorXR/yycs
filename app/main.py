@@ -42,14 +42,16 @@ app = FastAPI(
     debug=settings.DEBUG,
     lifespan=lifespan,
     docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
 )
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "Idempotency-Key", "Wechatpay-*", "X-Requested-With"],
 )
 
 
@@ -94,6 +96,23 @@ app.include_router(pay.router)
 # 生产静态托管：backend 容器内直接托管前端构建产物，nginx 仅反代 127.0.0.1:8000。
 # 必须在全部 API 路由注册之后追加 catch-all；dev/测试用 Vite，目录不存在时静默跳过。
 _DIST_DIR = Path(settings.FRONTEND_DIST_DIR)
+# 防御环境变量注入劫持为 "/" 导致任意文件读取
+try:
+    _dist_resolved = _DIST_DIR.resolve()
+    if _dist_resolved == Path("/").resolve():
+        logger.warning("FRONTEND_DIST_DIR 非法为根路径，已禁用静态托管")
+        _DIST_DIR = Path("/nonexistent_dist_disabled")
+    else:
+        # 仅允许 /app 或当前工作目录下的路径
+        _allowed_roots = {Path("/app").resolve(), Path.cwd().resolve()}
+        if not any(
+            _dist_resolved == r or _dist_resolved.is_relative_to(r)  # type: ignore[attr-defined]
+            for r in _allowed_roots
+        ):
+            logger.warning("FRONTEND_DIST_DIR 非法路径 %s，已禁用静态托管", _DIST_DIR)
+            _DIST_DIR = Path("/nonexistent_dist_disabled")
+except Exception:
+    pass
 
 
 def _json_404() -> JSONResponse:

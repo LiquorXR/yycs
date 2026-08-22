@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { getOrder, getOrderReport, type OrderReport } from '@/api/orders'
 import { formatPrice } from '@/lib/format'
+import { isSafeQrcodeUrl } from '@/lib/url'
 
 /** 已支付（付款成功，进入人工交付流程）的订单状态 */
 const PAID_STATES = ['PAID', 'UNLOCKED', 'DELIVERED', 'ADDED_WECOM']
@@ -109,8 +110,11 @@ function MasterConsult({
           alt="企业微信活码二维码"
           className="mx-auto size-44 rounded-lg border border-border-gold bg-white object-contain p-2 shadow-gold"
           loading="lazy"
+          onError={(e) => {
+            ;(e.target as HTMLImageElement).style.display = 'none'
+          }}
         />
-        <a href="wecom://" className="mt-3 block w-full">
+        <a href="wecom://" className="mt-3 block w-full" rel="noopener noreferrer">
           <button type="button" className="btn-guofeng-gold !text-[15px]">
             添加到企业微信
           </button>
@@ -450,8 +454,8 @@ function ReportPage() {
             ) : null}
           </section>
 
-          {/* 大师亲批导流（企微数据） */}
-          {report.wecom ? (
+          {/* 大师亲批导流（企微数据，qrcodeUrl 需白名单校验防 XSS） */}
+          {report.wecom && isSafeQrcodeUrl(report.wecom.qrcodeUrl) ? (
             <MasterConsult wecom={report.wecom} orderNo={report.orderNo} />
           ) : (
             <p className="text-center text-xs text-muted">报告编号：{report.orderNo}</p>
@@ -473,7 +477,7 @@ function ReportPage() {
             </span>
           </button>
           <div className="mt-1 flex justify-between px-1 text-[11px] text-muted">
-            <span>原价 ¥198 · 已有 28.4 万人解锁</span>
+            <span>原价 {formatPrice(Math.round((amount ?? 9900) * 2))} · 已有 28.4 万人解锁</span>
             <span>不支持退款承诺·测算加密</span>
           </div>
         </div>
@@ -545,15 +549,15 @@ function ReportPage() {
               </ul>
             </div>
 
-            {/* 特惠现价行 */}
+            {/* 特惠现价行 — 价格统一取订单真实金额，防价格欺诈 */}
             <div className="mb-3 flex items-center justify-between">
               <span className="text-xs text-fg-secondary">
                 特惠现价（限时剩余 3 席）
               </span>
               <span className="flex items-baseline gap-1.5">
-                <span className="text-xs text-muted line-through">¥198.00</span>
+                <span className="text-xs text-muted line-through">{formatPrice(Math.round((amount ?? 9900) * 2))}</span>
                 <span className="font-mono text-2xl font-bold text-gold">
-                  ¥28.00
+                  {formatPrice(amount ?? 9900)}
                 </span>
               </span>
             </div>
@@ -574,7 +578,7 @@ function ReportPage() {
                 navigate(`/pay/${orderNo}`)
               }}
             >
-              确认支付 ¥28.00 开启天书
+              确认支付 {formatPrice(amount ?? 9900)} 开启天书
             </button>
             <p className="mt-2.5 text-center text-[11px] text-muted">
               🔒 256 位安全加密传输 · 解锁后永久随时查阅

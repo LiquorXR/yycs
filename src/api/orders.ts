@@ -22,6 +22,8 @@ export interface OrderDetail {
   amount: number
   state: string
   payType: string | null
+  payUrl: string | null
+  codeUrl: string | null
   createdAt?: string
   paidAt?: string | null
 }

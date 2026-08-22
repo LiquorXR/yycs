@@ -11,6 +11,8 @@ from __future__ import annotations
 
 import json
 import logging
+import time
+import uuid
 
 from sqlalchemy import update as sa_update
 from sqlalchemy.orm import Session
@@ -134,7 +136,7 @@ def _unlock_and_record(db: Session, order: Order, payload: dict, now, raw_callba
         report.state = "unlocked"
         report.unlocked_at = now
 
-    transaction_id = payload.get("transaction_id") or f"WX-{order.order_no}-{now:%Y%m%d%H%M%S}"
+    transaction_id = payload.get("transaction_id") or f"WX-{order.order_no}-{uuid.uuid4().hex[:8].upper()}-{now:%Y%m%d%H%M%S}"
     db.add(
         PayTransaction(
             transaction_id=transaction_id,
@@ -176,14 +178,24 @@ def handle_pay_notify(db: Session, headers, raw_body: bytes) -> tuple[str, str]:
     timestamp = headers.get("Wechatpay-Timestamp") or headers.get("wechatpay-timestamp")
     nonce = headers.get("Wechatpay-Nonce") or headers.get("wechatpay-nonce")
     serial = headers.get("Wechatpay-Serial") or headers.get("wechatpay-serial")
-    # 平台证书序列号一致性校验（不匹配则告警并拒绝，避免错配证书验签）
+    # 平台证书序列号一致性校验：不匹配直接拒绝（防错配证书验签）
     if serial:
         expected = client._platform_cert_serial()
         if expected and serial.upper() != expected.upper():
             logger.warning("微信回调 serial 不匹配 header=%s expected=%s request-id=%s", serial, expected, request_id)
+            return "FAIL", "serial mismatch"
     if not (signature and timestamp and nonce):
         logger.warning("回调缺少签名头 request-id=%s", request_id)
         return "FAIL", "missing signature headers"
+    # timestamp 时效校验 ±5min 防重放
+    try:
+        ts = int(str(timestamp).strip())
+        if abs(ts - int(time.time())) > 300:
+            logger.warning("回调 timestamp 超时 request-id=%s ts=%s", request_id, timestamp)
+            return "FAIL", "timestamp expired"
+    except (ValueError, TypeError):
+        logger.warning("回调 timestamp 非法 request-id=%s ts=%s", request_id, timestamp)
+        return "FAIL", "invalid timestamp"
     if not client.verify_signature(timestamp, nonce, raw_body, signature):
         logger.error("微信支付回调验签失败 request-id=%s", request_id)
         return "FAIL", "signature verification failed"

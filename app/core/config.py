@@ -21,7 +21,7 @@ class Settings(BaseSettings):
 
     APP_NAME: str = "振凡命理"
     APP_ENV: str = "dev"
-    DEBUG: bool = True
+    DEBUG: bool = False
 
     # 数据库连接串；默认使用项目根目录的 SQLite 文件
     DATABASE_URL: str = "sqlite:///./app.db"
@@ -84,3 +84,6 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+# 生产环境禁止 DEBUG 开启，防 traceback 泄露
+if settings.APP_ENV == "prod" and settings.DEBUG:
+    raise RuntimeError("prod 环境禁止 DEBUG=true，请设置 DEBUG=false")

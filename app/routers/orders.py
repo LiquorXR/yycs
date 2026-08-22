@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import logging
 
-from fastapi import APIRouter, Depends, Header, Request
+from fastapi import APIRouter, Depends, Header, Query, Request
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -18,7 +18,7 @@ from app.models.order import Order, OrderState
 from app.models.pay_transaction import PayTransaction
 from app.models.report import Report
 from app.services import order_service, pay_service
-from app.services.idempotency import IDEM_SCOPE_ORDER, get_idempotent_response, store_idempotent_response
+from app.services.idempotency import IDEM_SCOPE_ORDER, get_idempotent_response, hash_payload, store_idempotent_response
 from app.services.report import DEFAULT_LOCKED_PREVIEW
 from app.services.wechatpay import WechatPayError
 
@@ -39,11 +39,21 @@ _PAID_STATES = {
 _WECOM_NOTE = "已生成专属客服码,扫码添加后由人工为您深度测算"
 
 
+class AdParamsModel(BaseModel):
+    """投放归因白名单：仅允许三字段，其余 forbid，防 DoS/注入。"""
+
+    model_config = {"extra": "forbid"}
+
+    ad_id: str | None = Field(None, max_length=64, pattern=r"^[a-zA-Z0-9_-]+$")
+    creative_id: str | None = Field(None, max_length=64, pattern=r"^[a-zA-Z0-9_-]+$")
+    campaign_id: str | None = Field(None, max_length=64, pattern=r"^[a-zA-Z0-9_-]+$")
+
+
 class OrderCreateRequest(BaseModel):
     profileId: str
     productId: int
     paymentMethod: str = Field("auto", description="auto/h5/native")
-    adParams: dict | None = None
+    adParams: AdParamsModel | None = None
     amount: int | None = Field(None, description="防改价校验用，非必填")
 
 
@@ -60,16 +70,22 @@ def create_order(
     if payload.paymentMethod not in PAYMENT_METHODS:
         raise BizError(ErrorCode.PARAM_VALIDATION, "参数校验失败：paymentMethod 需为 auto/h5/native")
 
-    cached = get_idempotent_response(db, idempotency_key, IDEM_SCOPE_ORDER)
+    payload_hash = hash_payload(payload.model_dump())
+    cached = get_idempotent_response(db, idempotency_key, IDEM_SCOPE_ORDER, payload_hash)
     if cached is not None:
         return ok_response(cached)
+
+    # 白名单后的 AdParams 需转为普通 dict 落库
+    ad_params_dict = None
+    if payload.adParams is not None:
+        ad_params_dict = payload.adParams.model_dump(exclude_none=True) or None
 
     order_no, amount = order_service.create_order(
         db,
         payload.profileId,
         payload.productId,
         payload.paymentMethod,
-        payload.adParams,
+        ad_params_dict,
         payload.amount,
     )
 
@@ -89,16 +105,22 @@ def create_order(
         "payUrl": pay_info["payUrl"],
         "codeUrl": pay_info["codeUrl"],
     }
-    store_idempotent_response(db, idempotency_key, IDEM_SCOPE_ORDER, data)
+    store_idempotent_response(db, idempotency_key, IDEM_SCOPE_ORDER, data, payload_hash)
     db.commit()
     return ok_response(data)
 
 
 @router.get("/api/orders/{order_no}")
-def get_order(order_no: str, db: Session = Depends(get_db)) -> dict:
-    """订单详情（时间字段 ISO8601 UTC）。"""
+def get_order(
+    order_no: str,
+    profileId: str | None = Query(None, description="归属校验：传入时需与订单 profile_id 一致"),
+    db: Session = Depends(get_db),
+) -> dict:
+    """订单详情（时间字段 ISO8601 UTC）。归属校验：若传入 profileId 则校验一致性，防随机ID外的二次防护。"""
     order = db.query(Order).filter(Order.order_no == order_no).first()
     if order is None:
+        raise BizError(ErrorCode.NOT_FOUND, "资源不存在")
+    if profileId is not None and order.profile_id != profileId:
         raise BizError(ErrorCode.NOT_FOUND, "资源不存在")
     return ok_response(
         {
@@ -121,10 +143,16 @@ def get_order(order_no: str, db: Session = Depends(get_db)) -> dict:
 
 
 @router.post("/api/orders/{order_no}/close")
-def close_order(order_no: str, db: Session = Depends(get_db)) -> dict:
+def close_order(
+    order_no: str,
+    profileId: str | None = Query(None, description="归属校验"),
+    db: Session = Depends(get_db),
+) -> dict:
     """关单：仅 CREATED 可关；已支付 12002，其余非 CREATED 12003。配置齐全时同步调用微信关单（幂等）。"""
     order = db.query(Order).filter(Order.order_no == order_no).first()
     if order is None:
+        raise BizError(ErrorCode.NOT_FOUND, "资源不存在")
+    if profileId is not None and order.profile_id != profileId:
         raise BizError(ErrorCode.NOT_FOUND, "资源不存在")
     if order.state in _PAID_STATES:
         raise BizError(ErrorCode.ORDER_ALREADY_PAID, "订单已支付")
@@ -144,11 +172,17 @@ def close_order(order_no: str, db: Session = Depends(get_db)) -> dict:
 
 
 @router.get("/api/orders/{order_no}/report")
-def get_order_report(order_no: str, db: Session = Depends(get_db)) -> dict:
+def get_order_report(
+    order_no: str,
+    profileId: str | None = Query(None, description="归属校验"),
+    db: Session = Depends(get_db),
+) -> dict:
     """获取报告：无论订单状态一律只返回锁定预览（title + lockedPreview + locked=true），
     完整测算结果由人工交付；已支付订单在配置企微客服码时返回 wecom 引导。"""
     order = db.query(Order).filter(Order.order_no == order_no).first()
     if order is None:
+        raise BizError(ErrorCode.NOT_FOUND, "资源不存在")
+    if profileId is not None and order.profile_id != profileId:
         raise BizError(ErrorCode.NOT_FOUND, "资源不存在")
 
     report = (
