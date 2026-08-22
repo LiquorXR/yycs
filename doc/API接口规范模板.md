@@ -26,6 +26,7 @@
 | v1.0.6 | 2026-08-16 | 生产同域部署：前端静态产物改由 backend 托管（/assets + SPA 回退 index.html），nginx 仅 TLS 反代 |  |
 | v1.0.7 | 2026-08-18 | 微信支付 V3 支付闭环落地：创建订单（§2.5）支付配置齐全时返回真实 payType/payUrl/codeUrl（H5/Native），否则 null 降级；微信支付回调（§2.10）改为已实现（验签/AES-GCM 解密/幂等/恰好一次解锁）；新增查单与对账补偿说明；关单同步调用微信关单；删除 §2.11 退款回调（产品决策移除退款功能，退款接口/回调/模型/配置全部下线） |  |
 | v1.0.8 | 2026-08-18 | 报告交付模式变更：获取报告（§2.8）改为**一律返回锁定态**（title + locked=true + lockedPreview），不再下发 score/rank/analysis/karma 等完整内容——付费后由人工经企业微信交付完整结果；wecom 字段改为「已支付 + 配置企微二维码」时返回；移除 14002 错误码（报告不再抛越权/未解锁错误，代码与文档同步删除） |  |
+| v1.0.9 | 2026-08-23 | 姻缘主线收敛：产品更名为「姻缘测算·正缘完整报告」/「姻缘测算·正缘预览（免费版）」；提交测算信息 focusTags 去除事业运势、新增正缘画像/桃花旺衰年份/婚后走势/相处之道/脱单锦囊；报告 title 改为「姓名 · 姻缘天书·正缘详批（预览）」，lockedPreview 第二章改为婚后走势与相处经营指南 |  |
 
 ---
 
@@ -186,7 +187,7 @@ Query 参数：
   "message": "success",
   "data": {
     "list": [
-      { "id": 1, "name": "姻缘测算完整报告", "price": 9900, "type": 1, "freeFlag": 0, "status": 1 }
+      { "id": 1, "name": "姻缘测算·正缘完整报告", "price": 990, "type": 1, "freeFlag": 0, "status": 1 }
     ],
     "total": 1,
     "page": 1,
@@ -232,8 +233,8 @@ Query 参数：
   "message": "success",
   "data": {
     "id": 1,
-    "name": "姻缘测算完整报告",
-    "price": 9900,
+    "name": "姻缘测算·正缘完整报告",
+    "price": 990,
     "type": 1,
     "freeFlag": 0,
     "status": 1
@@ -270,7 +271,7 @@ Body（JSON）：
 | birth | string | 是 | 出生日期，`YYYY-MM-DD`（1900-01-01 至今天） |
 | birthHour | string | 否 | 出生时辰（十二时辰之一：`子`~`亥`；不填或空串视为时辰不详） |
 | isLunar | boolean | 否 | 出生日期是否农历（默认 false，服务端换算） |
-| focusTags | string[] | 否 | 关注点标签数组，用于定制报告章节，取值：`正缘桃花期`/`婚后财运旺衰`/`性格解析`/`事业运势`/`避坑锦囊`；不传则按默认章节生成 |
+| focusTags | string[] | 否 | 关注点标签数组，用于定制姻缘报告章节，取值：`正缘画像`/`桃花旺衰年份`/`婚后走势`/`相处之道`/`脱单锦囊`（兼容旧：`正缘桃花期`/`婚后财运旺衰`/`性格解析`/`避坑锦囊`，已去除 `事业运势`）；不传则按默认章节生成 |
 
 > 请求头：`Idempotency-Key` 可选（服务端 24 小时内同键返回首次结果；未携带则不幂等去重）。与创建订单（§2.5 强制必填）不同，本接口不强制。
 
@@ -286,7 +287,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
   "birth": "1995-08-15",
   "birthHour": "子",
   "isLunar": false,
-  "focusTags": ["正缘桃花期", "婚后财运旺衰"]
+  "focusTags": ["正缘画像", "桃花旺衰年份"]
 }
 ```
 
@@ -299,7 +300,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
   "data": {
     "profileId": "P2026080900123",
     "previewReport": {
-      "title": "张三 · 姻缘运势测算预览",
+      "title": "张三 · 姻缘正缘测算预览",
       "locked": true,
       "lockedNote": "完整版需付费解锁"
     }
@@ -339,7 +340,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
     "name": "张三",
     "birth": "1995-08-15",
     "previewReport": {
-      "title": "张三 · 姻缘运势测算预览",
+      "title": "张三 · 姻缘正缘测算预览",
       "locked": true,
       "lockedNote": "完整版需付费解锁"
     }
@@ -405,7 +406,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
   "message": "success",
   "data": {
     "orderNo": "S20260809001",
-    "amount": 9900,
+    "amount": 990,
     "payType": "h5",
     "payUrl": "https://wx.tenpay.com/cgi-bin/mmpayweb-bin/checkmweb?...",
     "codeUrl": null
@@ -459,7 +460,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
     "profileId": "P2026080900123",
     "productId": 1,
     "outTradeNo": "S20260809001",
-    "amount": 9900,
+    "amount": 990,
     "state": "CREATED",
     "payType": "h5",
     "payUrl": "https://wx.tenpay.com/cgi-bin/mmpayweb-bin/checkmweb?...",
@@ -554,16 +555,18 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
     "orderNo": "S20260809001",
     "state": "UNLOCKED",
     "report": {
-      "title": "张三 · 八字命盘详批（姻缘预览）",
+      "title": "张三 · 姻缘天书·正缘详批（预览）",
       "locked": true,
       "lockedPreview": [
         { "title": "正缘画像与桃花旺衰节点", "body": "完整版将生成你的专属正缘画像，推演未来数年桃花旺衰与脱单关键节点，并给出应期把握之法。付费解锁后即可查看。" },
-        { "title": "婚后财运走势与家庭财富规划", "body": "完整版将测算婚后财运旺衰与家庭财富走势，助力家宅兴旺、财库充盈。付费解锁后即可查看。" }
+        { "title": "婚后走势与相处经营指南", "body": "完整版将测算婚后走势与家宅财运，并给出相处经营与避坑锦囊，助力姻缘和美、家宅兴旺。付费解锁后即可查看。" }
       ]
     },
     "wecom": {
-      "qrcodeUrl": "https://qywx.../contact",
-      "note": "已生成专属客服码,扫码添加后由人工为您深度测算"
+      "addWay": "contact_way",          // 企业微信「联系我」活码/链接（预留）
+      "qrcodeUrl": "https://qywx...",
+      "state": "S20260809001",
+      "note": "已生成姻缘专属客服码，扫码添加后由人工为您深度解读正缘"
     }
   }
 }
@@ -579,11 +582,11 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
     "orderNo": "S20260809001",
     "state": "CREATED",
     "report": {
-      "title": "张三 · 八字命盘详批（姻缘预览）",
+      "title": "张三 · 姻缘天书·正缘详批（预览）",
       "locked": true,
       "lockedPreview": [
         { "title": "正缘画像与桃花旺衰节点", "body": "完整版将生成你的专属正缘画像，推演未来数年桃花旺衰与脱单关键节点，并给出应期把握之法。付费解锁后即可查看。" },
-        { "title": "婚后财运走势与家庭财富规划", "body": "完整版将测算婚后财运旺衰与家庭财富走势，助力家宅兴旺、财库充盈。付费解锁后即可查看。" }
+        { "title": "婚后走势与相处经营指南", "body": "完整版将测算婚后走势与家宅财运，并给出相处经营与避坑锦囊，助力姻缘和美、家宅兴旺。付费解锁后即可查看。" }
       ]
     },
     "wecom": null
@@ -597,9 +600,9 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 |---|---|---|
 | data.state | string | 订单状态：CREATED/PAID/UNLOCKED/DELIVERED/ADDED_WECOM/CLOSED；已支付态为 PAID/UNLOCKED/DELIVERED/ADDED_WECOM |
 | data.report | object | 报告内容；**恒为锁定态**：仅含 title/locked/lockedPreview（locked=true），不再返回 score/rank/analysis/karma 等完整字段 |
-| data.report.title | string | 报告标题（`姓名 · 八字命盘详批（姻缘预览）`）；报告记录缺失时返回兜底标题 |
+| data.report.title | string | 报告标题（`姓名 · 姻缘天书·正缘详批（预览）`）；报告记录缺失时返回兜底标题 |
 | data.report.locked | boolean | 恒为 `true`（完整结果由人工企微交付，页面不展示） |
-| data.report.lockedPreview | array | 锁定预览 `[{title, body}]`（2 条：正缘画像与桃花旺衰节点 / 婚后财运走势与家庭财富规划），付费前后均返回；报告记录缺失时返回默认预览 |
+| data.report.lockedPreview | array | 锁定预览 `[{title, body}]`（2 条：正缘画像与桃花旺衰节点 / 婚后走势与相处经营指南），付费前后均返回；报告记录缺失时返回默认预览 |
 | data.wecom | object \| null | 企微加好友信息；已支付且配置 `WECOM_QRCODE_URL` 时返回，否则 null |
 | data.wecom.qrcodeUrl | string | 企微二维码 URL。当前为配置占位 URL（环境变量 `WECOM_QRCODE_URL`）；企微真活码（state=订单号归因）后续接入后填充 |
 | data.wecom.note | string | 加好友提示语 |

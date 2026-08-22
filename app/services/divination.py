@@ -1,6 +1,6 @@
 """测算模块：信息校验、测算因子提取、预览报告算法骨架。
 
-单人测算（个人运势 + 姻缘预览）：仅需单人姓名/生辰/时辰。
+姻缘测算（正缘画像 + 桃花期预览）：仅需单人姓名/生辰/时辰，以姻缘为主线。
 预览报告仅做简单规则（生肖/五行）生成 title 与摘要，摘要不涉及真实测算内容，
 预览即掩码。算法函数化、可替换，后续可改为配置化/接入真实测算引擎。
 """
@@ -91,11 +91,11 @@ def generate_preview_report(factors: dict) -> dict:
     返回 dict 含 title/locked/lockedNote/summary；对外响应仅取前三项，
     summary 仅为展示型摘要（生肖/五行标签），完整测算 B 阶段实现。
     """
-    title = f"{factors['name']} · 姻缘运势测算预览"
+    title = f"{factors['name']} · 姻缘正缘测算预览"
     summary = (
         f"{factors['name']}（属{factors['zodiac']}·{factors['element']}）"
-        "的个人运势与姻缘前景速览。"
-        "以上为免费预览，完整运势报告需付费解锁。"
+        "的正缘画像与桃花时机速览。"
+        "以上为免费预览，完整姻缘天书需付费解锁。"
     )
     return {
         "title": title,

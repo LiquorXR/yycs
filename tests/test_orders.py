@@ -62,7 +62,7 @@ def test_create_order_success(client):
     assert body["code"] == 0
     data = body["data"]
     assert data["orderNo"].startswith("S")
-    assert data["amount"] == 9900
+    assert data["amount"] == 990
     assert data["payType"] is None
     assert data["payUrl"] is None
     assert data["codeUrl"] is None
@@ -77,9 +77,9 @@ def test_create_order_anti_tamper_amount_12001(client):
 
 def test_create_order_matching_amount_ok(client):
     pid = _profile_id(client)
-    resp = _create_order(client, pid, key="order-key-okamt", amount=9900)
+    resp = _create_order(client, pid, key="order-key-okamt", amount=990)
     assert resp.status_code == 200
-    assert resp.json()["data"]["amount"] == 9900
+    assert resp.json()["data"]["amount"] == 990
 
 
 def test_create_order_idempotent(client):
@@ -125,7 +125,7 @@ def test_get_order_detail(client):
     data = resp.json()["data"]
     assert data["orderNo"] == order_no
     assert data["profileId"] == pid
-    assert data["amount"] == 9900
+    assert data["amount"] == 990
     assert data["state"] == "CREATED"
     assert data["payType"] == "auto"
     assert data["outTradeNo"] == order_no
@@ -258,7 +258,7 @@ def test_report_missing_returns_default_preview(client_and_factory):
     data = client.get(f"/api/orders/{order_no}/report").json()["data"]
     report = data["report"]
     assert report["locked"] is True
-    assert report["title"] == "八字命盘详批（姻缘预览）"
+    assert report["title"] == "姻缘天书·正缘详批（预览）"
     assert len(report["lockedPreview"]) == 2
     assert all(k["title"] and k["body"] for k in report["lockedPreview"])
     assert data["wecom"] is None

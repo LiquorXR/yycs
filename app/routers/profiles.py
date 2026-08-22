@@ -34,7 +34,7 @@ class ProfileCreateRequest(BaseModel):
     birth: str
     birthHour: str | None = None
     isLunar: bool = False
-    focusTags: list[str] | None = Field(default=None, description="正缘桃花期/婚后财运旺衰/性格解析/事业运势/避坑锦囊")
+    focusTags: list[str] | None = Field(default=None, description="正缘画像/桃花旺衰年份/婚后走势/相处之道/脱单锦囊（兼容旧：正缘桃花期/婚后财运旺衰/性格解析/避坑锦囊）")
     agreedPrivacyVersion: str | None = Field(default=None, description="已同意的隐私政策版本，需等于当前版本")
 
 
@@ -124,7 +124,7 @@ def get_preview(profile_id: str, db: Session = Depends(get_db)) -> dict:
     preview = json.loads(profile.preview_report) if profile.preview_report else None
     if preview is None:
         preview = {
-            "title": "姻缘运势测算预览",
+            "title": "姻缘正缘测算预览",
             "locked": True,
             "lockedNote": "完整版需付费解锁",
         }

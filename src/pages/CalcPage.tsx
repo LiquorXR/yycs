@@ -20,14 +20,14 @@ const HOURS = [
   { value: '', label: '时辰不详 (系统推算)' },
 ]
 
-const FOCUS_TAGS = ['正缘桃花期', '婚后财运旺衰', '性格解析', '事业运势', '避坑锦囊']
-const DEFAULT_FOCUS = ['正缘桃花期', '婚后财运旺衰', '性格解析']
+const FOCUS_TAGS = ['正缘画像', '桃花旺衰年份', '婚后走势', '相处之道', '脱单锦囊']
+const DEFAULT_FOCUS = ['正缘画像', '桃花旺衰年份', '婚后走势']
 
 const LOADING_STEPS = [
-  '排盘天干地支四柱与纳音五行...',
-  '推演八字喜用神与五行旺衰...',
-  '计算正缘桃花期与事业财运走势...',
-  '生成命盘密签与化解锦囊...',
+  '合参八字与生肖桃花…',
+  '定位正缘画像与相遇时机…',
+  '推演近三年桃花旺衰与婚后走势…',
+  '生成姻缘密签与相处锦囊…',
 ]
 
 /** 推演超时阈值：30s 未完成则展示重试容器 */
@@ -98,17 +98,29 @@ function CalcLoading({
     >
       <div>
         <h2 className="mb-1.5 font-kai text-[22px] tracking-[0.08em] text-gold-light">
-          天机交感 · 命盘推演
+          天机交感 · 姻缘推演
         </h2>
         <p className="text-[13px] text-muted">
-          正在排盘计算个人五行喜忌与运势姻缘
+          正在合参八字 · 定位你的正缘桃花期
         </p>
       </div>
 
-      {/* 命主居中 */}
+      {/* 命主居中 — 头像 */}
       <div className="relative z-10 mt-5 flex flex-col items-center gap-1.5">
-        <span className="grid size-[58px] animate-pulse-glow-slow place-items-center rounded-full border-2 border-gold bg-[radial-gradient(circle,#4a0e0e_0%,#2a0808_100%)] font-kai text-lg text-gold-light shadow-[0_0_16px_rgba(226,180,95,0.4)]">
-          命
+        <span className="grid size-[58px] animate-pulse-glow-slow place-items-center rounded-full border-2 border-gold bg-[radial-gradient(circle,#4a0e0e_0%,#2a0808_100%)] text-gold-light shadow-[0_0_16px_rgba(226,180,95,0.4)]">
+          <svg
+            viewBox="0 0 24 24"
+            className="size-8"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.7}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx={12} cy={8} r={3.8} />
+            <path d="M6.2 19c0-3.05 2.75-5.45 5.8-5.45S17.8 15.95 17.8 19" />
+          </svg>
         </span>
         <span className="max-w-[120px] truncate text-[13px] font-medium text-fg">
           {name}
@@ -185,7 +197,7 @@ function CalcLoading({
           {timedOut ? (
             <div className="mt-3 rounded-[10px] border border-red/25 bg-red/10 px-3 py-3 text-center">
               <p className="text-xs leading-relaxed text-red-light">
-                推演耗时稍长，已为您保留排盘数据
+                推演耗时稍长，已为您保留姻缘数据
               </p>
               <div className="mt-2.5 flex justify-center">
                 <button
@@ -229,7 +241,7 @@ function PersonSection({
     <section className="rounded-[16px] border border-border-gold bg-surface-card p-4">
       <div className="mb-3 flex items-center justify-between">
         <div className="font-kai text-[15px] font-bold text-gold-light">
-          个人命盘
+          个人信息
         </div>
         <div
           className="flex rounded-full border border-border bg-[#3a0a0a]/55 p-0.5 text-[11px]"
@@ -353,22 +365,22 @@ function PreviewReport({ result }: { result: StoredResult }) {
     <section className="mt-4" aria-label="预览报告">
       <div className="overflow-hidden rounded-[16px] border border-border-gold bg-surface-card shadow-card">
         <div className="border-b border-border bg-gradient-to-b from-[#5a0f0f]/60 to-transparent px-5 py-4">
-          <p className="text-xs tracking-[0.3em] text-muted">单人测算 · 预览报告</p>
+          <p className="text-xs tracking-[0.3em] text-muted">姻缘测算 · 正缘预览</p>
           <h3 className="mt-1 font-kai text-lg font-bold text-gold-light">
             {result.title}
           </h3>
           <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-fg-secondary">
             <div className="flex items-center gap-1.5">
-              运势指数：<span className="font-bold text-gold">★★★★☆</span>
+              姻缘契合度：<span className="font-bold text-gold">★★★★☆</span>
             </div>
             <div className="flex items-center gap-1.5">
               正缘桃花期：<span className="font-bold text-gold">今明两年</span>
             </div>
             <div className="flex items-center gap-1.5">
-              婚后财运：<span className="font-bold text-gold">稳步上升</span>
+              婚后走势：<span className="font-bold text-gold">稳步向好</span>
             </div>
             <div className="flex items-center gap-1.5">
-              性格解析：<span className="font-bold text-gold">五行已排</span>
+              相处之道：<span className="font-bold text-gold">已洞察</span>
             </div>
           </div>
         </div>
@@ -395,9 +407,9 @@ function PreviewReport({ result }: { result: StoredResult }) {
               {result.lockedNote ?? '完整版需付费解锁'}
             </p>
             <p className="mt-1 text-xs leading-relaxed text-fg-secondary">
-              解锁后可查看完整命盘报告与
+              解锁后可查看完整姻缘天书与
               <br />
-              专属运势建议
+              正缘专属指引
             </p>
           </div>
         </div>
@@ -575,7 +587,7 @@ function CalcPage() {
             </svg>
           </Link>
           <div className="font-kai text-[15px] font-bold tracking-[0.2em] text-gold-light">
-            填写命盘
+            填写个人信息
           </div>
           <span className="w-8" aria-hidden="true" />
         </div>
@@ -634,7 +646,7 @@ function CalcPage() {
             <Link to="/privacy" className="text-gold underline decoration-gold/40 underline-offset-2 hover:text-gold-light">
               《隐私政策》
             </Link>
-            ，所填信息仅用于本次命盘推演 · 点击“开始推演”即视为同意
+            ，所填信息仅用于本次姻缘测算 · 点击“开始推演”即视为同意
           </span>
         </label>
 
@@ -648,7 +660,7 @@ function CalcPage() {
         ) : null}
 
         <button type="submit" className="btn-guofeng-primary h-[50px] font-kai text-[17px] font-bold" disabled={showLoading}>
-          <span>开始推演 · 生成命盘</span>
+          <span>开始推演 · 定正缘桃花</span>
           <svg
             width="18"
             height="18"
@@ -661,7 +673,7 @@ function CalcPage() {
             <path d="M5 12h14M12 5l7 7-7 7" />
           </svg>
         </button>
-        <p className="text-center text-[11px] text-muted">已为 324,891 人生成专属命盘 · 平均耗时 8.2s</p>
+        <p className="text-center text-[11px] text-muted">已为 324,891 人定正缘桃花 · 平均耗时 8.2s</p>
       </form>
 
       {result ? <div className="px-5">
@@ -673,18 +685,18 @@ function CalcPage() {
         <div className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-border-gold bg-[#2e0808]/96 backdrop-blur-md">
           <div className="flex items-center justify-between gap-4 px-5 py-3">
             <div>
-              <p className="text-xs text-muted">解锁完整版</p>
+              <p className="text-xs text-muted">解锁姻缘完整报告</p>
               <p className="font-kai text-xl font-bold text-gold">
-                ¥99
+                ¥9.9
                 <span className="ml-1 text-xs font-normal text-muted">
-                  一次解锁 · 永久查看
+                  含正缘画像与桃花年份
                 </span>
               </p>
             </div>
             <div className="w-28 shrink-0">
               <Link to={`/order?profileId=${result.profileId}`} className="block">
                 <button type="button" className="btn-guofeng-primary !min-h-[40px] !px-4 !text-[13px]">
-                  解锁完整版
+                  解锁报告
                 </button>
               </Link>
             </div>

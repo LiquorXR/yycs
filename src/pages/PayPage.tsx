@@ -45,7 +45,7 @@ function PayChannelEmpty() {
         </svg>
       </span>
       <p className="mt-5 font-kai text-lg font-bold text-gold-light">支付通道即将上线，敬请期待</p>
-      <p className="mt-2 text-sm leading-relaxed text-fg-secondary">支付功能正在建设中，完成后即可解锁完整报告</p>
+              <p className="mt-2 text-sm leading-relaxed text-fg-secondary">支付功能正在建设中，完成后即可解锁姻缘完整报告</p>
     </div>
   )
 }
@@ -99,6 +99,22 @@ export default function PayPage() {
     return () => clearInterval(t)
   }, [])
 
+  // 持久化最近订单，便于付款后重复回看企微码（同设备 last_orderNo + 历史列表，无需跨设备）
+  useEffect(() => {
+    if (!orderNo) return
+    try {
+      localStorage.setItem('last_orderNo', orderNo)
+      const raw = localStorage.getItem('order_history')
+      const list: string[] = raw ? (JSON.parse(raw) as string[]) : []
+      if (!list.includes(orderNo)) {
+        list.unshift(orderNo)
+        localStorage.setItem('order_history', JSON.stringify(list.slice(0, 20)))
+      }
+    } catch {
+      /* 忽略隐私模式写入失败 */
+    }
+  }, [orderNo])
+
   const pay = (location.state as PayState | null) ?? null
   const isPaid = order?.state === 'PAID'
   // 有效支付信息优先取 location.state，刷新后回退到 order 字段（均需白名单校验）
@@ -122,10 +138,10 @@ export default function PayPage() {
             订单待支付 · <span className="font-mono font-bold">{countdownText}</span> 后自动关闭
           </div>
           <div className="mt-3 text-[13px] text-fg-secondary">
-            订单号 <span className="font-mono text-fg">{order?.orderNo ?? orderNo}</span> · 单人精批
+            订单号 <span className="font-mono text-fg">{order?.orderNo ?? orderNo}</span> · 姻缘专属报告
           </div>
           <div className="mt-1 font-kai text-[22px] font-bold leading-none text-gold">
-            {order ? formatPrice(order.amount) : '¥29.90'}
+            {order ? formatPrice(order.amount) : '¥9.9'}
           </div>
 
           {loading ? (
@@ -147,7 +163,7 @@ export default function PayPage() {
                 </svg>
               </span>
               <p className="mt-4 font-kai text-lg font-bold text-gold-light">支付成功</p>
-              <p className="mt-1 text-sm text-fg-secondary">完整报告已解锁，立即查看吧</p>
+              <p className="mt-1 text-sm text-fg-secondary">姻缘完整报告已解锁，立即查看吧</p>
               <Link to={`/report/${orderNo}`} className="mt-6 w-full max-w-[280px]">
                 <Button size="lg" variant="gold" className="w-full rounded-full text-base font-bold">
                   查看完整报告

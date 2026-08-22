@@ -27,7 +27,7 @@ export default function SiteFooter() {
         版权所有：{COMPANY_NAME}
       </p>
       <p className="mt-1 text-[10px] leading-relaxed text-white/25">
-        生辰信息已加密存储，仅用于本次测算
+        生辰信息已加密存储，仅用于本次姻缘测算
       </p>
     </footer>
   )

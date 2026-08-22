@@ -129,7 +129,7 @@ def _make_callback(platform_key, payload, sign=True, timestamp=None, nonce="1787
     return raw, headers
 
 
-def _success_payload(out_trade_no, total=9900, transaction_id="4200001234567890", trade_state="SUCCESS"):
+def _success_payload(out_trade_no, total=990, transaction_id="4200001234567890", trade_state="SUCCESS"):
     return {
         "appid": APPID,
         "mchid": MCHID,
@@ -182,19 +182,19 @@ def _create_order(client, key="pay-test-order") -> str:
 class TestClientUnits:
     def test_build_h5_payment_body(self, tmp_path):
         client = WechatPayClient(settings)
-        body = client.build_h5_payment("S20260818001", 9900, "https://e.com/n", "测试", "1.2.3.4")
+        body = client.build_h5_payment("S20260818001", 990, "https://e.com/n", "测试", "1.2.3.4")
         assert body["out_trade_no"] == "S20260818001"
         assert "mchid" in body and "appid" in body
-        assert body["amount"]["total"] == 9900
+        assert body["amount"]["total"] == 990
         assert body["amount"]["currency"] == "CNY"
         assert body["notify_url"] == "https://e.com/n"
         assert body["scene_info"]["payer_client_ip"] == "1.2.3.4"
         assert body["scene_info"]["h5_info"]["type"] == "Wap"
 
     def test_build_native_payment_body(self, tmp_path):
-        body = WechatPayClient(settings).build_native_payment("S20260818002", 9900, "https://e.com/n", "测试")
+        body = WechatPayClient(settings).build_native_payment("S20260818002", 990, "https://e.com/n", "测试")
         assert body["out_trade_no"] == "S20260818002"
-        assert body["amount"]["total"] == 9900
+        assert body["amount"]["total"] == 990
         assert "scene_info" not in body
 
     def test_sign_verify_roundtrip(self, tmp_path):
@@ -212,7 +212,7 @@ class TestClientUnits:
         _configure_wxpay(monkeypatch, tmp_path)
         client = WechatPayClient(settings)
         nonce = "abcdefghijkl"
-        plain = '{"out_trade_no":"S1","amount":{"total":9900}}'
+        plain = '{"out_trade_no":"S1","amount":{"total":990}}'
         cipher = AESGCM(APIV3_KEY.encode()).encrypt(nonce.encode(), plain.encode(), b"transaction")
         resource = {
             "algorithm": "AEAD_AES_256_GCM",

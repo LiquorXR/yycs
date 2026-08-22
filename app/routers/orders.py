@@ -36,7 +36,7 @@ _PAID_STATES = {
     OrderState.ADDED_WECOM.value,
 }
 
-_WECOM_NOTE = "已生成专属客服码,扫码添加后由人工为您深度测算"
+_WECOM_NOTE = "已生成姻缘专属客服码，扫码添加后由人工为您深度解读正缘"
 
 
 class AdParamsModel(BaseModel):
@@ -194,7 +194,7 @@ def get_order_report(
     contract = json.loads(report.full_report) if report and report.full_report else None
 
     report_view = {
-        "title": contract["title"] if contract else "八字命盘详批（姻缘预览）",
+        "title": contract["title"] if contract else "姻缘天书·正缘详批（预览）",
         "locked": True,
         "lockedPreview": contract["lockedPreview"] if contract else [dict(x) for x in DEFAULT_LOCKED_PREVIEW],
     }

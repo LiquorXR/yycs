@@ -15,7 +15,7 @@ def test_create_profile_success(client):
     preview = data["previewReport"]
     assert preview["locked"] is True
     assert preview["lockedNote"] == "完整版需付费解锁"
-    assert preview["title"] == "张三 · 姻缘运势测算预览"
+    assert preview["title"] == "张三 · 姻缘正缘测算预览"
     # 死链字段已删除：previewReport 不含 contentUrl
     assert "contentUrl" not in preview
 
@@ -28,7 +28,7 @@ def test_create_profile_without_birth_hour(client):
 
 
 def test_create_profile_with_focus_tags(client):
-    payload = dict(VALID_PROFILE, focusTags=["正缘桃花期", "婚后财运旺衰"])
+    payload = dict(VALID_PROFILE, focusTags=["正缘画像", "婚后走势"])
     resp = client.post("/api/profiles", json=payload, headers={"Idempotency-Key": "k-tags"})
     assert resp.status_code == 200
     assert resp.json()["code"] == 0

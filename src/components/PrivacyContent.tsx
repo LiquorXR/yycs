@@ -15,7 +15,7 @@ export default function PrivacyContent() {
           <p>备案号：{ICP_NO}</p>
         </div>
         <p className="mt-3 rounded-lg bg-gold/10 px-3 py-2 text-xs leading-relaxed text-gold-light">
-          提示：您点击“开始推演/立即测算”即视为已阅读并同意本隐私政策全部内容。如您不同意，请勿提交信息。
+          提示：您点击“开始推演/立即测姻缘”即视为已阅读并同意本隐私政策全部内容。如您不同意，请勿提交信息。
         </p>
       </header>
 
@@ -35,7 +35,7 @@ export default function PrivacyContent() {
               <tr>
                 <td className="px-2 py-2">身份与生辰</td>
                 <td className="px-2 py-2">姓名/昵称、出生日期、时辰、历法、关注重点</td>
-                <td className="px-2 py-2">生成八字命盘及预览报告（<span className="font-semibold text-gold">生辰属敏感个人信息</span>）</td>
+                <td className="px-2 py-2">生成姻缘命盘及正缘预览报告（<span className="font-semibold text-gold">生辰属敏感个人信息</span>）</td>
               </tr>
               <tr>
                 <td className="px-2 py-2">订单与交易</td>

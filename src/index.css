@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* 项目内毛笔字体：马善政毛笔楷书（Ma Shan Zheng，SIL OFL-1.1，见 assets/fonts/OFL.txt）
-   已裁剪至首页主标题用字（八字命盘·运势姻缘），勿用于未裁剪字符（缺失时回退字体栈） */
+   已裁剪至首页主标题用字（正缘姻缘·桃花定盘），勿用于未裁剪字符（缺失时回退字体栈） */
 @font-face {
   font-family: "Ma Shan Zheng";
   src: url("./assets/fonts/mashanzheng-title.woff2") format("woff2");

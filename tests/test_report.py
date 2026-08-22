@@ -1,4 +1,4 @@
-"""简版单人运势报告服务单元测试：评分规则、rank 五档、契约结构、focus_tags。"""
+"""姻缘测算报告服务单元测试：评分规则、rank 五档、契约结构、focus_tags。"""
 
 from __future__ import annotations
 
@@ -69,22 +69,22 @@ def test_score_clamped_to_range():
 
 
 def test_rank_five_bands():
-    # 96 → 上等运势（相生 60 + 三合 26 + 时辰 10）
+    # 96 → 上等姻缘（相生 60 + 三合 26 + 时辰 10）
     r = generate_single_report(_factors(zodiac="虎", element="木", hour="午"))
     assert r["score"] == 96
-    assert r["rank"] == "上等运势 · 正缘可期"
-    # 84 → 中上运势（相生 60 + 六冲 14 + 时辰 10）
+    assert r["rank"] == "上等姻缘 · 正缘可期"
+    # 84 → 中上姻缘（相生 60 + 六冲 14 + 时辰 10）
     r = generate_single_report(_factors(zodiac="鼠", element="木", hour="午"))
     assert r["score"] == 84
-    assert r["rank"] == "中上运势 · 良缘可成"
-    # 76 → 中平运势（相克 36 + 六合 30 + 时辰 10）
+    assert r["rank"] == "中上姻缘 · 良缘可成"
+    # 76 → 中平姻缘（相克 36 + 六合 30 + 时辰 10）
     r = generate_single_report(_factors(zodiac="鼠", element="木", hour="丑"))
     assert r["score"] == 76
-    assert r["rank"] == "中平运势 · 磨合可圆"
-    # 60 → 平稳运势（相克 36 + 六冲 14 + 时辰 10）
+    assert r["rank"] == "中平姻缘 · 磨合可圆"
+    # 60 → 平稳姻缘（相克 36 + 六冲 14 + 时辰 10）
     r = generate_single_report(_factors(zodiac="虎", element="木", hour="申"))
     assert r["score"] == 60
-    assert r["rank"] == "平稳运势 · 厚积薄发"
+    assert r["rank"] == "平稳姻缘 · 厚积薄发"
     # 55 → 缘浅之合（时辰缺失）
     r = generate_single_report(_factors(hour=None))
     assert r["score"] == 55
@@ -96,10 +96,10 @@ def test_contract_schema_complete():
     for key in ("title", "score", "rank", "scoreNote", "analysis", "karma", "lockedPreview"):
         assert key in r
     assert isinstance(r["score"], int) and 0 <= r["score"] <= 100
-    assert r["title"] == "张三 · 八字命盘详批（姻缘预览）"
+    assert r["title"] == "张三 · 姻缘天书·正缘详批（预览）"
     assert r["rank"]
     assert r["scoreNote"]
-    assert r["analysis"]["label"] == "命理总评" and r["analysis"]["text"]
+    assert r["analysis"]["label"] == "姻缘总评" and r["analysis"]["text"]
     assert len(r["karma"]) == 3
     assert all(set(k) == {"title", "body"} and k["title"] and k["body"] for k in r["karma"])
     assert len(r["lockedPreview"]) == 2
@@ -114,11 +114,11 @@ def test_focus_tags_with_and_without():
     # 传入 focus_tags（含未知标签）正常且内容侧重定制
     tagged = generate_single_report(
         _factors(),
-        focus_tags=["正缘桃花期", "婚后财运旺衰", "未知标签"],
+        focus_tags=["正缘画像", "婚后走势", "未知标签"],
     )
     assert len(tagged["karma"]) == 3
     assert tagged["karma"] != base["karma"]
-    assert "桃花期已至" in tagged["karma"][0]["body"]
-    assert "财库" in tagged["karma"][2]["body"]
+    assert "正缘画像已定" in tagged["karma"][0]["body"]
+    assert "婚后走势" in tagged["karma"][2]["body"]
     assert base["karma"][0] != tagged["karma"][0]
     assert base["karma"][2] != tagged["karma"][2]

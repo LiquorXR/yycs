@@ -186,10 +186,10 @@ function Compass() {
 /* ---------------- 实时测算喜报播报 ---------------- */
 
 const TICKER_ITEMS = [
-  '张** 单人测算 · 预测今年秋季遇到正缘',
-  '李** 单人测算 · 正缘桃花期与财运走势 已生成',
-  '王** 测算成功 · 婚后财运旺衰与性格解析 已批注',
-  '赵** 测算成功 · 获得【大师亲批·避坑锦囊】',
+  '张** 姻缘测算 · 正缘桃花期已定 · 今年秋季易遇良缘',
+  '李** 姻缘测算 · 正缘画像与桃花旺衰 已生成',
+  '王** 姻缘测算 · 婚后走势与相处之道 已批注',
+  '赵** 姻缘测算 · 获得【大师亲批·正缘锦囊】',
 ]
 
 const TICKER_INTERVAL = 3500
@@ -256,23 +256,23 @@ function Ticker() {
 const FEATURES = [
   {
     icon: '缘',
-    title: '正缘桃花期',
-    desc: '预测感情关键节点与桃花旺衰年份',
+    title: '正缘画像',
+    desc: '八字定正缘，推演相遇时机与良人画像',
   },
   {
-    icon: '财',
-    title: '婚后财运旺衰',
-    desc: '推演财运走势与置业吸金最佳时机',
+    icon: '桃',
+    title: '桃花旺衰',
+    desc: '推演近三年桃花走势与脱单关键年份',
   },
   {
-    icon: '性',
-    title: '性格解析',
-    desc: '剖析五行，解相处之道与自我认知',
+    icon: '婚',
+    title: '婚后走势',
+    desc: '姻缘视角看婚后财运与家宅兴旺之势',
   },
   {
-    icon: '避',
-    title: '避坑指南',
-    desc: '预判运势风险点，提供化解妙招',
+    icon: '合',
+    title: '相处锦囊',
+    desc: '以正缘为本，解相处之道与避坑良方',
   },
 ]
 
@@ -302,13 +302,13 @@ function LandingPage() {
       {/* 顶部高光云纹护栏 — 严格对齐原型 */}
       <section className="relative overflow-hidden bg-[radial-gradient(circle_at_50%_0%,rgba(226,180,95,0.16)_0%,transparent_68%)] px-5 pt-3 pb-4 text-center">
         <span className="relative mb-3 inline-flex items-center gap-1.5 rounded-full border border-gold/35 bg-gold/10 px-3 py-1 text-[11px] tracking-[0.12em] text-gold shadow-[0_2px_10px_rgba(226,180,95,0.18)]">
-          敕造命盘 · 单人测算 <span className="size-1 rounded-full bg-gold animate-pulse-glow" aria-hidden="true" />
+          姻缘天定 · 正缘测算 <span className="size-1 rounded-full bg-gold animate-pulse-glow" aria-hidden="true" />
         </span>
-        <h1 className="title-gold-3d relative mt-3 font-shufa text-[30px] font-bold leading-[1.08] tracking-[0.08em]">
-          八字命盘 · 运势姻缘
+        <h1 className="title-gold-3d relative mt-3 font-shufa text-[32px] font-bold leading-[1.08] tracking-[0.08em]">
+          正缘姻缘 · 桃花定盘
         </h1>
         <p className="relative mt-1.5 text-[12px] tracking-[0.06em] text-fg-secondary drop-shadow-[0_1px_4px_rgba(0,0,0,0.45)]">
-          测算个人五行喜忌 · 预测正缘桃花与运势转折
+          八字定正缘画像 · 推演桃花旺衰与脱单良机
         </p>
 
         <Compass />
@@ -360,7 +360,7 @@ function LandingPage() {
             style={{ fontSynthesis: 'weight', WebkitTextStroke: '0.2px currentColor', paintOrder: 'stroke fill' } as React.CSSProperties}
           >
             <span className="font-bold [font-synthesis:weight]" style={{ fontSynthesis: 'weight', WebkitTextStroke: '0.22px currentColor', paintOrder: 'stroke fill' } as React.CSSProperties}>
-              立即测算 · 开启个人命盘
+              立即测姻缘 · 定正缘桃花期
             </span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
               <path d="M5 12h14M12 5l7 7-7 7" />
