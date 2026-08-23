@@ -64,6 +64,11 @@ class Settings(BaseSettings):
     # 微信支付 API 基址（沙箱联调可改）
     WXPAY_API_BASE: str = "https://api.mch.weixin.qq.com"
 
+    # ===== 直连 IP 限流（仅 IP:8000 生效，域名经 NPM 跳过保峰值）=====
+    RATE_LIMIT_IP_PROFILE: int = 10
+    RATE_LIMIT_IP_ORDERS: int = 10
+    RATE_LIMIT_IP_QUERY: int = 30
+
     # ===== 对账/补偿定时任务 =====
     # 总开关：dev 默认关闭（避免后台线程干扰联调），prod 需显式开启
     RECONCILE_ENABLED: bool = False

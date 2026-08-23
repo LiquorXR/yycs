@@ -54,6 +54,11 @@ app.add_middleware(
     allow_headers=["Content-Type", "Authorization", "Idempotency-Key", "Wechatpay-*", "X-Requested-With"],
 )
 
+# 直连 IP 条件限流：域名经 NPM（Docker 段）放行，IP:8000 直连按 10/30 限流
+from app.core.rate_limit import ConditionalRateLimitMiddleware
+
+app.add_middleware(ConditionalRateLimitMiddleware)
+
 
 @app.exception_handler(BizError)
 async def biz_error_handler(request: Request, exc: BizError) -> JSONResponse:
