@@ -5,10 +5,12 @@
 - 恰好一次：订单状态 CAS `UPDATE ... WHERE state='CREATED'`，并发回调仅一个获胜者；
   已进入支付链的状态重复回调直接返回成功（幂等，不重复解锁）。
 - 未配置微信支付时优雅降级：ensure_payment 返回全 null，订单仍可创建。
+- 统一下单为 async（httpx 外呼不占线程池）；Semaphore 限制微信并发外呼防风控。
 """
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import time
@@ -16,6 +18,7 @@ import uuid
 
 from sqlalchemy import update as sa_update
 from sqlalchemy.orm import Session
+from starlette.concurrency import run_in_threadpool
 
 from app.core.timeutil import utcnow
 from app.models.order import Order, OrderState
@@ -37,13 +40,16 @@ _PAID_CHAIN_STATES = {
 
 _PAYMENT_DESC = "振凡命理·测算服务"
 
+# 微信统一下单并发外呼上限（每 worker 独立，2 worker 合计 16）：防突发流量触发微信风控
+_WX_SEM = asyncio.Semaphore(8)
+
 
 def wx_ready() -> bool:
     return wechatpay.client.is_ready
 
 
-def ensure_payment(db: Session, order: Order, client_ip: str | None) -> dict:
-    """统一下单，返回 {payType, payUrl, codeUrl}。
+async def ensure_payment(db: Session, order: Order, client_ip: str | None) -> dict:
+    """统一下单（async），返回 {payType, payUrl, codeUrl}。
 
     支付配置缺失或上游失败时优雅降级返回全 null（订单仍可创建）；
     auto/h5 拉起失败自动降级 Native 扫码。
@@ -51,29 +57,30 @@ def ensure_payment(db: Session, order: Order, client_ip: str | None) -> dict:
     if not wx_ready():
         return {"payType": None, "payUrl": None, "codeUrl": None}
 
-    product = db.query(Product).filter(Product.id == order.product_id).first()
+    product = await run_in_threadpool(db.query(Product).filter(Product.id == order.product_id).first)
     description = product.name if product else _PAYMENT_DESC
     method = order.pay_type or "h5"
 
-    if method in ("auto", "h5"):
-        try:
-            pay_url = wechatpay.client.create_h5_payment(
-                order.out_trade_no, order.amount, description, client_ip or "127.0.0.1"
-            )
-            if pay_url:
-                logger.info("H5 下单成功 order_no=%s out_trade_no=%s", order.order_no, order.out_trade_no)
-                return {"payType": "h5", "payUrl": pay_url, "codeUrl": None}
-        except WechatPayError as e:
-            # WechatPayError 已在 wechatpay._request 中打印 request-id，此处补充订单维度的可追踪日志
-            logger.warning("H5 下单失败（%s），降级 Native：order_no=%s out_trade_no=%s", e, order.order_no, order.out_trade_no)
+    async with _WX_SEM:
+        if method in ("auto", "h5"):
+            try:
+                pay_url = await wechatpay.client.create_h5_payment(
+                    order.out_trade_no, order.amount, description, client_ip or "127.0.0.1"
+                )
+                if pay_url:
+                    logger.info("H5 下单成功 order_no=%s out_trade_no=%s", order.order_no, order.out_trade_no)
+                    return {"payType": "h5", "payUrl": pay_url, "codeUrl": None}
+            except WechatPayError as e:
+                # WechatPayError 已在 wechatpay._request 中打印 request-id，此处补充订单维度的可追踪日志
+                logger.warning("H5 下单失败（%s），降级 Native：order_no=%s out_trade_no=%s", e, order.order_no, order.out_trade_no)
 
-    try:
-        code_url = wechatpay.client.create_native_payment(order.out_trade_no, order.amount, description)
-        if code_url:
-            logger.info("Native 下单成功 order_no=%s out_trade_no=%s", order.order_no, order.out_trade_no)
-            return {"payType": "native", "payUrl": None, "codeUrl": code_url}
-    except WechatPayError as e:
-        logger.error("Native 下单失败：order_no=%s out_trade_no=%s, %s", order.order_no, order.out_trade_no, e)
+        try:
+            code_url = await wechatpay.client.create_native_payment(order.out_trade_no, order.amount, description)
+            if code_url:
+                logger.info("Native 下单成功 order_no=%s out_trade_no=%s", order.order_no, order.out_trade_no)
+                return {"payType": "native", "payUrl": None, "codeUrl": code_url}
+        except WechatPayError as e:
+            logger.error("Native 下单失败：order_no=%s out_trade_no=%s, %s", order.order_no, order.out_trade_no, e)
 
     return {"payType": None, "payUrl": None, "codeUrl": None}
 

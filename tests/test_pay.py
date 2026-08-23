@@ -79,9 +79,15 @@ def _configure_wxpay(monkeypatch, tmp_path, with_platform_cert=True):
     monkeypatch.setattr(settings, "WXPAY_PLATFORM_CERT_PATH", str(tmp_path / "platform.pem") if with_platform_cert else None)
     monkeypatch.setattr(settings, "WXPAY_NOTIFY_URL", "https://example.com/api/pay/notify")
 
-    # 默认打桩统一下单，避免真实网络；需要自定义时测试内覆盖
-    monkeypatch.setattr(wechatpay.client, "create_h5_payment", lambda *a, **k: "https://wx.tenpay.com/cgi-bin/mmpayweb/bin/checkmweb?pr=TEST")
-    monkeypatch.setattr(wechatpay.client, "create_native_payment", lambda *a, **k: "weixin://wxpay/bizpayurl?pr=TEST")
+    # 默认打桩统一下单（async），避免真实网络；需要自定义时测试内覆盖
+    async def _fake_h5(*a, **k):
+        return "https://wx.tenpay.com/cgi-bin/mmpayweb/bin/checkmweb?pr=TEST"
+
+    async def _fake_native(*a, **k):
+        return "weixin://wxpay/bizpayurl?pr=TEST"
+
+    monkeypatch.setattr(wechatpay.client, "create_h5_payment", _fake_h5)
+    monkeypatch.setattr(wechatpay.client, "create_native_payment", _fake_native)
     return platform_key
 
 
@@ -249,8 +255,15 @@ def test_create_order_not_configured_returns_null_pay_fields(client):
 def test_create_order_h5_returns_pay_url(client_and_factory, monkeypatch, tmp_path):
     client, _ = client_and_factory
     _configure_wxpay(monkeypatch, tmp_path)
-    monkeypatch.setattr(wechatpay.client, "create_h5_payment", lambda *a, **k: "https://wx.tenpay.com/cgi-bin/mmpayweb/bin/checkmweb?x=1")
-    monkeypatch.setattr(wechatpay.client, "create_native_payment", lambda *a, **k: pytest.fail("不应走 native"))
+
+    async def _fake_h5(*a, **k):
+        return "https://wx.tenpay.com/cgi-bin/mmpayweb/bin/checkmweb?x=1"
+
+    async def _fake_native(*a, **k):
+        pytest.fail("不应走 native")
+
+    monkeypatch.setattr(wechatpay.client, "create_h5_payment", _fake_h5)
+    monkeypatch.setattr(wechatpay.client, "create_native_payment", _fake_native)
 
     order_no = _create_order(client, key="pay-h5")
     detail = client.get(f"/api/orders/{order_no}").json()["data"]
@@ -263,11 +276,14 @@ def test_create_order_h5_fallback_native(client_and_factory, monkeypatch, tmp_pa
     client, _ = client_and_factory
     _configure_wxpay(monkeypatch, tmp_path)
 
-    def fail_h5(*a, **k):
+    async def fail_h5(*a, **k):
         raise WechatPayError("PAY_ERROR", "h5 拉起失败")
 
+    async def _fake_native(*a, **k):
+        return "weixin://wxpay/bizpayurl?pr=TEST"
+
     monkeypatch.setattr(wechatpay.client, "create_h5_payment", fail_h5)
-    monkeypatch.setattr(wechatpay.client, "create_native_payment", lambda *a, **k: "weixin://wxpay/bizpayurl?pr=TEST")
+    monkeypatch.setattr(wechatpay.client, "create_native_payment", _fake_native)
 
     profile_id = create_profile(client, _key="pay-fb-profile")["profileId"]
     resp = client.post(
@@ -300,8 +316,12 @@ def test_create_order_h5_fallback_native(client_and_factory, monkeypatch, tmp_pa
 def test_create_order_upstream_failure_degrades_to_null(client_and_factory, monkeypatch, tmp_path):
     client, _ = client_and_factory
     _configure_wxpay(monkeypatch, tmp_path)
-    monkeypatch.setattr(wechatpay.client, "create_h5_payment", lambda *a, **k: (_ for _ in ()).throw(WechatPayError("X", "boom")))
-    monkeypatch.setattr(wechatpay.client, "create_native_payment", lambda *a, **k: (_ for _ in ()).throw(WechatPayError("X", "boom")))
+
+    async def _fail(*a, **k):
+        raise WechatPayError("X", "boom")
+
+    monkeypatch.setattr(wechatpay.client, "create_h5_payment", _fail)
+    monkeypatch.setattr(wechatpay.client, "create_native_payment", _fail)
     order_no = _create_order(client, key="pay-fail-degrade")
     detail = client.get(f"/api/orders/{order_no}").json()["data"]
     assert detail["payUrl"] is None and detail["codeUrl"] is None

@@ -1,8 +1,8 @@
-"""微信支付 V3 客户端：轻量自实现（cryptography + stdlib urllib，无新增依赖）。
+"""微信支付 V3 客户端：轻量自实现（cryptography + httpx/urllib）。
 
 覆盖能力：
-- 统一下单：H5（h5_url）与 Native（code_url）
-- 主动查单、关单
+- 统一下单：H5（h5_url）与 Native（code_url）—— async（httpx），不阻塞事件循环线程池
+- 主动查单、关单 —— sync（urllib），供对账 daemon 线程/关单短操作使用
 - 请求签名（SHA256-RSA）与响应/回调验签（微信平台证书公钥）
 - 回调 resource 报文 AES-256-GCM 解密（APIv3 密钥）
 
@@ -21,6 +21,7 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
+import httpx
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
@@ -252,6 +253,97 @@ class WechatPayClient:
 
         return json.loads(resp_raw) if resp_raw else {}
 
+    async def _request_async(self, method: str, path: str, body: dict | None = None) -> dict:
+        """异步发起 V3 请求并校验响应签名，返回 JSON 对象（统一下单热路径用）。
+
+        与 _request 行为逐行对齐（签名/日志/验签/错误映射），仅 HTTP 层换 httpx：
+        - 请求体用 content 字节发送，避免 httpx json= 参数 ensure_ascii 序列化差异
+        - 异常映射：非 2xx → WechatPayError(code, message, http_status)；网络/超时 → NETWORK_ERROR
+        """
+        url = self._cfg.WXPAY_API_BASE + path
+        payload = json.dumps(body, ensure_ascii=False) if body is not None else ""
+        headers = {
+            "Authorization": self._auth_header(method, path, payload),
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "User-Agent": "ZhenFan/1.0",
+        }
+        try:
+            async with httpx.AsyncClient(timeout=10) as hc:
+                resp = await hc.request(
+                    method,
+                    url,
+                    content=payload.encode("utf-8") if body is not None else None,
+                    headers=headers,
+                )
+        except httpx.TransportError as e:
+            logger.error("wxpay network error method=%s path=%s err=%s", method, path, e)
+            raise WechatPayError("NETWORK_ERROR", f"网络错误: {e}") from None
+
+        resp_raw = resp.text
+        resp_headers = resp.headers  # httpx Headers 大小写不敏感
+        request_id = self._extract_request_id(resp_headers)
+        if resp.status_code >= 400:
+            try:
+                err = json.loads(resp_raw)
+            except Exception:
+                err = {"message": resp_raw}
+            if request_id:
+                logger.error(
+                    "wxpay request failed method=%s path=%s http=%s request-id=%s code=%s msg=%s",
+                    method,
+                    path,
+                    resp.status_code,
+                    request_id,
+                    err.get("code", "HTTP_ERROR"),
+                    err.get("message", resp_raw[:200]),
+                )
+            else:
+                logger.error(
+                    "wxpay request failed method=%s path=%s http=%s code=%s msg=%s",
+                    method,
+                    path,
+                    resp.status_code,
+                    err.get("code", "HTTP_ERROR"),
+                    err.get("message", resp_raw[:200]),
+                )
+            raise WechatPayError(
+                err.get("code", "HTTP_ERROR"),
+                err.get("message", f"HTTP {resp.status_code}"),
+                resp.status_code,
+            ) from None
+
+        if request_id:
+            logger.info("wxpay request ok method=%s path=%s request-id=%s", method, path, request_id)
+        else:
+            logger.info("wxpay request ok method=%s path=%s", method, path)
+
+        if self.platform_ready:
+            sig = resp_headers.get("wechatpay-signature")
+            ts = resp_headers.get("wechatpay-timestamp")
+            nonce = resp_headers.get("wechatpay-nonce")
+            resp_serial = resp_headers.get("wechatpay-serial")
+            expected_serial = self._platform_cert_serial()
+            if resp_serial and expected_serial and resp_serial.upper() != expected_serial.upper():
+                logger.warning(
+                    "wxpay response serial mismatch resp_serial=%s expected=%s request-id=%s",
+                    resp_serial,
+                    expected_serial,
+                    self._extract_request_id(resp_headers),
+                )
+            if not (sig and ts and nonce) or not self.verify_signature(ts, nonce, resp_raw.encode("utf-8"), sig):
+                logger.error(
+                    "wxpay response signature verification failed method=%s path=%s request-id=%s",
+                    method,
+                    path,
+                    self._extract_request_id(resp_headers),
+                )
+                raise WechatPayError("SIGN_ERROR", "微信响应验签失败")
+        else:
+            logger.warning("微信支付平台证书未配置，跳过响应验签（不推荐生产使用）")
+
+        return json.loads(resp_raw) if resp_raw else {}
+
     # ---- 统一下单 ----
 
     def build_h5_payment(self, out_trade_no: str, total: int, notify_url: str, description: str, client_ip: str) -> dict:
@@ -280,16 +372,16 @@ class WechatPayClient:
             "amount": {"total": total, "currency": "CNY"},
         }
 
-    def create_h5_payment(self, out_trade_no: str, total: int, description: str, client_ip: str) -> str:
-        """H5 下单，返回 h5_url（mweb_url）。"""
+    async def create_h5_payment(self, out_trade_no: str, total: int, description: str, client_ip: str) -> str:
+        """H5 下单（async），返回 h5_url（mweb_url）。"""
         body = self.build_h5_payment(out_trade_no, total, self._cfg.WXPAY_NOTIFY_URL, description, client_ip)
-        data = self._request("POST", "/v3/pay/transactions/h5", body)
+        data = await self._request_async("POST", "/v3/pay/transactions/h5", body)
         return data.get("h5_url") or ""
 
-    def create_native_payment(self, out_trade_no: str, total: int, description: str) -> str:
-        """Native 下单，返回 code_url（二维码内容）。"""
+    async def create_native_payment(self, out_trade_no: str, total: int, description: str) -> str:
+        """Native 下单（async），返回 code_url（二维码内容）。"""
         body = self.build_native_payment(out_trade_no, total, self._cfg.WXPAY_NOTIFY_URL, description)
-        data = self._request("POST", "/v3/pay/transactions/native", body)
+        data = await self._request_async("POST", "/v3/pay/transactions/native", body)
         return data.get("code_url") or ""
 
     # ---- 查单 / 关单 ----

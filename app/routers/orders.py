@@ -8,6 +8,7 @@ import logging
 from fastapi import APIRouter, Depends, Header, Query, Request
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
+from starlette.concurrency import run_in_threadpool
 
 from app.core.config import settings
 from app.core.errors import BizError, ErrorCode
@@ -58,20 +59,24 @@ class OrderCreateRequest(BaseModel):
 
 
 @router.post("/api/orders")
-def create_order(
+async def create_order(
     payload: OrderCreateRequest,
     request: Request,
     db: Session = Depends(get_db),
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ) -> dict:
-    """创建订单：金额以服务端产品表为准；支付配置齐全时返回真实 payType/payUrl/codeUrl，否则 null 降级。"""
+    """创建订单（async）：金额以服务端产品表为准；支付配置齐全时返回真实 payType/payUrl/codeUrl，否则 null 降级。
+
+    DB 操作统一经 run_in_threadpool 执行，避免同步 IO 阻塞事件循环；
+    支付统一下单 await 微信外呼（httpx async），不占线程池。
+    """
     if not idempotency_key:
         raise BizError(ErrorCode.PARAM_VALIDATION, "参数校验失败：Idempotency-Key 必填")
     if payload.paymentMethod not in PAYMENT_METHODS:
         raise BizError(ErrorCode.PARAM_VALIDATION, "参数校验失败：paymentMethod 需为 auto/h5/native")
 
     payload_hash = hash_payload(payload.model_dump())
-    cached = get_idempotent_response(db, idempotency_key, IDEM_SCOPE_ORDER, payload_hash)
+    cached = await run_in_threadpool(get_idempotent_response, db, idempotency_key, IDEM_SCOPE_ORDER, payload_hash)
     if cached is not None:
         return ok_response(cached)
 
@@ -80,7 +85,8 @@ def create_order(
     if payload.adParams is not None:
         ad_params_dict = payload.adParams.model_dump(exclude_none=True) or None
 
-    order_no, amount = order_service.create_order(
+    order_no, amount = await run_in_threadpool(
+        order_service.create_order,
         db,
         payload.profileId,
         payload.productId,
@@ -89,9 +95,9 @@ def create_order(
         payload.amount,
     )
 
-    order = db.query(Order).filter(Order.order_no == order_no).first()
+    order = await run_in_threadpool(db.query(Order).filter(Order.order_no == order_no).first)
     client_ip = request.client.host if request.client else None
-    pay_info = pay_service.ensure_payment(db, order, client_ip)
+    pay_info = await pay_service.ensure_payment(db, order, client_ip)
 
     # 同步订单支付参数（auto 会实际路由到 h5/native）
     order.pay_type = pay_info["payType"] or order.pay_type
@@ -105,8 +111,8 @@ def create_order(
         "payUrl": pay_info["payUrl"],
         "codeUrl": pay_info["codeUrl"],
     }
-    store_idempotent_response(db, idempotency_key, IDEM_SCOPE_ORDER, data, payload_hash)
-    db.commit()
+    await run_in_threadpool(store_idempotent_response, db, idempotency_key, IDEM_SCOPE_ORDER, data, payload_hash)
+    await run_in_threadpool(db.commit)
     return ok_response(data)
 
 

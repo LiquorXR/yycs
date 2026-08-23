@@ -2,18 +2,17 @@
 
 from fastapi.testclient import TestClient
 
-from app.main import app
 
-client = TestClient(app)
-
-
-def test_health():
+def test_health(client: TestClient):
     resp = client.get("/api/health")
     assert resp.status_code == 200
     body = resp.json()
     assert body["code"] == 0
     assert body["message"] == "success"
-    assert body["data"]["status"] == "ok"
-    assert "dbSizeBytes" in body["data"]
-    assert "lastReconcileAt" in body["data"]
-    assert "lastReconcileSummary" in body["data"]
+    data = body["data"]
+    assert data["status"] == "ok"
+    assert "dbSizeBytes" in data
+    assert isinstance(data["reconcileEnabled"], bool)
+    assert isinstance(data["wxpayReady"], bool)
+    assert data["lastReconcileAt"] is None
+    assert data["lastReconcileSummary"] is None

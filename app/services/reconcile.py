@@ -11,6 +11,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import threading
 import time
@@ -21,7 +22,7 @@ from sqlalchemy import delete
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.core.timeutil import iso_utc, utcnow
+from app.core.timeutil import utcnow
 from app.db.session import SessionLocal
 from app.models.idempotency import IdempotencyRecord
 from app.models.order import Order, OrderState
@@ -37,14 +38,14 @@ _CLOSED_TRADE_STATES = {"CLOSED", "PAYERROR", "REVOKED"}
 # 幂等记录清理：每日一次，删除超过 TTL(24h) 的过期键
 _IDEM_CLEANUP_INTERVAL = 86400
 
+# 对账指标落库键（复用 idempotency_records 表，多 worker 下 health 读库取一致值）
+_METRICS_KEY = "reconcile:metrics"
+_METRICS_SCOPE = "reconcile:metrics"
+
 try:
     import fcntl
 except ImportError:  # Windows 本地开发无 fcntl，单进程运行无需锁
     fcntl = None  # type: ignore[assignment]
-
-# 健康检查指标（进程内，供 /api/health 读取）
-last_reconcile_at: str | None = None
-last_reconcile_summary: dict | None = None
 
 _last_idem_cleanup: float = 0.0
 _lock_file: object | None = None
@@ -93,6 +94,19 @@ def reconcile_once(db: Session) -> dict:
     return summary
 
 
+def _persist_reconcile_metrics(db: Session, summary: dict) -> None:
+    """对账指标写入 idempotency_records（key 唯一，覆盖更新），供 /api/health 跨 worker 读取。"""
+    record = db.query(IdempotencyRecord).filter(IdempotencyRecord.key == _METRICS_KEY).first()
+    now = utcnow()
+    response = json.dumps({"at": iso_utc(now), "summary": summary}, ensure_ascii=False)
+    if record is not None:
+        record.response = response
+        record.created_at = now
+    else:
+        db.add(IdempotencyRecord(key=_METRICS_KEY, scope=_METRICS_SCOPE, response=response, created_at=now))
+    db.commit()
+
+
 def _cleanup_idempotency(db: Session) -> None:
     """清理超过 TTL 的幂等记录（24h），防表无限增长。"""
     global _last_idem_cleanup
@@ -108,17 +122,15 @@ def _cleanup_idempotency(db: Session) -> None:
 
 
 def _loop() -> None:
-    """后台线程主循环：休眠周期后执行一次对账 + 每日幂等清理。"""
+    """后台线程主循环：休眠周期后执行一次对账 + 每日幂等清理 + 指标落库。"""
     interval = max(10, settings.RECONCILE_INTERVAL_SECONDS)
     while True:
         time.sleep(interval)
         try:
             with SessionLocal() as db:
                 summary = reconcile_once(db)
+                _persist_reconcile_metrics(db, summary)
                 _cleanup_idempotency(db)
-            global last_reconcile_at, last_reconcile_summary
-            last_reconcile_at = iso_utc(utcnow())
-            last_reconcile_summary = summary
         except Exception:  # noqa: BLE001
             logger.exception("对账任务异常，下轮重试")
 
