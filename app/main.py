@@ -31,6 +31,14 @@ async def lifespan(app: FastAPI):
         with SessionLocal() as db:
             seed_products(db)
 
+    # 收敛 anyio 默认线程池（默认 40→16）：缩短同步 DB 写排队时间、降低内存占用
+    try:
+        from anyio import to_thread
+
+        to_thread.current_default_thread_limiter().total_tokens = 16
+    except Exception:  # noqa: BLE001
+        logger.warning("设置 anyio 线程池上限失败，沿用默认 40")
+
     from app.services.reconcile import start_reconcile_loop
 
     start_reconcile_loop()

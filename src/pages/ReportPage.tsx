@@ -7,8 +7,9 @@ import { isSafeQrcodeUrl } from '@/lib/url'
 /** 已支付（付款成功，进入人工交付流程）的订单状态 */
 const PAID_STATES = ['PAID', 'UNLOCKED', 'DELIVERED', 'ADDED_WECOM']
 
-/** 轮询间隔：5s */
-const POLL_INTERVAL = 5000
+/** 轮询间隔：10s 起，指数退避至 30s 封顶（降低服务器读压力） */
+const POLL_INTERVAL = 10000
+const POLL_MAX_INTERVAL = 30000
 
 /** 倒计时总秒数：14:59 */
 const COUNTDOWN_SECONDS = 899
@@ -329,9 +330,17 @@ function ReportPage() {
     }
 
     void load()
-    timer = setInterval(() => {
-      void load()
-    }, POLL_INTERVAL)
+    let pollDelay = POLL_INTERVAL
+    const schedule = () => {
+      timer = setInterval(() => {
+        void load()
+        // 指数退避：10s → 20s → 30s；paid/异常时 load 内已清定时器
+        if (timer) clearInterval(timer)
+        pollDelay = Math.min(pollDelay * 2, POLL_MAX_INTERVAL)
+        schedule()
+      }, pollDelay)
+    }
+    schedule()
 
     return () => {
       active = false

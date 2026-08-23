@@ -80,14 +80,23 @@ export default function PayPage() {
   useEffect(() => {
     let active = true
     let timer: ReturnType<typeof setInterval> | undefined
-    void fetchOrder()
-    timer = setInterval(async () => {
-      const o = await fetchOrder({ silent: true })
-      if (!active) return
-      if (!o || o.state !== 'CREATED') {
+    let pollDelay = 5000
+    const schedule = () => {
+      timer = setInterval(async () => {
+        const o = await fetchOrder({ silent: true })
+        if (!active) return
+        if (!o || o.state !== 'CREATED') {
+          if (timer) clearInterval(timer)
+          return
+        }
+        // 指数退避：5s → 10s → 20s → 30s 封顶，降低服务器读压力
         if (timer) clearInterval(timer)
-      }
-    }, 3000)
+        pollDelay = Math.min(pollDelay * 2, 30000)
+        schedule()
+      }, pollDelay)
+    }
+    void fetchOrder()
+    schedule()
     return () => {
       active = false
       if (timer) clearInterval(timer)

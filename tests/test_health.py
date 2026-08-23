@@ -13,4 +13,7 @@ def test_health():
     body = resp.json()
     assert body["code"] == 0
     assert body["message"] == "success"
-    assert body["data"] == {"status": "ok"}
+    assert body["data"]["status"] == "ok"
+    assert "dbSizeBytes" in body["data"]
+    assert "lastReconcileAt" in body["data"]
+    assert "lastReconcileSummary" in body["data"]

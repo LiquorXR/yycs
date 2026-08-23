@@ -7,6 +7,9 @@ services:
       context: .
       dockerfile: Dockerfile.frontend
     command: ["npm", "run", "build"]
+    # 2C1G 机器构建 Vite 易 OOM：限制 Node 堆上限，配合宿主机 swap 兜底
+    environment:
+      NODE_OPTIONS: "--max-old-space-size=512"
     volumes:
       - frontend_dist:/app/dist
     restart: "no"
@@ -22,12 +25,16 @@ services:
       - app_data:/data
     restart: "no"
 
-  # 后端 API + 前端静态托管：仅映射回环地址，由主机 nginx 统一反代到 127.0.0.1:8000
+  # 后端 API + 前端静态托管：仅映射回环地址，由主机 nginx/NPM 统一反代到 <host-IP>:8000
   backend:
     build:
       context: .
       dockerfile: Dockerfile.backend
-    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    # 2 worker 吃满双核读吞吐；SQLite 写仍串行（WAL+busy_timeout 由 session.py PRAGMA 兜底），
+    # 对账后台任务经 reconcile.lock 文件锁保证仅单 worker 运行
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2", "--log-level", "warning"]
+    # 2C1G 内存护栏：容器超限由内核回收（配合宿主机 swap 2GB）
+    mem_limit: 700m
     env_file: .env
     volumes:
       - app_data:/data
@@ -41,6 +48,12 @@ services:
         condition: service_completed_successfully
       frontend-build:
         condition: service_completed_successfully
+    # 日志轮转：防 2C1G 磁盘被 json-file 日志写满
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/api/health')"]
       interval: 15s
