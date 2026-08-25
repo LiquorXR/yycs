@@ -105,10 +105,10 @@ function MasterConsult({
 
   return (
     <section aria-label="大师一对一亲批">
-      <div className="flex items-center gap-3 rounded-[16px] border border-border-gold bg-[#6e1313]/80 p-3.5">
+      <div className="flex items-center gap-3 rounded-[16px] border border-border-gold bg-bg/80 p-3.5">
         <span
           aria-hidden="true"
-          className="grid size-12 shrink-0 place-items-center rounded-full border-2 border-gold bg-[radial-gradient(circle,#4a0e0e_0%,#2a0808_100%)] font-kai text-xl text-gold-light"
+          className="grid size-12 shrink-0 place-items-center rounded-full border-2 border-gold bg-[radial-gradient(circle,#6b2424_0%,#4a1a1a_100%)] font-kai text-xl text-gold-light"
         >
           道
         </span>
@@ -197,7 +197,7 @@ function MasterConsult({
             </div>
 
             {/* 大师介绍卡 */}
-            <div className="mb-3 flex items-center gap-3 rounded-[14px] border border-border-gold bg-[#3a0a0a]/60 p-3.5">
+            <div className="mb-3 flex items-center gap-3 rounded-[14px] border border-border-gold bg-bg/60 p-3.5">
               <span
                 aria-hidden="true"
                 className="grid size-12 shrink-0 place-items-center rounded-full border-2 border-gold bg-red font-kai text-xl text-white shadow-[0_0_12px_rgba(217,56,41,0.4)]"
@@ -430,7 +430,7 @@ function ReportPage() {
         <div className="space-y-4">
           {/* 顶部黑底金边批书标题 */}
           <section
-            className="relative rounded-[16px] border border-border-gold bg-gradient-to-b from-[#5a0e0e]/92 to-[#3a0a0a]/96 p-4 text-center shadow-gold"
+            className="relative rounded-[16px] border border-border-gold bg-gradient-to-b from-surface/92 to-bg/96 p-4 text-center shadow-gold"
             aria-label="报告标题"
           >
             <span className="seal-red absolute top-3 right-3">敕批</span>
@@ -450,7 +450,7 @@ function ReportPage() {
 
           {/* 深度付费解锁区域 */}
           <section
-            className="relative overflow-hidden rounded-[16px] border-[1.5px] border-border-gold bg-gradient-to-b from-[#5a0e0e]/95 to-[#2e0808]/98 p-4 shadow-[0_8px_32px_rgba(0,0,0,0.6)]"
+            className="relative overflow-hidden rounded-[16px] border-[1.5px] border-border-gold bg-gradient-to-b from-surface/95 to-bg/98 p-4 shadow-[0_8px_32px_rgba(0,0,0,0.40)]"
             aria-label="姻缘深度推演"
           >
             <div className="mb-3 flex items-center justify-between">
@@ -479,7 +479,7 @@ function ReportPage() {
               {report.report.lockedPreview.map((k) => (
                 <div
                   key={k.title}
-                  className="mb-2.5 rounded-[10px] border border-border bg-[#3a0a0a]/55 p-3 last:mb-0"
+                  className="mb-2.5 rounded-[10px] border border-border bg-bg/55 p-3 last:mb-0"
                 >
                   <h4 className="mb-1 font-kai text-sm text-gold">{k.title}</h4>
                   <p className="text-[13px] leading-relaxed text-fg-secondary">
@@ -491,7 +491,7 @@ function ReportPage() {
 
             {/* 未支付：浮层解锁遮罩 */}
             {!paid ? (
-              <div className="absolute inset-x-0 top-[60px] bottom-0 z-10 flex flex-col items-center justify-end bg-gradient-to-b from-[#6e1313]/35 to-[#2e0808]/98 px-4 py-5 backdrop-blur-[8px]">
+              <div className="absolute inset-x-0 top-[60px] bottom-0 z-10 flex flex-col items-center justify-end bg-gradient-to-b from-bg/35 to-bg/98 px-4 py-5 backdrop-blur-[8px]">
                 <span className="mb-2 grid size-11 place-items-center rounded-full bg-gradient-to-b from-gold to-gold-dark text-[#591010] shadow-[0_0_20px_rgba(226,180,95,0.6)]">
                   <LockIcon className="size-6" />
                 </span>
@@ -529,7 +529,7 @@ function ReportPage() {
 
       {/* 底部固定解锁栏（真实订单价格，仅未支付显示） */}
       {report && !paid ? (
-        <div className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-border-gold bg-[#2e0808]/96 px-4 pt-2.5 pb-5 backdrop-blur-md">
+        <div className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-border-gold bg-bg/96 px-4 pt-2.5 pb-5 backdrop-blur-md">
           <button
             type="button"
             onClick={() => setPayModalOpen(true)}
@@ -601,7 +601,7 @@ function ReportPage() {
             </p>
 
             {/* 四重权益框 */}
-            <div className="mb-3 rounded-[14px] border border-border-gold bg-[#3a0a0a]/60 p-3.5">
+            <div className="mb-3 rounded-[14px] border border-border-gold bg-bg/60 p-3.5">
               <p className="mb-2 text-[13px] font-medium text-gold-light">
                 ✨ 解锁即享四重姻缘天书核心权益：
               </p>

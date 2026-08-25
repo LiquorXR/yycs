@@ -4,7 +4,7 @@ import PrivacyContent from '@/components/PrivacyContent'
 export default function PrivacyPage() {
   return (
     <main className="fx-paper fx-cloud min-h-screen page-enter">
-      <header className="sticky top-0 z-10 border-b border-gold/15 bg-[#3a0a0a]/92 backdrop-blur-md">
+      <header className="sticky top-0 z-10 border-b border-gold/15 bg-bg/92 backdrop-blur-md">
         <div className="flex h-[48px] items-center justify-between px-4">
           <Link
             to="/calc"

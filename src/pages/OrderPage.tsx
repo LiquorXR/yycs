@@ -189,7 +189,7 @@ export default function OrderPage() {
           </p>
         ) : (
           <div className="overflow-hidden rounded-[16px] border border-border-gold bg-surface-card shadow-card">
-              <div className="border-b border-border bg-gradient-to-b from-[#5a0f0f]/60 to-transparent px-5 py-4">
+              <div className="border-b border-border bg-gradient-to-b from-surface/60 to-transparent px-5 py-4">
                 <p className="text-xs tracking-[0.3em] text-muted">姻缘测算 · 正缘预览</p>
                 <h3 className="mt-1 font-kai text-lg font-bold text-gold-light">
                   {preview?.previewReport.title ?? '姻缘正缘测算预览'}
@@ -272,8 +272,8 @@ export default function OrderPage() {
                 >
                   <input type="radio" name="product" checked={active} disabled={disabled} onChange={() => setSelected(p)} className="accent-gold" aria-hidden="true" />
                   <div className="min-w-0 flex-1">
-                    <div className="font-kai text-[14px] font-semibold text-gold-light">
-                      {displayName} {isRecommend ? <span className="ml-1 rounded bg-gold px-1.5 py-0.5 text-[10px] font-bold text-[#3a0a0a]">推荐</span> : null}
+                      <div className="font-kai text-[14px] font-semibold text-gold-light">
+                      {displayName} {isRecommend ? <span className="ml-1 rounded bg-gold px-1.5 py-0.5 text-[10px] font-bold text-bg">推荐</span> : null}
                     </div>
                     <div className="truncate text-[11px] text-muted">{isYinyuan ? '含正缘画像/桃花年份/婚后走势/相处锦囊 + 大师亲批' : '需补充另一半信息 · 合婚指数'}</div>
                   </div>

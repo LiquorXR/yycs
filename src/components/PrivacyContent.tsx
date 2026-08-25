@@ -7,7 +7,7 @@ import { COMPANY_NAME, CONTACT_ADDRESS, CONTACT_EMAIL, ICP_NO, PRIVACY_EFFECTIVE
 export default function PrivacyContent() {
   return (
     <article className="space-y-5 text-[13px] leading-relaxed text-fg-secondary">
-      <header className="rounded-[12px] border border-border-gold bg-[#3a0a0a]/60 p-4">
+      <header className="rounded-[12px] border border-border-gold bg-bg/60 p-4">
         <h2 className="font-kai text-lg font-bold text-gold-light">振凡命理 · 隐私政策</h2>
         <div className="mt-2 space-y-1 text-xs text-muted">
           <p>生效日期：{PRIVACY_EFFECTIVE_DATE} · 版本：{PRIVACY_VERSION}</p>
@@ -24,7 +24,7 @@ export default function PrivacyContent() {
         <p>仅在必要范围内收集以下信息，超出部分将另行征得您的单独同意：</p>
         <div className="mt-2 overflow-hidden rounded-[10px] border border-border-gold">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#3a0a0a]/70 text-gold-light">
+            <thead className="bg-bg/70 text-gold-light">
               <tr>
                 <th className="px-2 py-1.5">类别</th>
                 <th className="px-2 py-1.5">字段</th>
@@ -75,7 +75,7 @@ export default function PrivacyContent() {
         <p className="mb-2">我们不会向任何第三方出售您的个人信息，仅在以下必要情形共享：</p>
         <div className="overflow-hidden rounded-[10px] border border-border-gold">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#3a0a0a]/70 text-gold-light">
+            <thead className="bg-bg/70 text-gold-light">
               <tr>
                 <th className="px-2 py-1.5">接收方</th>
                 <th className="px-2 py-1.5">信息</th>
@@ -121,7 +121,7 @@ export default function PrivacyContent() {
         <p>重大变更将在 H5 内显著提示并重新征得同意。您可通过页脚“隐私政策”随时查阅当前版本。</p>
       </section>
 
-      <section className="rounded-[12px] border border-border-gold bg-[#3a0a0a]/40 p-4 text-xs">
+      <section className="rounded-[12px] border border-border-gold bg-bg/40 p-4 text-xs">
         <h4 className="mb-2 font-semibold text-gold-light">八、如何联系我们</h4>
         <p>运营主体：{COMPANY_NAME}</p>
         <p>地址：{CONTACT_ADDRESS}</p>

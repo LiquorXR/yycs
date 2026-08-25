@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom'
  */
 function PageHeader({ title, backTo = '/' }: { title: string; backTo?: string }) {
   return (
-    <header className="sticky top-0 z-10 border-b border-gold/15 bg-[#3a0a0a]/92 backdrop-blur-md">
+    <header className="sticky top-0 z-10 border-b border-gold/15 bg-bg/92 backdrop-blur-md">
       <div className="flex items-center justify-between px-4 h-[48px]">
         <Link
           to={backTo}

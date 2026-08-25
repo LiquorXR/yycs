@@ -28,7 +28,7 @@ function NativeQrArea({ codeUrl }: { codeUrl: string }) {
       </div>
       <p className="mt-4 text-sm text-fg-secondary">长按二维码保存到相册，打开微信「扫一扫」完成支付</p>
       <p className="mt-1 text-xs text-muted">长按识别失败？请复制下方链接在微信中打开</p>
-      <p className="mt-2 w-full max-w-[300px] rounded-lg border border-gold/20 bg-[#2e0808]/60 px-3 py-2 text-xs text-fg-secondary break-all select-all">
+      <p className="mt-2 w-full max-w-[300px] rounded-lg border border-gold/20 bg-bg/60 px-3 py-2 text-xs text-fg-secondary break-all select-all">
         {codeUrl}
       </p>
     </div>
@@ -38,7 +38,7 @@ function NativeQrArea({ codeUrl }: { codeUrl: string }) {
 function PayChannelEmpty() {
   return (
     <div className="flex flex-col items-center px-6 py-12 text-center">
-      <span className="grid size-16 place-items-center rounded-full border border-border-gold bg-[#2e0808]/60 text-muted">
+      <span className="grid size-16 place-items-center rounded-full border border-border-gold bg-bg/60 text-muted">
         <svg viewBox="0 0 24 24" className="size-8" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <rect x="3" y="6" width="18" height="13" rx="2.5" />
           <path d="M3 10h18M7 15h4" />

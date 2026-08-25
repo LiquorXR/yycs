@@ -22,24 +22,25 @@
 
 /* ------------------------------------------------------------------ *
  * 国风玄学 · 中国红 × 鎏金设计令牌（Open Design 原型 35a2cc25 guofeng.css）
- * 深绛红底 #6e1313 / 鎏金 #e2b45f / 丹砂朱红 #d93829 / 宣纸米白 #f7efdc
+ * B档 提浅：绛红底 #8b2323 / 次面 #a73232 / 卡片 rgba(145,38,38,0.88)
+ * 鎏金 #e2b45f / 丹砂朱红 #d93829 / 宣纸米白 #f7efdc
  * 展示字体：楷体；全局质感：fx-paper 宣纸颗粒 + fx-cloud 云气晕染
  * ------------------------------------------------------------------ */
 
 @theme {
-  /* 底与面（深绛红） */
-  --color-bg: #6e1313; /* 页面主底 */
-  --color-surface: #8c1f1f; /* 次级面 */
-  --color-surface-card: rgba(110, 19, 19, 0.85); /* 卡片面 */
-  --color-surface-hover: #9a2626; /* 悬停面 */
+  /* 底与面（绛红 提浅 B档） */
+  --color-bg: #8b2323; /* 页面主底 — B档由 #6e1313 提浅 */
+  --color-surface: #a73232; /* 次级面 — B档由 #8c1f1f 提浅 */
+  --color-surface-card: rgba(145, 38, 38, 0.88); /* 卡片面 — B档由 rgba(110,19,19,0.85) 提浅 */
+  --color-surface-hover: #b53e3e; /* 悬停面 — B档由 #9a2626 提浅 */
 
   /* 文字（宣纸米白） */
   --color-fg: #f7efdc; /* 主文字 */
   --color-fg-secondary: #e8d9b6; /* 次级文字 */
-  --color-muted: #d8c9a8; /* 弱化文字 */
+  --color-muted: #e0d2b6; /* 弱化文字 — B档由 #d8c9a8 提浅 3% 提通透 */
 
   /* 描边 */
-  --color-border: #5c1b16;
+  --color-border: #7a3330; /* B档由 #5c1b16 提浅 */
   --color-border-gold: #a8833f; /* 描金边 */
 
   /* 强调 */
@@ -69,13 +70,13 @@
     sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
 
-  /* 墨影（暖调）— 四级 Elevation */
-  --shadow-sm: 0 2px 8px rgb(0 0 0 / 0.22), inset 0 1px 0 rgb(255 255 255 / 0.05);
-  --shadow-md: 0 4px 16px rgb(0 0 0 / 0.32), inset 0 1px 0 rgb(255 255 255 / 0.06);
+  /* 墨影（暖调）— 四级 Elevation — B档 浅底降不透明度 0.12-0.16 提通透 */
+  --shadow-sm: 0 2px 8px rgb(0 0 0 / 0.16), inset 0 1px 0 rgb(255 255 255 / 0.05);
+  --shadow-md: 0 4px 16px rgb(0 0 0 / 0.22), inset 0 1px 0 rgb(255 255 255 / 0.06);
   --shadow-card:
-    0 8px 32px rgb(0 0 0 / 0.4), inset 0 0 16px rgb(226 180 95 / 0.05);
-  --shadow-lg: 0 12px 40px rgb(0 0 0 / 0.45), inset 0 1px 0 rgb(255 255 255 / 0.07);
-  --shadow-xl: 0 16px 48px rgb(0 0 0 / 0.52), 0 0 28px rgb(226 180 95 / 0.12);
+    0 8px 32px rgb(0 0 0 / 0.24), inset 0 0 16px rgb(226 180 95 / 0.05);
+  --shadow-lg: 0 12px 40px rgb(0 0 0 / 0.28), inset 0 1px 0 rgb(255 255 255 / 0.07);
+  --shadow-xl: 0 16px 48px rgb(0 0 0 / 0.32), 0 0 28px rgb(226 180 95 / 0.12);
   --shadow-gold: 0 4px 20px rgb(226 180 95 / 0.15);
   --shadow-red: 0 6px 24px rgb(226 180 95 / 0.25);
 
@@ -327,11 +328,11 @@
     -webkit-touch-callout: none;
   }
 
-  /* 中国红径向底 + 顶部鎏金高光晕染（纯 CSS 静态，固定锚定视口） */
+  /* 中国红径向底 + 顶部鎏金高光晕染（纯 CSS 静态，固定锚定视口）— B档 提浅 */
   body {
     margin: 0;
     min-height: 100dvh;
-    background: #3a0a0a;
+    background: #552020;
     color: var(--color-fg);
     font-family: var(--font-sans);
     overscroll-behavior-y: none;
@@ -342,7 +343,7 @@
     position: fixed;
     inset: 0;
     z-index: -1;
-    background: radial-gradient(circle at 50% 20%, #8a1a1a 0%, #5a0f0f 55%, #3a0a0a 100%);
+    background: radial-gradient(circle at 50% 20%, #a73232 0%, #7a2323 55%, #552020 100%);
     transform: translateZ(0);
     will-change: transform;
   }
@@ -350,7 +351,7 @@
   /* 低端机降级：小屏或偏好减少动画时，关闭固定渐变重绘，改纯色 */
   @media (max-width: 380px), (prefers-reduced-motion: reduce) {
     body::before {
-      background: #3a0a0a;
+      background: #552020;
     }
   }
 
@@ -435,12 +436,12 @@
     pointer-events: none;
   }
 
-  /* 低端机：关闭昂贵的 backdrop-blur，改实色 */
+  /* 低端机：关闭昂贵的 backdrop-blur，改实色 — B档 同步提浅 */
   @media (max-width: 380px) {
     .card-guofeng {
       backdrop-filter: none;
       -webkit-backdrop-filter: none;
-      background: rgba(74, 14, 14, 0.96);
+      background: rgba(95, 30, 30, 0.96);
     }
   }
 
@@ -590,7 +591,7 @@
     width: 100%;
     min-height: 48px;
     padding: 12px 20px;
-    background: rgb(58 10 10 / 0.5);
+    background: rgb(85 32 32 / 0.45);
     color: var(--color-gold);
     border: 1px solid var(--color-border-gold);
     border-radius: 24px;
@@ -621,7 +622,7 @@
   .input-guofeng {
     width: 100%;
     height: 44px;
-    background: rgb(46 8 8 / 0.6);
+    background: rgb(70 28 28 / 0.55);
     border: 1px solid var(--color-border-gold);
     border-radius: 10px;
     padding: 0 14px;
@@ -662,7 +663,7 @@
 
   .tag-chip {
     padding: 6px 12px;
-    background: rgb(58 10 10 / 0.6);
+    background: rgb(85 32 32 / 0.5);
     border: 1px solid var(--color-border);
     border-radius: 999px;
     font-size: 12px;
@@ -713,7 +714,7 @@
     display: flex;
     align-items: flex-end;
     justify-content: center;
-    background: rgb(26 4 4 / 0.82);
+    background: rgb(42 12 12 / 0.78);
     backdrop-filter: blur(6px);
     opacity: 0;
     pointer-events: none;
@@ -732,7 +733,7 @@
     max-width: 420px;
     max-height: 85vh;
     overflow-y: auto;
-    background: #4a0e0e;
+    background: #6b2424;
     border: 1px solid var(--color-border-gold);
     border-bottom: none;
     border-radius: 20px 20px 0 0;
@@ -805,7 +806,7 @@
     justify-content: center;
     gap: 8px;
     padding: 10px 14px;
-    background: rgb(58 10 10 / 0.6);
+    background: rgb(85 32 32 / 0.5);
     border: 1px solid var(--color-border);
     border-radius: 16px;
     color: var(--color-fg-secondary);
@@ -836,7 +837,7 @@
     position: absolute;
     inset: 0;
     pointer-events: none;
-    opacity: 0.38;
+    opacity: 0.30;
     mix-blend-mode: soft-light;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.95 0 0 0 0 0.82 0 0 0 0 0.6 0 0 0 0.18 0'/%3E%3C/filter%3E%3Crect width='260' height='260' filter='url(%23n)'/%3E%3C/svg%3E");
     z-index: 0;
@@ -979,7 +980,7 @@
 .compass-metal {
   background:
     radial-gradient(ellipse 80% 70% at 30% 20%, rgba(255,255,255,0.18) 0%, transparent 55%),
-    radial-gradient(circle at 50% 50%, #8a1a1a 0%, #5a0f0f 62%, #3a0a0a 100%);
+    radial-gradient(circle at 50% 50%, #a73232 0%, #7a2323 62%, #552020 100%);
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,0.18),
     inset 0 -1px 0 rgba(0,0,0,0.5),
@@ -1007,7 +1008,7 @@
   font-weight: 600;
   letter-spacing: 0.06em;
   paint-order: stroke;
-  stroke: rgba(58,10,10,0.85);
+  stroke: rgba(85,32,32,0.85);
   stroke-width: 2.2px;
   stroke-linejoin: round;
 }

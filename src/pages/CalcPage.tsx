@@ -92,7 +92,7 @@ function CalcLoading({
 
   return (
     <div
-      className="fx-paper fx-cloud fade-in fixed inset-0 z-50 flex flex-col items-center overflow-y-auto bg-[radial-gradient(circle_at_50%_20%,#8a1a1a_0%,#5a0f0f_55%,#3a0a0a_100%)] px-5 py-8 text-center"
+      className="fx-paper fx-cloud fade-in fixed inset-0 z-50 flex flex-col items-center overflow-y-auto bg-[radial-gradient(circle_at_50%_20%,#a73232_0%,#7a2323_55%,#552020_100%)] px-5 py-8 text-center"
       role="status"
       aria-live="polite"
     >
@@ -107,7 +107,7 @@ function CalcLoading({
 
       {/* 命主居中 — 头像 */}
       <div className="relative z-10 mt-5 flex flex-col items-center gap-1.5">
-        <span className="grid size-[58px] animate-pulse-glow-slow place-items-center rounded-full border-2 border-gold bg-[radial-gradient(circle,#4a0e0e_0%,#2a0808_100%)] text-gold-light shadow-[0_0_16px_rgba(226,180,95,0.4)]">
+        <span className="grid size-[58px] animate-pulse-glow-slow place-items-center rounded-full border-2 border-gold bg-[radial-gradient(circle,#6b2424_0%,#4a1a1a_100%)] text-gold-light shadow-[0_0_16px_rgba(226,180,95,0.4)]">
           <svg
             viewBox="0 0 24 24"
             className="size-8"
@@ -146,7 +146,7 @@ function CalcLoading({
       </div>
 
       {/* 实时演算状态日志 */}
-      <div className="w-full rounded-[16px] border border-border-gold bg-[#3a0a0a]/70 p-4 text-left">
+      <div className="w-full rounded-[16px] border border-border-gold bg-bg/70 p-4 text-left">
         {LOADING_STEPS.map((text, i) => {
           const done = i < doneCount
           const active = !done && i === doneCount
@@ -175,7 +175,7 @@ function CalcLoading({
 
         <div className="mt-2.5">
           <div
-            className="h-1.5 overflow-hidden rounded-full border border-border bg-[#5a1414]/60"
+            className="h-1.5 overflow-hidden rounded-full border border-border bg-surface/60"
             role="progressbar"
             aria-valuemin={0}
             aria-valuemax={100}
@@ -244,7 +244,7 @@ function PersonSection({
           个人信息
         </div>
         <div
-          className="flex rounded-full border border-border bg-[#3a0a0a]/55 p-0.5 text-[11px]"
+          className="flex rounded-full border border-border bg-bg/55 p-0.5 text-[11px]"
           role="group"
           aria-label="历法切换"
         >
@@ -364,7 +364,7 @@ function PreviewReport({ result }: { result: StoredResult }) {
   return (
     <section className="mt-4" aria-label="预览报告">
       <div className="overflow-hidden rounded-[16px] border border-border-gold bg-surface-card shadow-card">
-        <div className="border-b border-border bg-gradient-to-b from-[#5a0f0f]/60 to-transparent px-5 py-4">
+        <div className="border-b border-border bg-gradient-to-b from-surface/60 to-transparent px-5 py-4">
           <p className="text-xs tracking-[0.3em] text-muted">姻缘测算 · 正缘预览</p>
           <h3 className="mt-1 font-kai text-lg font-bold text-gold-light">
             {result.title}
@@ -566,7 +566,7 @@ function CalcPage() {
 
   return (
     <main className={`fx-paper fx-cloud min-h-screen ${result ? 'pb-28' : 'pb-6'}`}>
-      <header className="sticky top-0 z-10 border-b border-gold/15 bg-[#3a0a0a]/92 backdrop-blur-md">
+      <header className="sticky top-0 z-10 border-b border-gold/15 bg-bg/92 backdrop-blur-md">
         <div className="flex items-center justify-between px-4 h-[48px]">
           <Link
             to="/"
@@ -682,7 +682,7 @@ function CalcPage() {
 
       {/* 底部固定解锁栏（返回本页且有预览结果时） */}
       {result ? (
-        <div className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-border-gold bg-[#2e0808]/96 backdrop-blur-md">
+        <div className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-border-gold bg-bg/96 backdrop-blur-md">
           <div className="flex items-center justify-between gap-4 px-5 py-3">
             <div>
               <p className="text-xs text-muted">解锁姻缘完整报告</p>

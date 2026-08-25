@@ -214,8 +214,8 @@ function Ticker() {
   }, [])
 
   return (
-    <div
-      className="mx-5 mb-3 flex items-center gap-2 overflow-hidden rounded-full border border-gold/20 bg-[#3a0a0a]/58 px-3 py-1.5 text-xs text-fg-secondary backdrop-blur"
+      <div
+      className="mx-5 mb-3 flex items-center gap-2 overflow-hidden rounded-full border border-gold/20 bg-bg/58 px-3 py-1.5 text-xs text-fg-secondary backdrop-blur"
       role="status"
       aria-live="polite"
       tabIndex={0}
@@ -282,7 +282,7 @@ function LandingPage() {
   return (
     <main className="fx-paper fx-cloud flex min-h-screen flex-col pb-6">
       {/* 顶部滚动免责提示栏 */}
-      <div className="sticky top-0 z-30 overflow-hidden border-b border-gold/12 bg-[#1a0505]/92 backdrop-blur-md supports-[backdrop-filter]:bg-[#1a0505]/80">
+      <div className="sticky top-0 z-30 overflow-hidden border-b border-gold/12 bg-bg/92 backdrop-blur-md supports-[backdrop-filter]:bg-bg/80">
         <div className="flex select-none items-center gap-1 py-[6px] text-[10px] leading-none tracking-wide text-gold/90">
           <span className="ml-2 inline-flex shrink-0 items-center gap-1 rounded-full bg-gold/12 px-1.5 py-0.5 text-[9px] font-bold tracking-[0.08em] text-gold-light">
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -325,7 +325,7 @@ function LandingPage() {
         {FEATURES.map((f, i) => (
           <div
             key={f.icon}
-            className="group relative overflow-hidden rounded-[11px] border border-[#a8833f]/40 bg-[linear-gradient(180deg,rgba(140,26,26,0.94)_0%,rgba(74,14,14,0.98)_100%)] px-3 py-2 shadow-[0_3px_12px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-[6px] transition-all duration-300 hover:-translate-y-[1px] hover:border-gold/60 active:scale-[0.98]"
+            className="group relative overflow-hidden rounded-[11px] border border-[#a8833f]/40 bg-[linear-gradient(180deg,rgba(167,50,50,0.94)_0%,rgba(95,30,30,0.98)_100%)] px-3 py-2 shadow-[0_3px_12px_rgba(0,0,0,0.20),inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-[6px] transition-all duration-300 hover:-translate-y-[1px] hover:border-gold/60 active:scale-[0.98]"
             style={{ animationDelay: `${i * 70}ms` }}
           >
             <span
@@ -378,7 +378,7 @@ function LandingPage() {
           <span className="flex items-center gap-1">
             <svg viewBox="0 0 24 24" className="size-3 fill-gold" aria-hidden="true">
               <circle cx="12" cy="12" r="10" />
-              <path d="M12 6v6l4 2" stroke="#3a0a0a" strokeWidth="1.5" fill="none" />
+              <path d="M12 6v6l4 2" stroke="#552020" strokeWidth="1.5" fill="none" />
             </svg>
             周易古籍精算
           </span>
