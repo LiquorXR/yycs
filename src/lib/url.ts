@@ -3,7 +3,7 @@
 const ALLOWED_URL_PATTERN = /^https:\/\//i
 
 // 支付/活码允许的域名白名单（前缀匹配）
-const PAY_ALLOW_HOSTS = ["wx.tenpay.com", "work.weixin.qq.com", "qywx."]
+const PAY_ALLOW_HOSTS = ["qr.shouqianba.com", "alipay.com", "alipay.cn", "work.weixin.qq.com", "qywx."]
 const QRCODE_ALLOW_HOSTS = ["work.weixin.qq.com", "qywx."]
 
 function hostAllowed(host: string, allowList: string[]): boolean {
@@ -42,9 +42,11 @@ export function isSafeQrcodeUrl(url: string | null | undefined): boolean {
   return isSafeHttpUrl(url, QRCODE_ALLOW_HOSTS)
 }
 
+const CODE_ALLOW_HOSTS = ["qr.shouqianba.com", "alipay.com", "alipay.cn"]
+
 export function isSafeCodeUrl(url: string | null | undefined): boolean {
   if (!url || typeof url !== "string") return false
   const t = url.trim()
-  if (t.startsWith("weixin://")) return true
-  return isSafeHttpUrl(t)
+  if (t.startsWith("weixin://") || t.startsWith("alipays://") || t.startsWith("alipay://")) return true
+  return isSafeHttpUrl(t, CODE_ALLOW_HOSTS)
 }

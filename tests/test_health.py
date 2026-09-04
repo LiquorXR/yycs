@@ -13,6 +13,8 @@ def test_health(client: TestClient):
     assert data["status"] == "ok"
     assert "dbSizeBytes" in data
     assert isinstance(data["reconcileEnabled"], bool)
+    assert isinstance(data["sqbReady"], bool)
     assert isinstance(data["wxpayReady"], bool)
+    assert isinstance(data["sqbMissing"], list)
     assert data["lastReconcileAt"] is None
     assert data["lastReconcileSummary"] is None

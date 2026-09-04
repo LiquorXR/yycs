@@ -127,7 +127,8 @@ def test_get_order_detail(client):
     assert data["profileId"] == pid
     assert data["amount"] == 990
     assert data["state"] == "CREATED"
-    assert data["payType"] == "auto"
+    assert data["payType"] is None
+    assert data["payChannel"] == "wx_h5"
     assert data["outTradeNo"] == order_no
     assert data["createdAt"].endswith("Z")
     assert data["paidAt"] is None

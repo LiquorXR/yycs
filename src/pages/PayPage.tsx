@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
+import { QRCodeSVG } from 'qrcode.react'
 import { Button } from '@/components/ui/button'
 import PageHeader from '@/components/PageHeader'
 import { getOrder, type OrderDetail } from '@/api/orders'
@@ -16,18 +17,10 @@ function NativeQrArea({ codeUrl }: { codeUrl: string }) {
   return (
     <div className="flex flex-col items-center">
       <div className="relative flex size-[168px] items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-gold/50 bg-white p-2">
-        <span aria-hidden="true" className="absolute inset-0 bg-gradient-to-r from-transparent via-black/[0.06] to-transparent -translate-x-full animate-[shimmer_2s_linear_infinite]" />
-        <svg viewBox="0 0 100 100" className="size-full" aria-hidden="true">
-          <rect x="6" y="6" width="34" height="34" fill="none" stroke="#e2b45f" strokeWidth="5" />
-          <rect x="60" y="6" width="34" height="34" fill="none" stroke="#e2b45f" strokeWidth="5" />
-          <rect x="6" y="60" width="34" height="34" fill="none" stroke="#e2b45f" strokeWidth="5" />
-          <path d="M16 16h14v14H16z M70 16h14v14H70z M16 70h14v14H16z" fill="#e2b45f" />
-          <path d="M10 46h10v5H10z M10 60h5v5H10z M20 50h5v10h-5z M34 44h8v4h-8z M38 54h6v6h-6z M52 12h6v4h-6z M58 20h8v8h-8z M52 30h5v6h-5z M64 10h4v6h-4z M46 52h6v4h-6z M56 56h4v4h-4z M52 70h10v6h-10z M70 54h8v6h-8z M66 44h4v6h-4z M80 40h6v8h-6z M80 54h6v5h-6z M46 70h4v6h-4z" fill="#e2b45f" />
-        </svg>
-        <span className="absolute right-1.5 bottom-1.5 rounded bg-surface px-1 py-0.5 text-[10px] leading-none text-muted">长按保存</span>
+        <QRCodeSVG value={codeUrl} size={152} level="M" aria-label="扫码支付" className="size-full" />
       </div>
-      <p className="mt-4 text-sm text-fg-secondary">长按二维码保存到相册，打开微信「扫一扫」完成支付</p>
-      <p className="mt-1 text-xs text-muted">长按识别失败？请复制下方链接在微信中打开</p>
+      <p className="mt-4 text-sm text-fg-secondary">用微信 / 支付宝「扫一扫」完成支付</p>
+      <p className="mt-1 text-xs text-muted">扫码失败？请复制下方链接在对应 App 中打开</p>
       <p className="mt-2 w-full max-w-[300px] rounded-lg border border-gold/20 bg-bg/60 px-3 py-2 text-xs text-fg-secondary break-all select-all">
         {codeUrl}
       </p>
@@ -125,14 +118,20 @@ export default function PayPage() {
   }, [orderNo])
 
   const pay = (location.state as PayState | null) ?? null
-  const isPaid = order?.state === 'PAID'
-  // 有效支付信息优先取 location.state，刷新后回退到 order 字段（均需白名单校验）
-  const effectivePayType = pay?.payType ?? order?.payType ?? null
-  const effectivePayUrl = pay?.payUrl ?? order?.payUrl ?? null
-  const effectiveCodeUrl = pay?.codeUrl ?? order?.codeUrl ?? null
+  const PAID_STATES = ['PAID', 'UNLOCKED', 'DELIVERED', 'ADDED_WECOM']
+  const PAID_AFTER_CLOSE = 'paid_after_close'
+  const isPaid = order !== null && PAID_STATES.includes(order.state)
+  // 订单加载后以服务端字段为准（防旧 location.state 过期链接）；加载前用首屏透传加速
+  const effectivePayType = order?.payType ?? pay?.payType ?? null
+  const effectivePayUrl = order?.payUrl ?? pay?.payUrl ?? null
+  const effectiveCodeUrl = order?.codeUrl ?? pay?.codeUrl ?? null
   const showH5 = effectivePayType === 'h5' && isSafePayUrl(effectivePayUrl)
   const showNative = effectivePayType === 'native' && isSafeCodeUrl(effectiveCodeUrl)
+  // H5 主路径附带聚合码备选（快手 WebView 拦截拉起时用）
+  const showH5FallbackQr = showH5 && isSafeCodeUrl(effectiveCodeUrl)
   const showEmpty = !showH5 && !showNative
+  const isClosed = order?.state === 'CLOSED'
+  const paidAfterClose = !!order?.failReason?.includes(PAID_AFTER_CLOSE)
   const countdownText = `${String(Math.floor(payCountdown / 60)).padStart(2, '0')}:${String(payCountdown % 60).padStart(2, '0')}`
 
   return (
@@ -142,10 +141,21 @@ export default function PayPage() {
       <div className="p-4 space-y-3 pb-6">
         {/* 订单支付卡 — 严格原型 */}
         <div className="card-guofeng p-4 text-center">
-          <div className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-500/15 px-2.5 py-1 text-xs text-amber-200">
-            <span className="size-1.5 shrink-0 animate-pulse rounded-full bg-amber-400" aria-hidden="true" />
-            订单待支付 · <span className="font-mono font-bold">{countdownText}</span> 后自动关闭
-          </div>
+          {isPaid ? (
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-2.5 py-1 text-xs text-emerald-200">
+              <span className="size-1.5 shrink-0 rounded-full bg-emerald-400" aria-hidden="true" />
+              订单已支付
+            </div>
+          ) : isClosed ? (
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-xs text-muted">
+              订单已关闭
+            </div>
+          ) : (
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-500/15 px-2.5 py-1 text-xs text-amber-200">
+              <span className="size-1.5 shrink-0 animate-pulse rounded-full bg-amber-400" aria-hidden="true" />
+              订单待支付 · 请尽快完成支付（<span className="font-mono font-bold">{countdownText}</span>）
+            </div>
+          )}
           <div className="mt-3 text-[13px] text-fg-secondary">
             订单号 <span className="font-mono text-fg">{order?.orderNo ?? orderNo}</span> · 姻缘专属报告
           </div>
@@ -179,19 +189,37 @@ export default function PayPage() {
                 </Button>
               </Link>
             </div>
+          ) : isClosed ? (
+            <div className="flex flex-col items-center py-6 text-center">
+              <p className="font-kai text-lg font-bold text-gold-light">订单已关闭</p>
+              {paidAfterClose ? (
+                <p className="mt-2 max-w-[280px] text-sm leading-relaxed text-fg-secondary">
+                  系统检测到关闭后到账，金额原路退回或人工核账中。如已扣款请联系客服（工作时间 9:00-21:00），并提供订单号。
+                </p>
+              ) : (
+                <p className="mt-2 text-sm text-fg-secondary">订单已关闭，如需继续请重新下单。</p>
+              )}
+              <p className="mt-3 font-mono text-xs text-muted">{order?.orderNo ?? orderNo}</p>
+            </div>
           ) : showH5 ? (
             <div className="flex flex-col items-center py-4 text-center">
               <p className="text-sm leading-relaxed text-fg-secondary">
-                将拉起微信完成支付
+                将拉起支付应用完成支付
                 <br />
                 支付成功后自动返回本页查看报告
               </p>
               <a href={effectivePayUrl!} target="_blank" rel="noopener noreferrer" className="mt-6 w-full max-w-[280px]">
                 <Button size="lg" className="w-full rounded-full text-base font-bold">
-                  点击唤起微信支付
+                  点击唤起支付
                 </Button>
               </a>
               <p className="mt-3 text-xs text-muted">未自动跳转？请点击右上角在浏览器中打开</p>
+              {showH5FallbackQr ? (
+                <div className="mt-6 w-full border-t border-gold/20 pt-5">
+                  <p className="mb-3 text-xs text-muted">拉起被拦截？可用扫码备选支付</p>
+                  <NativeQrArea codeUrl={effectiveCodeUrl!} />
+                </div>
+              ) : null}
             </div>
           ) : showNative ? (
             <div className="mt-4">

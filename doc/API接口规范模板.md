@@ -27,6 +27,7 @@
 | v1.0.7 | 2026-08-18 | 微信支付 V3 支付闭环落地：创建订单（§2.5）支付配置齐全时返回真实 payType/payUrl/codeUrl（H5/Native），否则 null 降级；微信支付回调（§2.10）改为已实现（验签/AES-GCM 解密/幂等/恰好一次解锁）；新增查单与对账补偿说明；关单同步调用微信关单；删除 §2.11 退款回调（产品决策移除退款功能，退款接口/回调/模型/配置全部下线） |  |
 | v1.0.8 | 2026-08-18 | 报告交付模式变更：获取报告（§2.8）改为**一律返回锁定态**（title + locked=true + lockedPreview），不再下发 score/rank/analysis/karma 等完整内容——付费后由人工经企业微信交付完整结果；wecom 字段改为「已支付 + 配置企微二维码」时返回；移除 14002 错误码（报告不再抛越权/未解锁错误，代码与文档同步删除） |  |
 | v1.0.9 | 2026-08-23 | 姻缘主线收敛：产品更名为「姻缘测算·正缘完整报告」/「姻缘测算·正缘预览（免费版）」；提交测算信息 focusTags 去除事业运势、新增正缘画像/桃花旺衰年份/婚后走势/相处之道/脱单锦囊；报告 title 改为「姓名 · 姻缘天书·正缘详批（预览）」，lockedPreview 第二章改为婚后走势与相处经营指南 |  |
+| v1.0.10 | 2026-09-04 | 支付通道切换微信 V3 → 收钱吧聚合（微信+支付宝）：创建订单 paymentMethod 新增 wx_h5/ali_h5/wx_native/ali_qr（兼容 auto/h5/native），响应新增 payChannel；订单详情新增 payChannel、payType 按 URL 归一化；关单改为收钱吧撤单 best-effort；支付回调（§2.10）改为收钱吧 RSA 验签纯文本 success/fail；企微回调（§2.11）与交付状态（§2.9）标注 B 阶段未实现 |  |
 
 ---
 
@@ -104,7 +105,7 @@ Authorization: Bearer <token>
 ```
 
 > 约定：HTTP 状态码表达传输层结果（2xx 成功、4xx 客户端错误、5xx 服务端错误）；业务状态码表达业务层结果（始终随 body 返回）。
-> 例外：回调接口（微信支付 `POST /api/pay/notify`、企业微信 `POST /api/wecom/notify`）不遵循统一包装，按微信/企微协议返回（`SUCCESS`/`FAIL`、`echostr`/`success`），见 §2.10~2.11。
+> 例外：回调接口不遵循统一包装——收钱吧 `POST /api/pay/notify` 按收钱吧协议返回纯文本 `success`/`fail`（见 §2.10）；企业微信 `POST /api/wecom/notify` 为 B 阶段未实现（见 §2.11）。
 
 ### 1.5 分页约定
 
@@ -377,7 +378,7 @@ Body（JSON）：
 |---|---|---|---|
 | profileId | string | 是 | 测算信息 ID |
 | productId | int | 是 | 产品 ID（金额以服务端产品表为准，杜绝前端改价） |
-| paymentMethod | string | 否 | `auto`（默认，服务端路由）/ `h5` / `native` |
+| paymentMethod | string | 否 | `auto`（默认微信，可大小写）/ `h5` / `native`（历史兼容）/ `wx_h5` / `ali_h5` / `wx_native` / `ali_qr`；入库归一化见 payChannel |
 | adParams | object | 否 | 磁力投放归因：`{ad_id, creative_id, campaign_id, ...}` |
 | amount | int | 否 | 防改价校验用：携带时须与产品表价格一致，否则返回 12001；不携带则以后端产品表为准 |
 
@@ -408,13 +409,14 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
     "orderNo": "S20260809001",
     "amount": 990,
     "payType": "h5",
-    "payUrl": "https://wx.tenpay.com/cgi-bin/mmpayweb-bin/checkmweb?...",
+    "payChannel": "wx_h5",
+    "payUrl": "https://qr.shouqianba.com/gateway?terminal_sn=...&sign=...",
     "codeUrl": null
   }
 }
 ```
 
-> 支付配置齐全（微信支付商户参数就绪）时：`payType` 为 `h5`（拉起微信）或 `native`（扫码），对应填充 `payUrl`/`codeUrl`；配置未就绪时三字段恒为 `null` 降级（订单仍可创建，前端展示待支付）。
+> 支付配置齐全（收钱吧终端号/密钥/操作员/回调地址就绪）时：`payType` 为 `h5`（WAP 跳转收银台）或 `native`（聚合码扫码），对应填充 `payUrl`/`codeUrl`（H5 下备选码为 best-effort 可能为 null）；配置未就绪时三字段恒为 `null` 降级（订单仍可创建，前端展示待支付）。
 
 #### 响应字段说明
 
@@ -422,15 +424,16 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 |---|---|---|
 | data.orderNo | string | 内部订单号 |
 | data.amount | int | 实际应付金额（分） |
-| data.payType | string \| null | `h5`（拉起微信）/ `native`（扫码）；支付配置未就绪时为 `null` |
-| data.payUrl | string \| null | H5 支付跳转 URL（payType=h5 时）；否则 null |
-| data.codeUrl | string \| null | 扫码支付二维码内容（payType=native 时）；否则 null |
+| data.payType | string \| null | 展示用：`h5`（WAP 跳转）/ `native`（扫码）；支付配置未就绪时为 `null` |
+| data.payChannel | string | 入库通道：`wx_h5/ali_h5/wx_native/ali_qr`（`auto/h5→wx_h5`，`native→wx_native`） |
+| data.payUrl | string \| null | WAP 跳转 URL（payType=h5 时）；否则 null |
+| data.codeUrl | string \| null | 聚合码短链/二维码内容（payType=native 时；H5 备选码也可能返回）；否则 null |
 
 #### 错误响应
 
 | HTTP 状态码 | 业务 code | message | 说明 |
 |---|---|---|---|
-| 400 | 10001 | 参数校验失败 | `Idempotency-Key` 缺失或 `paymentMethod` 非法（需为 auto/h5/native） |
+| 400 | 10001 | 参数校验失败 | `Idempotency-Key` 缺失或 `paymentMethod` 非法（需为 auto/h5/native/wx_h5/ali_h5/wx_native/ali_qr） |
 | 400 | 12001 | 金额校验失败 | 防改价：下单金额与产品表不一致 |
 | 404 | 10004 | 资源不存在 | profileId 不存在 |
 | 404 | 13001 | 产品不存在或已下架 | 产品下架 |
@@ -463,7 +466,8 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
     "amount": 990,
     "state": "CREATED",
     "payType": "h5",
-    "payUrl": "https://wx.tenpay.com/cgi-bin/mmpayweb-bin/checkmweb?...",
+    "payChannel": "wx_h5",
+    "payUrl": "https://qr.shouqianba.com/gateway?terminal_sn=...&sign=...",
     "codeUrl": null,
     "openid": "",
     "adParams": null,
@@ -479,12 +483,13 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | 字段 | 类型 | 说明 |
 |---|---|---|
 | data.productId | int | 产品 ID |
-| data.outTradeNo | string | 微信商户订单号（= orderNo） |
-| data.state | string | 状态机：CREATED/PAID/UNLOCKED/DELIVERED/ADDED_WECOM/CLOSED |
-| data.payType | string \| null | 实际支付方式：`auto` 请求会被服务端路由为 `h5`/`native` 并回写；支付配置未就绪时为 `null` |
-| data.payUrl | string \| null | H5 支付跳转 URL（payType=h5 时）；否则 null |
-| data.codeUrl | string \| null | 扫码支付二维码内容（payType=native 时）；否则 null |
-| data.openid | string | 微信 openid（A 阶段为空串） |
+| data.outTradeNo | string | 收钱吧 `client_sn`（= orderNo） |
+| data.state | string | 状态机：CREATED/PAID/UNLOCKED/DELIVERED/ADDED_WECOM/CLOSED（DELIVERED/ADDED_WECOM 为 B 阶段） |
+| data.payType | string \| null | 展示用：按 URL 归一化为 `h5`/`native`；支付配置未就绪时为 `null` |
+| data.payChannel | string | 入库通道：`wx_h5/ali_h5/wx_native/ali_qr`（不回写覆盖） |
+| data.payUrl | string \| null | WAP 跳转 URL（payType=h5 时）；否则 null |
+| data.codeUrl | string \| null | 聚合码短链/二维码内容（payType=native 时）；否则 null |
+| data.openid | string | 预留字段（当前恒为空串） |
 | data.adParams | object \| null | 磁力投放归因参数（原样返回，未传为 null） |
 | data.failReason | string \| null | 失败原因（正常为 null） |
 
@@ -520,7 +525,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 }
 ```
 
-> 支付配置就绪时同步调用微信关单接口（微信关单失败不阻塞本地关单，由对账补偿兜底）；仅 CREATED 可关，已支付 12002，其余状态 12003。
+> 支付配置就绪时同步调用收钱吧撤单（`POST /upay/v2/cancel`，best-effort，失败不阻塞本地关单，由 paid_after_close/对账兜底）；仅 CREATED 可关，已支付 12002，其余状态 12003。
 
 #### 错误响应
 
@@ -623,7 +628,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | 接口名称 | 交付状态/企微添加状态 |
 | 接口地址 | `GET /api/orders/{orderNo}/delivery` |
 | 鉴权要求 | 公开（免鉴权） |
-| 实现状态 | **B 阶段未实现** |
+| 实现状态 | **B 阶段未实现（代码无此路由，调用返回 404）** |
 | 版本 | v1 |
 
 #### 响应示例
@@ -648,35 +653,37 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | 404 | 10004 | 资源不存在 | 订单不存在 |
 | 500 | 50000 | 服务器内部错误 | 联系管理员 |
 
-### 2.10 微信支付回调
+### 2.10 收钱吧支付结果回调
+
+> 协议假设（待沙箱真报文复核）：回调头为 `Authorization: {terminal_sn} {base64(RSA-SHA256)}` 两段式，验签原文为 body 整体字节；成功态 `order_status=PAID`。
 
 #### 基本信息
 
 | 项目 | 内容 |
 |---|---|
-| 接口名称 | 微信支付结果回调 |
+| 接口名称 | 收钱吧支付结果回调 |
 | 接口地址 | `POST /api/pay/notify` |
-| 鉴权要求 | 无（微信平台证书/公钥验签） |
+| 鉴权要求 | 无（`terminal_sn` 比对 + 收钱吧公钥 RSA 验签） |
 | 实现状态 | **A 阶段已实现** |
 | 版本 | v1 |
-| 协议 | **例外**：不遵循统一包装，返回 `{"code":"SUCCESS"}` / `{"code":"FAIL"}` |
+| 协议 | **例外**：不遵循统一包装，返回纯文本 `success` / `fail` |
 
 #### 处理流程
 
-1. 验签：`Wechatpay-Signature` 头 + 微信平台证书验签，失败返回 `FAIL`
-2. 解密：`resource` 字段 AES-256-GCM 解密出明文（transaction_id、amount.total、out_trade_no、trade_state）
-3. 幂等：订单已支付/已解锁直接返回 `SUCCESS`（不重复解锁）
-4. 一致性：`amount.total` 与订单金额比对，不一致告警并拒绝（防改价/防串单）
-5. 成功：事务内 CAS（`UPDATE ... WHERE state='CREATED'`）推进订单状态并解锁完整报告，保证并发回调「恰好一次」解锁；重复回调幂等返回 `SUCCESS`
+1. 验签：`Authorization` 两段式 + 正文 `terminal_sn` 双重比对 + RSA-SHA256 验 body，失败返回 `fail`；公钥未配置时一律 `fail`
+2. 归一化：取 `terminal_sn/client_sn/total_amount/order_status`；失败态 `PAY_CANCELED` 关单（CREATED→CLOSED），待定态记日志，均回 `success`
+3. 幂等：订单已支付/已解锁直接返回 `success`（不重复解锁）
+4. 一致性：`total_amount` 与订单金额精确比对，不一致记死信并回 `success` 止血（防重试风暴）；`CLOSED` 后到账记 `paid_after_close` 人工核账
+5. 成功：事务内 CAS（`UPDATE ... WHERE state='CREATED'`）推进订单状态并解锁报告，保证并发回调「恰好一次」解锁；重复回调幂等返回 `success`
 
 #### 错误响应
 
 | HTTP 状态码 | body | 说明 |
 |---|---|---|
-| 200 | `{"code":"SUCCESS"}` | 处理成功 |
-| 200 | `{"code":"FAIL"}` | 验签/解密/业务校验失败，微信将重试 |
+| 200 | `success` | 处理成功或确定性失败止血 |
+| 200 | `fail` | 验签/解析/落库异常可重试，收钱吧按 1s/5s/30s/600s 重试 |
 
-> 对账兜底：支付配置就绪时后台定时任务（每 5 分钟）扫描超 30 分钟仍为 CREATED 的订单，调用微信查单接口按结果推进状态；微信平台证书未配置时回调一律返回 `FAIL`（不静默放行）。
+> 对账兜底：支付配置就绪时后台定时任务（每 5 分钟）扫描超 30 分钟仍为 CREATED 的订单（上限 60 单/轮），调用收钱吧查单（`POST /upay/v2/query`）按结果推进状态；未知/退款态转死信人工核账。
 
 ### 2.11 企业微信事件回调
 
@@ -687,7 +694,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | 接口名称 | 企业微信事件回调 |
 | 接口地址 | `POST /api/wecom/notify`（GET 用于 URL 验证） |
 | 鉴权要求 | 无（msg_signature + Token + EncodingAESKey 验签） |
-| 实现状态 | **B 阶段未实现**（企业微信服务模块） |
+| 实现状态 | **B 阶段未实现（代码无此路由；当前报告页活码为静态 `WECOM_QRCODE_URL` 配置）** |
 | 版本 | v1 |
 | 协议 | **例外**：GET 校验返回 `echostr`；POST 事件处理成功返回 `success` |
 
@@ -711,7 +718,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | 实现状态 | **仅开发环境可用**（APP_ENV=dev 时注册路由；生产返回 404） |
 | 版本 | v1 |
 
-> 说明：仅用于本地联调打通「解锁 → 获取报告」链路。开发/联调环境通过本接口模拟支付成功，将订单置为已解锁并落 mock 支付流水。生产环境（APP_ENV=prod）路由不注册，请求返回 HTTP 404（FastAPI 默认响应，无统一业务包装）；正式支付走 §2.10 微信支付回调。
+> 说明：仅用于本地联调打通「解锁 → 获取报告」链路。开发/联调环境通过本接口模拟支付成功，将订单置为已解锁并落 mock 支付流水。生产环境（APP_ENV=prod）路由不注册，请求返回 HTTP 404（FastAPI 默认响应，无统一业务包装）；正式支付走 §2.10 收钱吧支付结果回调。
 
 #### 请求示例
 
@@ -823,8 +830,8 @@ POST /api/orders/S20260809001/pay-success-mock
 | 12001 | 400 | 金额校验失败 | 防改价：下单金额与产品表不一致 |
 | 12002 | 409 | 订单已支付 | 重复支付/已支付订单操作冲突 |
 | 12003 | 409 | 订单状态不允许操作 | 状态机约束（如非 CREATED 关单） |
-| 12004 | 502 | 支付拉起失败 | H5 拉起微信失败，请改用扫码 |
-| 12005 | 400 | 回调验签失败 | 微信回调验签/解密失败 |
+| 12004 | 502 | 支付拉起失败 | （预留）收银台跳转/聚合码下单失败，请改用扫码 |
+| 12005 | 400 | 回调验签失败 | 收钱吧回调验签失败 |
 | 13001 | 404 | 产品不存在或已下架 | 产品 ID 无效或已禁用 |
 | 14001 | 422 | 测算信息无效 | 生辰/姓名校验失败 |
 

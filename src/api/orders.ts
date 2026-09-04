@@ -3,7 +3,7 @@ import http, { unwrapData, type ApiEnvelope } from './http'
 export interface CreateOrderPayload {
   profileId: string
   productId: number
-  paymentMethod?: 'auto' | 'h5' | 'native'
+  paymentMethod?: 'auto' | 'h5' | 'native' | 'wx_h5' | 'ali_h5' | 'wx_native' | 'ali_qr'
   adParams?: Record<string, string>
 }
 
@@ -12,6 +12,7 @@ export interface OrderResult {
   orderNo: string
   amount: number
   payType: string | null
+  payChannel?: string | null
   payUrl: string | null
   codeUrl: string | null
 }
@@ -22,8 +23,10 @@ export interface OrderDetail {
   amount: number
   state: string
   payType: string | null
+  payChannel?: string | null
   payUrl: string | null
   codeUrl: string | null
+  failReason?: string | null
   createdAt?: string
   paidAt?: string | null
 }

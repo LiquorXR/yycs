@@ -39,7 +39,8 @@ services:
     volumes:
       - app_data:/data
       - frontend_dist:/app/dist:ro
-      # 微信支付商户私钥/平台证书（WXPAY_PRIVATE_KEY_PATH / WXPAY_PLATFORM_CERT_PATH）
+      # 收钱吧公钥 PEM（SQB_PUBLIC_KEY_PATH=/app/certs/shouqianba_pub.pem，只读挂载；
+      # 确认 backend 运行用户对 certs/ 有读权限，否则回调验签恒 fail）
       - ./certs:/app/certs:ro
     ports:
       - "8000:8000"
