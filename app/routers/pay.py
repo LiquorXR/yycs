@@ -31,3 +31,16 @@ async def pay_notify(request: Request, db: Session = Depends(get_db)) -> PlainTe
         return PlainTextResponse("success")
     logger.warning("支付回调返回 fail：%s", message)
     return PlainTextResponse("fail")
+
+
+@router.post("/api/pay/refund-notify", response_model=None)
+async def refund_notify(request: Request, db: Session = Depends(get_db)) -> PlainTextResponse:
+    """收钱吧退款结果回调：RSA 验签 + 只记录可查（不改订单主状态，人工核账）。"""
+    raw_body = await request.body()
+    logger.info("收到收钱吧退款回调 bytes=%s", len(raw_body))
+    result, message = pay_service.handle_refund_notify(db, request.headers, raw_body)
+    if result == "success":
+        logger.info("退款回调返回 success")
+        return PlainTextResponse("success")
+    logger.warning("退款回调返回 fail：%s", message)
+    return PlainTextResponse("fail")

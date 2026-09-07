@@ -130,29 +130,21 @@ function MasterConsult({
       </div>
 
       <div className="mt-3 rounded-[16px] border border-border-gold bg-surface-card p-4 text-center">
-        <img
-          src={wecom.qrcodeUrl}
-          alt="企业微信活码二维码"
-          className="mx-auto size-44 rounded-lg border border-border-gold bg-white object-contain p-2 shadow-gold"
-          loading="lazy"
-          onError={(e) => {
-            ;(e.target as HTMLImageElement).style.display = 'none'
-          }}
-        />
-        <a href="wecom://" className="mt-3 block w-full" rel="noopener noreferrer">
-          <button type="button" className="btn-guofeng-gold !text-[15px]">
-            添加到企业微信
+        <a href={wecom.qrcodeUrl} rel="noopener noreferrer" className="block w-full">
+          <button type="button" className="btn-guofeng-gold w-full !text-[15px]">
+            立即添加 · 领取姻缘天书
           </button>
         </a>
+        <p className="mt-2 text-xs text-muted">添加后由玄天道长人工交付完整姻缘报告</p>
         <button
           type="button"
           onClick={handleCopyLink}
           className="mt-2 w-full rounded-full border border-gold/30 bg-gold/10 py-2.5 text-xs font-medium text-gold transition hover:bg-gold/15"
         >
-          {copied ? '✓ 已复制报告链接' : '复制报告链接 · 关闭后仍可回看企微码'}
+          {copied ? '✓ 已复制报告链接' : '复制报告链接 · 关闭后仍可回看企微入口'}
         </button>
         <p className="mt-2 text-xs text-muted">
-          未唤起企业微信？请长按上方二维码识别添加
+          未唤起企业微信？可点击右上角在浏览器中打开链接添加
         </p>
       </div>
 

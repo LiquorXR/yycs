@@ -37,7 +37,7 @@ _PAID_STATES = {
     OrderState.ADDED_WECOM.value,
 }
 
-_WECOM_NOTE = "已生成姻缘专属客服码，扫码添加后由人工为您深度解读正缘"
+_WECOM_NOTE = "点击添加企业微信后由人工为您深度解读正缘"
 
 
 class AdParamsModel(BaseModel):

@@ -56,6 +56,8 @@ class Settings(BaseSettings):
     SQB_GATEWAY: str = "https://qr.shouqianba.com/gateway"
     # 支付结果异步回调 URL（公网可访问，HTTPS）
     SQB_NOTIFY_URL: str | None = None
+    # 退款结果异步回调 URL（公网可访问，HTTPS；未配置时 /api/pay/refund-notify 一律返回 fail，不影响支付链路）
+    SQB_REFUND_NOTIFY_URL: str | None = None
     # 支付完成同步回跳 URL（可含 {orderNo} 占位，否则自动拼 /{orderNo}）
     SQB_RETURN_URL: str | None = None
     # 收钱吧公钥路径（PEM SubjectPublicKeyInfo；验签回调，未配置时 /api/pay/notify 一律返回 fail）

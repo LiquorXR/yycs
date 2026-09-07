@@ -770,3 +770,84 @@ def test_health_reports_missing_config(client):
     data = client.get("/api/health").json()["data"]
     assert isinstance(data["sqbMissing"], list)
     assert "SQB_TERMINAL_SN" in data["sqbMissing"] or data["sqbReady"] is False
+
+
+# ===================== 退款回调：只记录可查 =====================
+
+REFUND_NOTIFY_URL = "https://www.sxzfcm.top/api/pay/refund-notify"
+
+
+def _refund_payload(client_sn, status="REFUNDED", total=990, sn="RFD20260001"):
+    return {
+        "terminal_sn": TERMINAL_SN,
+        "sn": sn,
+        "client_sn": client_sn,
+        "order_status": status,
+        "total_amount": str(total),
+        "payway": "3",
+    }
+
+
+def test_refund_notify_records_without_changing_state(client_and_factory, monkeypatch, tmp_path):
+    client, factory = client_and_factory
+    priv = _configure_sqb(monkeypatch, tmp_path)
+    order_no = _create_order(client, key="sqb-refund-ok")
+    raw, headers = _make_callback(priv, _refund_payload(order_no))
+    resp = client.post("/api/pay/refund-notify", content=raw, headers={**headers, "Content-Type": "application/json"})
+    assert resp.status_code == 200 and resp.text == "success"
+    with factory() as db:
+        order = db.query(Order).filter(Order.order_no == order_no).one()
+        assert order.state == OrderState.CREATED.value
+        assert "refund:REFUNDED" in (order.fail_reason or "")
+        txn = db.query(PayTransaction).filter(PayTransaction.transaction_id == "RFD20260001").one()
+        assert txn.order_no == order_no and txn.pay_state == "REFUNDED"
+
+
+def test_refund_notify_idempotent_on_retry(client_and_factory, monkeypatch, tmp_path):
+    client, factory = client_and_factory
+    priv = _configure_sqb(monkeypatch, tmp_path)
+    order_no = _create_order(client, key="sqb-refund-idem")
+    raw, headers = _make_callback(priv, _refund_payload(order_no, sn="RFD-IDEM-1"))
+    for _ in range(2):
+        resp = client.post("/api/pay/refund-notify", content=raw, headers={**headers, "Content-Type": "application/json"})
+        assert resp.text == "success"
+    with factory() as db:
+        assert db.query(PayTransaction).filter(PayTransaction.transaction_id == "RFD-IDEM-1").count() == 1
+
+
+def test_refund_notify_bad_signature_returns_fail(client_and_factory, monkeypatch, tmp_path):
+    client, _ = client_and_factory
+    _configure_sqb(monkeypatch, tmp_path)
+    resp = client.post(
+        "/api/pay/refund-notify",
+        content=b'{"client_sn":"S1"}',
+        headers={"Authorization": f"{TERMINAL_SN} invalidsig", "Content-Type": "application/json"},
+    )
+    assert resp.text == "fail"
+
+
+def test_refund_notify_missing_pubkey_returns_fail(client_and_factory, monkeypatch, tmp_path):
+    client, _ = client_and_factory
+    _configure_sqb(monkeypatch, tmp_path, with_pubkey=False)
+    resp = client.post("/api/pay/refund-notify", content=b"{}", headers={"Content-Type": "application/json"})
+    assert resp.text == "fail"
+
+
+def test_refund_notify_unknown_order_stops_retry(client_and_factory, monkeypatch, tmp_path):
+    client, _ = client_and_factory
+    priv = _configure_sqb(monkeypatch, tmp_path)
+    raw, headers = _make_callback(priv, _refund_payload("S-NOT-EXIST", sn="RFD-NONE-1"))
+    resp = client.post("/api/pay/refund-notify", content=raw, headers={**headers, "Content-Type": "application/json"})
+    assert resp.text == "success"
+
+
+def test_refund_notify_amount_mismatch_stops_retry(client_and_factory, monkeypatch, tmp_path):
+    client, factory = client_and_factory
+    priv = _configure_sqb(monkeypatch, tmp_path)
+    order_no = _create_order(client, key="sqb-refund-amt")
+    raw, headers = _make_callback(priv, _refund_payload(order_no, total=1, sn="RFD-AMT-1"))
+    resp = client.post("/api/pay/refund-notify", content=raw, headers={**headers, "Content-Type": "application/json"})
+    assert resp.text == "success"
+    with factory() as db:
+        assert "refund_amount_mismatch" in (db.query(Order).filter(Order.order_no == order_no).one().fail_reason or "")
+        assert db.query(PayTransaction).filter(PayTransaction.transaction_id == "RFD-AMT-1").count() == 0

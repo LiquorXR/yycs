@@ -1,17 +1,20 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { QRCodeSVG } from 'qrcode.react'
 import { Button } from '@/components/ui/button'
 import PageHeader from '@/components/PageHeader'
-import { getOrder, type OrderDetail } from '@/api/orders'
+import { getOrder, getOrderReport, type OrderDetail } from '@/api/orders'
 import { formatPrice } from '@/lib/format'
-import { isSafeCodeUrl, isSafePayUrl } from '@/lib/url'
+import { isSafeCodeUrl, isSafePayUrl, isSafeQrcodeUrl } from '@/lib/url'
 
 interface PayState {
   payType: string | null
   payUrl: string | null
   codeUrl: string | null
 }
+
+/** 已支付（付款成功，进入人工交付流程）的订单状态 */
+const PAID_STATES = ['PAID', 'UNLOCKED', 'DELIVERED', 'ADDED_WECOM']
 
 function NativeQrArea({ codeUrl }: { codeUrl: string }) {
   return (
@@ -50,6 +53,7 @@ export default function PayPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [payCountdown, setPayCountdown] = useState(899)
+  const [wecomUrl, setWecomUrl] = useState<string | null>(null)
 
   const fetchOrder = useCallback(
     async (opts?: { silent?: boolean }) => {
@@ -118,9 +122,29 @@ export default function PayPage() {
   }, [orderNo])
 
   const pay = (location.state as PayState | null) ?? null
-  const PAID_STATES = ['PAID', 'UNLOCKED', 'DELIVERED', 'ADDED_WECOM']
   const PAID_AFTER_CLOSE = 'paid_after_close'
   const isPaid = order !== null && PAID_STATES.includes(order.state)
+
+  // 订单翻转为已支付那一刻，只取一次企微加好友链接（用于支付成功卡跳转；wecom=null 时回退查看报告）
+  const wecomFetchedRef = useRef(false)
+  useEffect(() => {
+    if (!orderNo || !order || !PAID_STATES.includes(order.state) || wecomFetchedRef.current) return
+    wecomFetchedRef.current = true
+    let active = true
+    getOrderReport(orderNo)
+      .then((r) => {
+        if (!active) return
+        if (r.wecom?.qrcodeUrl && isSafeQrcodeUrl(r.wecom.qrcodeUrl)) {
+          setWecomUrl(r.wecom.qrcodeUrl)
+        }
+      })
+      .catch(() => {
+        /* 拉取失败不影响主流程：回退查看报告按钮 */
+      })
+    return () => {
+      active = false
+    }
+  }, [orderNo, order])
   // 订单加载后以服务端字段为准（防旧 location.state 过期链接）；加载前用首屏透传加速
   const effectivePayType = order?.payType ?? pay?.payType ?? null
   const effectivePayUrl = order?.payUrl ?? pay?.payUrl ?? null
@@ -182,12 +206,27 @@ export default function PayPage() {
                 </svg>
               </span>
               <p className="mt-4 font-kai text-lg font-bold text-gold-light">支付成功</p>
-              <p className="mt-1 text-sm text-fg-secondary">姻缘完整报告已解锁，立即查看吧</p>
-              <Link to={`/report/${orderNo}`} className="mt-6 w-full max-w-[280px]">
-                <Button size="lg" variant="gold" className="w-full rounded-full text-base font-bold">
-                  查看完整报告
-                </Button>
-              </Link>
+              <p className="mt-1 text-sm text-fg-secondary">姻缘天书已解锁，由玄天道长微信人工交付完整报告</p>
+              {wecomUrl ? (
+                <>
+                  <a href={wecomUrl} className="mt-6 w-full max-w-[280px]" rel="noopener noreferrer">
+                    <Button size="lg" variant="gold" className="w-full rounded-full text-base font-bold">
+                      添加企业微信 · 领取完整报告
+                    </Button>
+                  </a>
+                  <Link to={`/report/${orderNo}`} className="mt-3 block w-full max-w-[280px]">
+                    <Button variant="outline" className="w-full rounded-full text-sm">
+                      查看完整报告 · 回看企微入口
+                    </Button>
+                  </Link>
+                </>
+              ) : (
+                <Link to={`/report/${orderNo}`} className="mt-6 w-full max-w-[280px]">
+                  <Button size="lg" variant="gold" className="w-full rounded-full text-base font-bold">
+                    查看完整报告
+                  </Button>
+                </Link>
+              )}
             </div>
           ) : isClosed ? (
             <div className="flex flex-col items-center py-6 text-center">
@@ -208,12 +247,12 @@ export default function PayPage() {
                 <br />
                 支付成功后自动返回本页查看报告
               </p>
-              <a href={effectivePayUrl!} target="_blank" rel="noopener noreferrer" className="mt-6 w-full max-w-[280px]">
+              <a href={effectivePayUrl!} rel="noopener noreferrer" className="mt-6 w-full max-w-[280px]">
                 <Button size="lg" className="w-full rounded-full text-base font-bold">
                   点击唤起支付
                 </Button>
               </a>
-              <p className="mt-3 text-xs text-muted">未自动跳转？请点击右上角在浏览器中打开</p>
+              <p className="mt-3 text-xs text-muted">未自动拉起？可点击右上角在浏览器中打开</p>
               {showH5FallbackQr ? (
                 <div className="mt-6 w-full border-t border-gold/20 pt-5">
                   <p className="mb-3 text-xs text-muted">拉起被拦截？可用扫码备选支付</p>

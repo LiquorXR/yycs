@@ -131,6 +131,8 @@ def missing_sqb_config(cfg=None) -> list[str]:
         missing.append("SQB_OPERATOR")
     if not _is_valid_https_url(c.SQB_NOTIFY_URL):
         missing.append("SQB_NOTIFY_URL")
+    if not _is_valid_https_url(getattr(c, "SQB_REFUND_NOTIFY_URL", None)):
+        missing.append("SQB_REFUND_NOTIFY_URL")
     if not _is_valid_https_url(c.SQB_RETURN_URL, allow_orderno_placeholder=True):
         missing.append("SQB_RETURN_URL")
     if not (c.SQB_PUBLIC_KEY_PATH or "").strip():

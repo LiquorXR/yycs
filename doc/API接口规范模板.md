@@ -609,7 +609,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | data.report.locked | boolean | 恒为 `true`（完整结果由人工企微交付，页面不展示） |
 | data.report.lockedPreview | array | 锁定预览 `[{title, body}]`（2 条：正缘画像与桃花旺衰节点 / 婚后走势与相处经营指南），付费前后均返回；报告记录缺失时返回默认预览 |
 | data.wecom | object \| null | 企微加好友信息；已支付且配置 `WECOM_QRCODE_URL` 时返回，否则 null |
-| data.wecom.qrcodeUrl | string | 企微二维码 URL。当前为配置占位 URL（环境变量 `WECOM_QRCODE_URL`）；企微真活码（state=订单号归因）后续接入后填充 |
+| data.wecom.qrcodeUrl | string | 企微「联系我」**跳转链接**（环境变量 `WECOM_QRCODE_URL`，如 `https://work.weixin.qq.com/ca/...`）；前端以按钮引导用户**整页跳转**该链接落地页，不再内嵌渲染二维码；企微真活码（state=订单号归因）后续接入后填充 |
 | data.wecom.note | string | 加好友提示语 |
 
 #### 错误响应
@@ -684,6 +684,18 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | 200 | `fail` | 验签/解析/落库异常可重试，收钱吧按 1s/5s/30s/600s 重试 |
 
 > 对账兜底：支付配置就绪时后台定时任务（每 5 分钟）扫描超 30 分钟仍为 CREATED 的订单（上限 60 单/轮），调用收钱吧查单（`POST /upay/v2/query`）按结果推进状态；未知/退款态转死信人工核账。
+
+### 2.10.1 收钱吧退款结果回调
+
+| 项目 | 内容 |
+|---|---|
+| 接口名称 | 收钱吧退款结果回调 |
+| 接口地址 | `POST /api/pay/refund-notify` |
+| 鉴权要求 | 无（`terminal_sn` 比对 + 收钱吧公钥 RSA 验签，与 §2.10 同规则） |
+| 实现状态 | **已实现（只记录可查）** |
+| 协议 | **例外**：不遵循统一包装，返回纯文本 `success` / `fail` |
+
+语义：验签通过后落一条 `pay_state=REFUNDED` 流水 + `order.fail_reason` 打标 `refund:{status}`，**不改 `order.state`**，后续人工核账；以收钱吧 `sn` 为流水主键去重，重复投递幂等回 `success`；金额不符/订单不存在记日志后回 `success` 止血。
 
 ### 2.11 企业微信事件回调
 

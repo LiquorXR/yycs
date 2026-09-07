@@ -371,3 +371,107 @@ def handle_pay_notify(db: Session, headers, raw_body: bytes) -> tuple[str, str]:
         return "success", message
     logger.error("回调业务校验不通过: %s", message)
     return "fail", message
+
+
+# 退款回调可识别的退款态（终态/处理中/失败）：命中即记录，不推进订单主状态（只记录可查，人工核账）
+_REFUND_STATUSES = (
+    shouqianba.REFUND_FINAL_STATUSES
+    | shouqianba.REFUND_PENDING_STATUSES
+    | shouqianba.REFUND_FAILED_STATUSES
+)
+
+
+def handle_refund_notify(db: Session, headers, raw_body: bytes) -> tuple[str, str]:
+    """收钱吧退款结果回调处理，返回 (应答, 说明)，应答为 "success"/"fail"。
+
+    语义（只记录可查）：验签通过后落一条 pay_state=REFUNDED 流水 + order.fail_reason 打标，
+    不改 order.state，不解锁/不关单，后续人工核账。
+    止重试策略：确定性失败（订单不存在/金额不符/terminal 不一致/非退款态）记日志后回
+    "success" 止血；可重试（未配置公钥/缺签名/验签失败/正文解析失败/落库异常）回 "fail"。
+    幂等：以收钱吧 sn 为 transaction_id，重复投递直接回 success。
+    """
+    client = shouqianba.client
+    if not client.verify_ready:
+        logger.error("收钱吧未配置或公钥缺失，拒绝处理退款回调")
+        return "fail", "sqb not configured"
+
+    signature = _get_header(headers, "Authorization")
+    if not signature or not signature.strip():
+        logger.warning("退款回调缺少 Authorization 签名头")
+        return "fail", "missing signature header"
+    parts = signature.strip().split()
+    if len(parts) != 2:
+        logger.warning("退款回调 Authorization 格式非法（须为“{sn} {sign}”两段）：%s", (signature or "")[:80])
+        return "fail", "invalid signature header"
+    sn_part, sig_value = parts
+    if not sig_value or sn_part.strip() != str(settings.SQB_TERMINAL_SN or "").strip():
+        logger.warning("退款回调 terminal_sn 不一致 header=%s expected=%s", sn_part, settings.SQB_TERMINAL_SN)
+        return "success", "terminal mismatch"
+    if not client.verify_callback(raw_body, sig_value):
+        logger.error("收钱吧退款回调验签失败")
+        return "fail", "signature verification failed"
+
+    try:
+        body = json.loads(raw_body.decode("utf-8"))
+    except Exception as e:  # noqa: BLE001
+        logger.error("退款回调正文解析失败: %s", e)
+        return "fail", f"invalid body: {e}"
+
+    # 兼容新老字段：client_sn / total_amount / order_status|status
+    data = body.get("biz_response", {}).get("data", {}) if isinstance(body.get("biz_response"), dict) else {}
+    src = data if isinstance(data, dict) and data else body
+    body_terminal = src.get("terminal_sn") or body.get("terminal_sn")
+    if not body_terminal or str(body_terminal).strip() != str(settings.SQB_TERMINAL_SN or "").strip():
+        logger.warning("退款回调正文 terminal_sn 缺失或不一致 body=%s expected=%s", body_terminal, settings.SQB_TERMINAL_SN)
+        return "success", "terminal mismatch"
+    client_sn = str(src.get("client_sn") or body.get("client_sn") or "")
+    total_raw = src.get("total_amount", body.get("total_amount"))
+    status = str(src.get("order_status") or src.get("status") or body.get("order_status") or body.get("status") or "")
+    sn = str(src.get("sn") or body.get("sn") or "")
+
+    if status not in _REFUND_STATUSES:
+        logger.info("退款回调非退款态无需记录 client_sn=%s status=%s", client_sn, status)
+        return "success", f"not refund status: {status}"
+
+    order = db.query(Order).filter(Order.out_trade_no == client_sn).first() if client_sn else None
+    if order is None:
+        logger.error("退款回调订单不存在 client_sn=%s status=%s", client_sn, status)
+        return "success", "order not found"
+
+    total_int = normalize_amount(total_raw)
+    if total_int is not None and total_int != order.amount:
+        logger.error("退款回调金额与订单不符：order_no=%s, sqb=%s, order=%s", order.order_no, total_raw, order.amount)
+        _append_fail_reason(order, f"refund_amount_mismatch:{total_raw}")
+        try:
+            db.commit()
+        except Exception:  # noqa: BLE001
+            db.rollback()
+        return "success", "amount mismatch"
+
+    txn_id = (sn or f"REFUND-{order.order_no}-{status}")[:64]
+    try:
+        existing = db.query(PayTransaction).filter(PayTransaction.transaction_id == txn_id).first()
+        if existing is not None:
+            logger.info("退款回调重复投递已记录 txn=%s client_sn=%s", txn_id, client_sn)
+            return "success", "already processed"
+        now = utcnow()
+        _append_fail_reason(order, f"refund:{status} sn={sn}" if sn else f"refund:{status}")
+        db.add(
+            PayTransaction(
+                transaction_id=txn_id,
+                order_no=order.order_no,
+                pay_type=order.pay_type or "h5",
+                amount=order.amount,
+                pay_state="REFUNDED",
+                raw_callback=raw_body.decode("utf-8", errors="replace"),
+                callback_at=now,
+            )
+        )
+        db.commit()
+    except Exception as e:  # noqa: BLE001
+        db.rollback()
+        logger.exception("退款回调落库失败: %s", e)
+        return "fail", "apply failed"
+
+    logger.info("退款回调已记录 order_no=%s status=%s txn=%s", order.order_no, status, txn_id)
+    return "success", ""
