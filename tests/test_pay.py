@@ -69,7 +69,7 @@ def _configure_wxs(monkeypatch):
     )
     monkeypatch.setattr(
         wxstore.client, "query_pre_order",
-        lambda pre, **k: {"state": "0", "amount": 1, "order_sn": None, "pre_order_id": pre},
+        lambda pre, **k: {"state": "0", "amount": 990, "order_sn": None, "pre_order_id": pre},
     )
     monkeypatch.setattr(wxstore.client, "delete_pre_order", lambda pre, **k: {})
 
@@ -98,7 +98,7 @@ def _make_push(priv_key, content: dict, event_id=1001, timestamp=1706679507593, 
     return json.dumps(outer, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
 
 
-def _pay_content(pre_order_id, order_sn="WXSN001", amount=2, **extra):
+def _pay_content(pre_order_id, order_sn="WXSN001", amount=990, **extra):
     content = {
         "orderSn": order_sn,
         "orderSignature": "sig001",
@@ -244,7 +244,7 @@ def test_pay_push_success_unlocks_exactly_once(client_and_factory, monkeypatch):
     priv = _configure_push_key(monkeypatch)
     order_no = _create_order(client, key="wxs-push-ok")
     pre = _pre_order_id(factory, order_no)
-    raw = _make_push(priv, _pay_content(pre, amount=1), event_id=2001)
+    raw = _make_push(priv, _pay_content(pre, amount=990), event_id=2001)
     for _ in range(2):
         resp = client.post("/api/pay/notify", content=raw, headers={"Content-Type": "application/json"})
         assert resp.status_code == 200 and resp.text == "success"
@@ -262,7 +262,7 @@ def test_pay_push_bad_signature_fail(client_and_factory, monkeypatch):
     _configure_push_key(monkeypatch)
     order_no = _create_order(client, key="wxs-push-bad")
     pre = _pre_order_id(factory, order_no)
-    raw = _make_push(priv_other(), _pay_content(pre, amount=1), event_id=2002)
+    raw = _make_push(priv_other(), _pay_content(pre, amount=990), event_id=2002)
     resp = client.post("/api/pay/notify", content=raw, headers={"Content-Type": "application/json"})
     assert resp.text == "fail"
     with factory() as db:
@@ -277,7 +277,7 @@ def test_pay_push_unknown_preorder_stops_retry(client_and_factory, monkeypatch):
     client, _ = client_and_factory
     _configure_wxs(monkeypatch)
     priv = _configure_push_key(monkeypatch)
-    raw = _make_push(priv, _pay_content("PRE-NOT-EXIST", amount=1), event_id=2003)
+    raw = _make_push(priv, _pay_content("PRE-NOT-EXIST", amount=990), event_id=2003)
     resp = client.post("/api/pay/notify", content=raw, headers={"Content-Type": "application/json"})
     assert resp.text == "success"
 
@@ -288,7 +288,7 @@ def test_pay_push_amount_mismatch_stops_retry(client_and_factory, monkeypatch):
     priv = _configure_push_key(monkeypatch)
     order_no = _create_order(client, key="wxs-push-amt")
     pre = _pre_order_id(factory, order_no)
-    raw = _make_push(priv, _pay_content(pre, amount=2), event_id=2004)
+    raw = _make_push(priv, _pay_content(pre, amount=1), event_id=2004)
     resp = client.post("/api/pay/notify", content=raw, headers={"Content-Type": "application/json"})
     assert resp.text == "success"
     with factory() as db:
@@ -302,7 +302,7 @@ def test_pay_push_closed_order_stops_retry(client_and_factory, monkeypatch):
     order_no = _create_order(client, key="wxs-push-closed")
     pre = _pre_order_id(factory, order_no)
     assert client.post(f"/api/orders/{order_no}/close").status_code == 200
-    raw = _make_push(priv, _pay_content(pre, amount=1), event_id=2005)
+    raw = _make_push(priv, _pay_content(pre, amount=990), event_id=2005)
     resp = client.post("/api/pay/notify", content=raw, headers={"Content-Type": "application/json"})
     assert resp.text == "success"
     with factory() as db:
@@ -327,7 +327,7 @@ def test_reconcile_success_advances_order(client_and_factory, monkeypatch):
     _make_order_stale(factory, order_no)
     monkeypatch.setattr(
         wxstore.client, "query_pre_order",
-        lambda pre, **k: {"state": "1", "amount": 1, "order_sn": "WXSN-R1", "pre_order_id": pre},
+        lambda pre, **k: {"state": "1", "amount": 990, "order_sn": "WXSN-R1", "pre_order_id": pre},
     )
     with factory() as db:
         summary = reconcile.reconcile_once(db)
@@ -343,7 +343,7 @@ def test_reconcile_canceled_marks_closed(client_and_factory, monkeypatch):
     _make_order_stale(factory, order_no)
     monkeypatch.setattr(
         wxstore.client, "query_pre_order",
-        lambda pre, **k: {"state": "2", "amount": 1, "order_sn": None, "pre_order_id": pre},
+        lambda pre, **k: {"state": "2", "amount": 990, "order_sn": None, "pre_order_id": pre},
     )
     with factory() as db:
         assert reconcile.reconcile_once(db)["closed"] == 1
@@ -394,7 +394,7 @@ def test_reconcile_unknown_state_goes_dead(client_and_factory, monkeypatch):
     _make_order_stale(factory, order_no)
     monkeypatch.setattr(
         wxstore.client, "query_pre_order",
-        lambda pre, **k: {"state": "9", "amount": 1, "order_sn": None, "pre_order_id": pre},
+        lambda pre, **k: {"state": "9", "amount": 990, "order_sn": None, "pre_order_id": pre},
     )
     with factory() as db:
         assert reconcile.reconcile_once(db)["dead"] == 1
@@ -459,11 +459,11 @@ def test_apply_payment_result_threaded_cas(monkeypatch, tmp_path):
         db.commit()
         order_no = next_order_no(db)
         db.add(Order(order_no=order_no, profile_id=profile.id, product_id=1, out_trade_no=order_no,
-                     pre_order_id=f"PRE-{order_no}", amount=1, state="CREATED"))
+                     pre_order_id=f"PRE-{order_no}", amount=990, state="CREATED"))
         db.add(Report(profile_id=profile.id, full_report="{}", state="locked"))
         db.commit()
 
-    payload = {"order_sn": "TXN-THREAD", "order_signature": "s", "amount": 1, "pre_order_id": f"PRE-{order_no}"}
+    payload = {"order_sn": "TXN-THREAD", "order_signature": "s", "amount": 990, "pre_order_id": f"PRE-{order_no}"}
     results = []
 
     def _work():
@@ -505,7 +505,7 @@ def test_refund_push_records_without_changing_state(client_and_factory, monkeypa
     order_no = _create_order(client, key="wxs-refund-ok")
     # 先支付成功拿到 order_sn
     pre = _pre_order_id(factory, order_no)
-    pay_raw = _make_push(priv, _pay_content(pre, amount=1), event_id=3000)
+    pay_raw = _make_push(priv, _pay_content(pre, amount=990), event_id=3000)
     assert client.post("/api/pay/notify", content=pay_raw, headers={"Content-Type": "application/json"}).text == "success"
     raw = _make_push(priv, _refund_content(), event_id=3001)
     resp = client.post("/api/pay/refund-notify", content=raw, headers={"Content-Type": "application/json"})
@@ -524,7 +524,7 @@ def test_refund_push_idempotent_on_retry(client_and_factory, monkeypatch):
     priv = _configure_push_key(monkeypatch)
     order_no = _create_order(client, key="wxs-refund-idem")
     pre = _pre_order_id(factory, order_no)
-    pay_raw = _make_push(priv, _pay_content(pre, amount=1), event_id=3010)
+    pay_raw = _make_push(priv, _pay_content(pre, amount=990), event_id=3010)
     assert client.post("/api/pay/notify", content=pay_raw, headers={"Content-Type": "application/json"}).text == "success"
     raw = _make_push(priv, _refund_content(ticket="TCK-IDEM"), event_id=3011)
     for _ in range(2):
@@ -559,7 +559,7 @@ def test_refund_push_non_final_noop(client_and_factory, monkeypatch):
     priv = _configure_push_key(monkeypatch)
     order_no = _create_order(client, key="wxs-refund-nonfinal")
     pre = _pre_order_id(factory, order_no)
-    pay_raw = _make_push(priv, _pay_content(pre, amount=1), event_id=3020)
+    pay_raw = _make_push(priv, _pay_content(pre, amount=990), event_id=3020)
     assert client.post("/api/pay/notify", content=pay_raw, headers={"Content-Type": "application/json"}).text == "success"
     raw = _make_push(priv, _refund_content(target=10, ticket="TCK-PENDING"), event_id=3021)
     assert client.post("/api/pay/refund-notify", content=raw, headers={"Content-Type": "application/json"}).text == "success"
