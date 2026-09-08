@@ -3,11 +3,11 @@ import http, { unwrapData, type ApiEnvelope } from './http'
 export interface CreateOrderPayload {
   profileId: string
   productId: number
-  paymentMethod?: 'auto' | 'h5' | 'native' | 'wx_h5' | 'ali_h5' | 'wx_native' | 'ali_qr'
+  paymentMethod?: 'auto' | 'h5'
   adParams?: Record<string, string>
 }
 
-/** 创建订单响应：支付未实现时 payType/payUrl/codeUrl 为 null */
+/** 创建订单响应：微信小店 H5 单链路；未配置时 payType/payUrl 为 null，codeUrl 恒为 null */
 export interface OrderResult {
   orderNo: string
   amount: number
@@ -74,7 +74,7 @@ export async function getOrder(orderNo: string): Promise<OrderDetail> {
 }
 
 /**
- * 获取报告（含企微活码）——预留接口，报告页使用
+ * 获取报告（含企微加好友链接）——报告页使用
  * GET /api/orders/{orderNo}/report
  */
 export async function getOrderReport(orderNo: string): Promise<OrderReport> {

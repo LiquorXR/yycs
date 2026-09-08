@@ -36,7 +36,7 @@ alembic upgrade head
 | `BIRTH_DATA_KEY` | base64 32B AES-256-GCM，`openssl rand -base64 32`；dev 为空自动生成临时密钥，prod 缺失直接 `RuntimeError` |
 | `CORS_ORIGINS` | JSON 数组，如 `["http://localhost:5173"]` |
 | `VITE_API_BASE_URL` | 默认 `/api`（`src/api/http.ts:3`），Vite 代理已配置 |
-| `SQB_*` | 收钱吧聚合支付（微信+支付宝），均可选，未配时订单可创建但 `payType/payUrl/codeUrl=null` 优雅降级 |
+| `WXS_*` | 收钱吧微信小店·代客下单（H5 单链路），均可选，未配时订单可创建但 `payType/payUrl=null` 优雅降级 |
 | `RECONCILE_ENABLED` | 默认 `false`，生产 `true`（每 300s 扫描超时 `CREATED` 订单） |
 
 ## 项目结构

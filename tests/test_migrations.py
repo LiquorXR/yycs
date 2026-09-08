@@ -116,3 +116,24 @@ def test_orders_pay_checkout_columns_roundtrip(migrate_db):
     cols = _order_columns(engine)
     assert "pay_url" in cols and "code_url" in cols
     engine.dispose()
+
+
+def test_orders_wxstore_columns_upgrade(migrate_db):
+    """升级到 head：orders 具备 pre_order_id/order_sn/order_signature（微信小店映射）。"""
+    url, cfg = migrate_db
+    command.upgrade(cfg, "head")
+    engine = create_engine(url)
+    cols = _order_columns(engine)
+    assert "pre_order_id" in cols and "order_sn" in cols and "order_signature" in cols
+    engine.dispose()
+
+
+def test_orders_wxstore_columns_downgrade(migrate_db):
+    """降级回 8c9d1e2f3a4b：微信小店映射列移除。"""
+    url, cfg = migrate_db
+    command.upgrade(cfg, "head")
+    command.downgrade(cfg, "8c9d1e2f3a4b")
+    engine = create_engine(url)
+    cols = _order_columns(engine)
+    assert "pre_order_id" not in cols and "order_sn" not in cols
+    engine.dispose()

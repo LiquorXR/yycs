@@ -35,7 +35,10 @@ class Order(Base):
         String(32), ForeignKey("profiles.id"), nullable=False
     )
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id"), nullable=False)
-    out_trade_no: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, comment="收钱吧 client_sn=order_no")
+    out_trade_no: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, comment="历史 VSI client_sn=order_no（微信小店切换后保留兼容）")
+    pre_order_id: Mapped[str | None] = mapped_column(String(256), nullable=True, unique=True, comment="微信小店预订单号（代客下单返回，全局唯一）")
+    order_sn: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="微信小店正式订单号（支付推送返回）")
+    order_signature: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="微信小店订单签名（支付推送返回）")
     openid: Mapped[str | None] = mapped_column(String(64), nullable=True, default="")
     amount: Mapped[int] = mapped_column(Integer, nullable=False, comment="金额（分）")
     state: Mapped[str] = mapped_column(String(16), nullable=False, default=OrderState.CREATED.value)

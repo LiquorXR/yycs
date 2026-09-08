@@ -96,7 +96,6 @@ export default function OrderPage() {
   const [selected, setSelected] = useState<Product | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
-  const [payMethod, setPayMethod] = useState<'wechat' | 'alipay'>('wechat')
 
   useEffect(() => {
     if (!profileId) return
@@ -153,7 +152,7 @@ export default function OrderPage() {
     setSubmitting(true)
     setSubmitError(null)
     try {
-      const paymentMethod = payMethod === 'alipay' ? 'ali_h5' : 'wx_h5'
+      const paymentMethod = 'h5'
       const res = await createOrder(
         { profileId, productId: selected.id, paymentMethod, adParams },
         newIdempotencyKey(),
@@ -283,24 +282,13 @@ export default function OrderPage() {
           )}
         </div>
 
-        {/* 支付方式 — 严格原型 */}
+        {/* 支付方式：微信小店 H5 单链路，微信/支付宝在收银台内选择 */}
         <div className="card-guofeng p-4">
           <div className="mb-2.5 text-xs font-semibold tracking-widest text-gold-light">支付方式</div>
-          <div className="grid grid-cols-2 gap-2.5">
-            <button
-              type="button"
-              onClick={() => setPayMethod('wechat')}
-              className={`flex h-11 items-center justify-center gap-2 rounded-2xl border text-[13px] font-medium transition-colors [touch-action:manipulation] ${payMethod === 'wechat' ? 'border-[#2b7a63] bg-[#2b7a63]/15 text-gold-light' : 'border-white/10 bg-black/20 text-muted hover:border-gold/30'}`}
-            >
-              <WechatPayIcon className="size-5 shrink-0" /> 微信支付
-            </button>
-            <button
-              type="button"
-              onClick={() => setPayMethod('alipay')}
-              className={`flex h-11 items-center justify-center gap-2 rounded-2xl border text-[13px] font-medium transition-colors [touch-action:manipulation] ${payMethod === 'alipay' ? 'border-[#1677ff] bg-[#1677ff]/15 text-gold-light' : 'border-white/10 bg-black/20 text-muted hover:border-gold/30'}`}
-            >
-              <AlipayIcon className="size-5 shrink-0" /> 支付宝
-            </button>
+          <div className="flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#2b7a63] bg-[#2b7a63]/15 text-[13px] font-medium text-gold-light">
+            <WechatPayIcon className="size-5 shrink-0" />
+            <AlipayIcon className="size-5 shrink-0" />
+            在线支付 · 收银台内选择微信 / 支付宝
           </div>
           <div className="mt-3 flex items-center justify-between text-xs">
             <span className="text-muted">实付金额</span>

@@ -44,26 +44,30 @@ class Settings(BaseSettings):
     # dev/测试使用 Vite，目录不存在时静默跳过静态托管
     FRONTEND_DIST_DIR: str = "./dist"
 
-    # ===== 收钱吧聚合支付（微信+支付宝）=====
+    # ===== 收钱吧微信小店·代客下单（open-api.shouqianba.com）=====
     # 商户参数一律经环境变量注入，禁止硬编码；未配置完整时支付功能优雅降级：
-    # 订单仍可创建，payType/payUrl/codeUrl 返回 null（前端已有空态处理）。
-    # 终端级凭证（日常下单/查单签名用；终端激活由收钱吧侧完成，密钥由运营配置，有效期到期前手动轮换）
-    SQB_TERMINAL_SN: str | None = None
-    SQB_TERMINAL_KEY: str | None = None
-    # 收钱吧开放平台 API 基址（VSI）
-    SQB_API_BASE: str = "https://vsi-api.shouqianba.com"
-    # WAP 跳转网关（302 跳转收银台）
-    SQB_GATEWAY: str = "https://qr.shouqianba.com/gateway"
-    # 支付结果异步回调 URL（公网可访问，HTTPS）
-    SQB_NOTIFY_URL: str | None = None
-    # 退款结果异步回调 URL（公网可访问，HTTPS；未配置时 /api/pay/refund-notify 一律返回 fail，不影响支付链路）
-    SQB_REFUND_NOTIFY_URL: str | None = None
+    # 订单仍可创建，payType/payUrl 返回 null（前端已有空态处理）。
+    # appKey 为服务端密钥，严禁下发前端、严禁打印日志（签名用原始发送字符串）。
+    WXS_APPID: str | None = None
+    WXS_APPKEY: str | None = None
+    # 微信小店开放平台 API 基址（生产固定，一般不改）
+    WXS_API_BASE: str = "https://open-api.shouqianba.com"
+    # 商城资料（开通资料提供）：mallSn + signature；signature 由服务端保管、下发给当前交易前端仅用于商城跳转场景
+    WXS_MALL_SN: str | None = None
+    WXS_MALL_SIGNATURE: str | None = None
+    # 卖家主体（开通资料提供，固定值）
+    WXS_MERCHANT_ID: str | None = None
+    WXS_MERCHANT_USER_ID: str | None = None
+    WXS_SELLER_ROLE: str = "super_admin"
+    # 商城场景采集：无采集字段的商城填 "[]"；带备注模板的商城填 JSON 字符串
+    WXS_SCENES: str = "[]"
+    # 支付/退款结果推送地址（公网可访问，HTTPS；验签通过后处理，未配置时推送一律返回失败）
+    WXS_NOTIFY_URL: str | None = None
+    WXS_REFUND_NOTIFY_URL: str | None = None
     # 支付完成同步回跳 URL（可含 {orderNo} 占位，否则自动拼 /{orderNo}）
-    SQB_RETURN_URL: str | None = None
-    # 收钱吧公钥路径（PEM SubjectPublicKeyInfo；验签回调，未配置时 /api/pay/notify 一律返回 fail）
-    SQB_PUBLIC_KEY_PATH: str | None = None
-    # 门店操作员（WAP/precreate 必填，无默认，须在 env 显式配置）
-    SQB_OPERATOR: str | None = None
+    WXS_RETURN_URL: str | None = None
+    # 推送验签公钥（PEM 全文；为空时使用文档第六章产线公共公钥常量）
+    WXS_PUSH_PUBLIC_KEY: str | None = None
 
     # ===== 直连 IP 限流（仅 IP:8000 生效，域名经 NPM 跳过保峰值）=====
     RATE_LIMIT_IP_PROFILE: int = 10

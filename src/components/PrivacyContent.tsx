@@ -50,7 +50,7 @@ export default function PrivacyContent() {
               <tr>
                 <td className="px-2 py-2">客服交付</td>
                 <td className="px-2 py-2">订单号关联的企微外部联系人标识</td>
-                <td className="px-2 py-2">人工交付完整报告（仅您主动扫码后产生）</td>
+                <td className="px-2 py-2">人工交付完整报告（仅您主动添加后产生）</td>
               </tr>
             </tbody>
           </table>

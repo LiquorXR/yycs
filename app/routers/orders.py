@@ -26,8 +26,8 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["orders"])
 
-# auto/h5/native 为历史兼容（默认微信通道）；wx_h5/ali_h5 为双通道显式值
-PAYMENT_METHODS = ("auto", "h5", "native", "wx_h5", "ali_h5", "wx_native", "ali_qr")
+# auto/h5 为历史兼容（单 H5 路径）；其余值归一到 h5
+PAYMENT_METHODS = ("auto", "h5")
 
 # 已进入支付/交付链路的状态：关单一律拒绝（12002）；报告接口据此决定是否展示企微引导
 _PAID_STATES = {
@@ -53,7 +53,7 @@ class AdParamsModel(BaseModel):
 class OrderCreateRequest(BaseModel):
     profileId: str
     productId: int
-    paymentMethod: str = Field("auto", description="auto/h5/native/wx_h5/ali_h5/wx_native/ali_qr")
+    paymentMethod: str = Field("auto", description="auto/h5（单 H5 路径，其余归一到 h5）")
     adParams: AdParamsModel | None = None
     amount: int | None = Field(None, description="防改价校验用，非必填")
 
@@ -65,10 +65,10 @@ async def create_order(
     db: Session = Depends(get_db),
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ) -> dict:
-    """创建订单（async）：金额以服务端产品表为准；支付配置齐全时返回真实 payType/payUrl/codeUrl，否则 null 降级。
+    """创建订单（async）：金额以服务端产品表为准；支付配置齐全时返回 H5 短链，否则 null 降级。
 
     DB 操作统一经 run_in_threadpool 执行，避免同步 IO 阻塞事件循环；
-    收钱吧 WAP 为本地拼串，聚合码预下单 await 外呼（httpx async），不占线程池。
+    微信小店建预订单 + 取 H5 短链均为 await 外呼（httpx async），不占线程池。
     """
     if not idempotency_key:
         raise BizError(ErrorCode.PARAM_VALIDATION, "参数校验失败：Idempotency-Key 必填")
@@ -100,7 +100,7 @@ async def create_order(
     client_ip = request.client.host if request.client else None
     pay_info = await pay_service.ensure_payment(db, order, client_ip)
 
-    # order.pay_type 保留原始通道（wx_h5/ali_h5），展示用 payType 按 URL 归一化，不回写覆盖
+    # order.pay_type 单 H5 路径恒为 h5，展示用 payType 按短链归一化，不回写覆盖
     order.pay_url = pay_info["payUrl"]
     order.code_url = pay_info["codeUrl"]
 
@@ -156,7 +156,7 @@ def close_order(
     profileId: str | None = Query(None, description="归属校验"),
     db: Session = Depends(get_db),
 ) -> dict:
-    """关单：仅 CREATED 可关；已支付 12002，其余非 CREATED 12003。上游撤单 best-effort，失败不阻塞本地关单。"""
+    """关单：仅 CREATED 可关；已支付 12002，其余非 CREATED 12003。上游删预订单 best-effort，失败不阻塞本地关单。"""
     order = db.query(Order).filter(Order.order_no == order_no).first()
     if order is None:
         raise BizError(ErrorCode.NOT_FOUND, "资源不存在")
@@ -167,11 +167,11 @@ def close_order(
     if order.state != OrderState.CREATED.value:
         raise BizError(ErrorCode.ORDER_STATUS_INVALID, "订单状态不允许操作")
 
-    if pay_service.sqb_ready():
+    if pay_service.wxs_ready() and order.pre_order_id:
         try:
-            pay_service.shouqianba.client.cancel_order(order.out_trade_no, timeout=5.0)
-        except Exception as e:  # noqa: BLE001 上游撤单失败不阻塞本地关单，由 paid_after_close 兜底
-            logger.warning("收钱吧撤单失败：order_no=%s, %s", order.order_no, e)
+            pay_service.wxstore.client.delete_pre_order(order.pre_order_id, timeout=5.0)
+        except Exception as e:  # noqa: BLE001 上游删单失败不阻塞本地关单，由 paid_after_close 兜底
+            logger.warning("微信小店删预订单失败：order_no=%s, %s", order.order_no, e)
 
     order.state = OrderState.CLOSED.value
     db.commit()

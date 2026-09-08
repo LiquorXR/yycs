@@ -39,9 +39,6 @@ services:
     volumes:
       - app_data:/data
       - frontend_dist:/app/dist:ro
-      # 收钱吧公钥 PEM（SQB_PUBLIC_KEY_PATH=/app/certs/shouqianba_pub.pem，只读挂载；
-      # 确认 backend 运行用户对 certs/ 有读权限，否则回调验签恒 fail）
-      - ./certs:/app/certs:ro
     ports:
       - "8000:8000"
     depends_on:

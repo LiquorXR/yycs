@@ -33,7 +33,7 @@ def _db_size_bytes() -> int | None:
 def health_check(db: Session = Depends(get_db)) -> dict:
     """健康检查。
 
-    配置态：reconcileEnabled/sqbReady 反映 .env 配置（收钱吧终端/回调齐全判断）；
+    配置态：reconcileEnabled/sqbReady 反映 .env 配置（微信小店 appid/商城/推送地址齐全判断）；
     运行态：lastReconcileAt/Summary 由持锁 worker 写入 DB，任何 worker 读取一致；
     两者均 null 时说明商户未配置或未到首轮，可一次 curl 定位。
     wxpayReady 为历史兼容别名，与 sqbReady 同值。
@@ -46,11 +46,11 @@ def health_check(db: Session = Depends(get_db)) -> dict:
     except Exception:  # noqa: BLE001  探活接口永不 5xx
         metrics = None
 
-    ready = pay_service.sqb_ready()
+    ready = pay_service.wxs_ready()
     try:
-        from app.services.shouqianba import missing_sqb_config
+        from app.services.wxstore import missing_wxs_config
 
-        missing = missing_sqb_config()
+        missing = missing_wxs_config()
     except Exception:  # noqa: BLE001 探活接口永不 5xx
         missing = []
     return ok_response(

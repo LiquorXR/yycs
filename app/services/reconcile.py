@@ -1,9 +1,9 @@
-"""对账/补偿：扫描超时未回调订单调用收钱吧查单，按结果推进状态。
+"""对账/补偿：扫描超时未推送订单调用微信小店查单，按结果推进状态。
 
 - 每 5 分钟扫描创建超过 30 分钟仍为 CREATED 的订单（阈值可配）。
-- 查单结果 PAID → 走支付结果推进（CAS 解锁报告，恰好一次）。
-- 收钱吧侧 PAY_CANCELED → 本地订单置 CLOSED 并记录原因。
-- 仍待支付（CREATED/PAY_ERROR 等）→ 保持 CREATED，下轮再查。
+- 查单结果已完成（state=1）→ 走支付结果推进（CAS 解锁报告，恰好一次）。
+- 微信小店侧已取消（state=2）→ 本地订单置 CLOSED 并记录原因。
+- 仍待支付（state=0/空）→ 保持 CREATED，下轮再查。
 - 后台线程在 lifespan 中启动（RECONCILE_ENABLED 开启时）；dev 默认关闭。
 - 多 worker（uvicorn --workers N）下用文件锁保证仅一个进程跑对账。
 - 每日顺带清理 24h 前幂等记录，防 idempotency_records 无限增长。
@@ -28,14 +28,11 @@ from app.models.idempotency import IdempotencyRecord
 from app.models.order import Order, OrderState
 from app.services import pay_service
 from app.services.idempotency import IDEMPOTENCY_TTL
-from app.services.shouqianba import (
-    FAILED_STATUSES,
-    PAID_STATUS,
-    PENDING_STATUSES,
-    REFUND_FAILED_STATUSES,
-    REFUND_FINAL_STATUSES,
-    REFUND_PENDING_STATUSES,
-    ShouqianbaError,
+from app.services.wxstore import (
+    PREORDER_CANCELED,
+    PREORDER_DONE,
+    PREORDER_PENDING,
+    WxstoreError,
 )
 
 logger = logging.getLogger(__name__)
@@ -77,22 +74,31 @@ def reconcile_once(db: Session) -> dict:
     )
     summary = {"checked": 0, "success": 0, "closed": 0, "pending": 0, "error": 0, "dead": 0, "paid_after_close": 0}
     for order in orders:
+        if not order.pre_order_id:
+            # 微信小店未配置下降级建单（无预订单号）：跳过本轮，不计 checked
+            continue
         try:
-            result = pay_service.shouqianba.client.query_order(order.out_trade_no, timeout=_RECONCILE_QUERY_TIMEOUT_S)
-        except ShouqianbaError as e:
+            result = pay_service.wxstore.client.query_pre_order(order.pre_order_id, timeout=_RECONCILE_QUERY_TIMEOUT_S)
+        except WxstoreError as e:
             logger.warning("查单失败：order_no=%s, %s", order.order_no, e)
             summary["error"] += 1
             continue
 
         summary["checked"] += 1
-        order_status = result.get("order_status", "")
-        if order_status == PAID_STATUS:
-            status, message = pay_service.apply_payment_result(db, order.out_trade_no, result, raw_callback=None)
+        order_state = result.get("state", "")
+        if order_state == PREORDER_DONE:
+            payload = {
+                "order_sn": result.get("order_sn"),
+                "order_signature": None,
+                "amount": result.get("amount"),
+                "pre_order_id": order.pre_order_id,
+            }
+            status, message = pay_service.apply_payment_result(db, str(order.pre_order_id), payload, raw_callback=None)
             if status == "ok":
                 summary["success"] += 1
             elif status == "already":
                 summary["success"] += 1
-            elif message == "amount mismatch" or result.get("total_amount") is None:
+            elif message == "amount mismatch" or result.get("amount") is None:
                 # 金额异常转死信人工核账，不再重查
                 pay_service._append_fail_reason(order, f"reconcile_dead:{message}")
                 logger.error("查单金额异常转死信：order_no=%s, %s", order.order_no, message)
@@ -100,21 +106,16 @@ def reconcile_once(db: Session) -> dict:
             else:
                 logger.error("查单推进失败：order_no=%s, %s", order.order_no, message)
                 summary["error"] += 1
-        elif order_status in FAILED_STATUSES:
+        elif order_state == PREORDER_CANCELED:
             order.state = OrderState.CLOSED.value
-            pay_service._append_fail_reason(order, f"收钱吧查单: {order_status}")
+            pay_service._append_fail_reason(order, "微信小店查单: 已取消")
             summary["closed"] += 1
-        elif order_status in PENDING_STATUSES or not order_status:
+        elif order_state == PREORDER_PENDING or not order_state:
             summary["pending"] += 1
-        elif order_status in REFUND_FINAL_STATUSES | REFUND_PENDING_STATUSES | REFUND_FAILED_STATUSES:
-            # 退款类状态不应出现在 CREATED 集合，记原因转人工，不再重查
-            pay_service._append_fail_reason(order, f"reconcile_dead:refund_state={order_status}")
-            logger.error("查单退款态转死信：order_no=%s, %s", order.order_no, order_status)
-            summary["dead"] += 1
         else:
             # 未知状态记原因+计数告警，转死信避免无限查单
-            pay_service._append_fail_reason(order, f"reconcile_dead:unknown={order_status}")
-            logger.error("查单未知状态转死信：order_no=%s, %s", order.order_no, order_status)
+            pay_service._append_fail_reason(order, f"reconcile_dead:unknown={order_state}")
+            logger.error("查单未知状态转死信：order_no=%s, %s", order.order_no, order_state)
             summary["dead"] += 1
         db.commit()
 
@@ -214,8 +215,8 @@ def start_reconcile_loop() -> threading.Thread | None:
     if not settings.RECONCILE_ENABLED:
         logger.info("对账任务未开启（RECONCILE_ENABLED=false）")
         return None
-    if not pay_service.sqb_ready():
-        logger.warning("收钱吧未配置，对账任务不启动")
+    if not pay_service.wxs_ready():
+        logger.warning("微信小店未配置，对账任务不启动")
         return None
     if not _acquire_reconcile_lock():
         return None

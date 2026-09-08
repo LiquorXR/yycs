@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
-import { QRCodeSVG } from 'qrcode.react'
 import { Button } from '@/components/ui/button'
 import PageHeader from '@/components/PageHeader'
 import { getOrder, getOrderReport, type OrderDetail } from '@/api/orders'
 import { formatPrice } from '@/lib/format'
-import { isSafeCodeUrl, isSafePayUrl, isSafeQrcodeUrl } from '@/lib/url'
+import { isSafePayUrl, isSafeQrcodeUrl } from '@/lib/url'
 
 interface PayState {
   payType: string | null
@@ -15,21 +14,6 @@ interface PayState {
 
 /** 已支付（付款成功，进入人工交付流程）的订单状态 */
 const PAID_STATES = ['PAID', 'UNLOCKED', 'DELIVERED', 'ADDED_WECOM']
-
-function NativeQrArea({ codeUrl }: { codeUrl: string }) {
-  return (
-    <div className="flex flex-col items-center">
-      <div className="relative flex size-[168px] items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-gold/50 bg-white p-2">
-        <QRCodeSVG value={codeUrl} size={152} level="M" aria-label="扫码支付" className="size-full" />
-      </div>
-      <p className="mt-4 text-sm text-fg-secondary">用微信 / 支付宝「扫一扫」完成支付</p>
-      <p className="mt-1 text-xs text-muted">扫码失败？请复制下方链接在对应 App 中打开</p>
-      <p className="mt-2 w-full max-w-[300px] rounded-lg border border-gold/20 bg-bg/60 px-3 py-2 text-xs text-fg-secondary break-all select-all">
-        {codeUrl}
-      </p>
-    </div>
-  )
-}
 
 function PayChannelEmpty() {
   return (
@@ -148,12 +132,9 @@ export default function PayPage() {
   // 订单加载后以服务端字段为准（防旧 location.state 过期链接）；加载前用首屏透传加速
   const effectivePayType = order?.payType ?? pay?.payType ?? null
   const effectivePayUrl = order?.payUrl ?? pay?.payUrl ?? null
-  const effectiveCodeUrl = order?.codeUrl ?? pay?.codeUrl ?? null
+  // 微信小店 H5 单链路：仅 h5 有效
   const showH5 = effectivePayType === 'h5' && isSafePayUrl(effectivePayUrl)
-  const showNative = effectivePayType === 'native' && isSafeCodeUrl(effectiveCodeUrl)
-  // H5 主路径附带聚合码备选（快手 WebView 拦截拉起时用）
-  const showH5FallbackQr = showH5 && isSafeCodeUrl(effectiveCodeUrl)
-  const showEmpty = !showH5 && !showNative
+  const showEmpty = !showH5
   const isClosed = order?.state === 'CLOSED'
   const paidAfterClose = !!order?.failReason?.includes(PAID_AFTER_CLOSE)
   const countdownText = `${String(Math.floor(payCountdown / 60)).padStart(2, '0')}:${String(payCountdown % 60).padStart(2, '0')}`
@@ -243,31 +224,16 @@ export default function PayPage() {
           ) : showH5 ? (
             <div className="flex flex-col items-center py-4 text-center">
               <p className="text-sm leading-relaxed text-fg-secondary">
-                将拉起支付应用完成支付
+                将前往微信小店收银台完成支付
                 <br />
-                支付成功后自动返回本页查看报告
+                可使用微信 / 支付宝，支付成功后自动返回本页查看报告
               </p>
               <a href={effectivePayUrl!} rel="noopener noreferrer" className="mt-6 w-full max-w-[280px]">
                 <Button size="lg" className="w-full rounded-full text-base font-bold">
-                  点击唤起支付
+                  前往收银台支付
                 </Button>
               </a>
               <p className="mt-3 text-xs text-muted">未自动拉起？可点击右上角在浏览器中打开</p>
-              {showH5FallbackQr ? (
-                <div className="mt-6 w-full border-t border-gold/20 pt-5">
-                  <p className="mb-3 text-xs text-muted">拉起被拦截？可用扫码备选支付</p>
-                  <NativeQrArea codeUrl={effectiveCodeUrl!} />
-                </div>
-              ) : null}
-            </div>
-          ) : showNative ? (
-            <div className="mt-4">
-              <NativeQrArea codeUrl={effectiveCodeUrl!} />
-              <Link to={`/report/${orderNo}`} className="mt-4 block">
-                <button type="button" className="h-9 w-full rounded-full bg-jade text-sm font-medium text-white transition hover:bg-[#2f8a6e] [touch-action:manipulation]">
-                  我已支付 · 查看报告
-                </button>
-              </Link>
             </div>
           ) : showEmpty ? (
             <div className="mt-3">
@@ -276,7 +242,7 @@ export default function PayPage() {
           ) : null}
         </div>
 
-        {!loading && !error && order && !isPaid && order.state === 'CREATED' && !(showH5 || showNative) ? (
+        {!loading && !error && order && !isPaid && order.state === 'CREATED' && !showH5 ? (
           <p className="text-center text-xs text-muted">
             已支付？{' '}
             <button type="button" className="text-gold underline underline-offset-2" onClick={() => void fetchOrder({ silent: true })}>

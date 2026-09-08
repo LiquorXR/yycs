@@ -105,7 +105,7 @@ Authorization: Bearer <token>
 ```
 
 > 约定：HTTP 状态码表达传输层结果（2xx 成功、4xx 客户端错误、5xx 服务端错误）；业务状态码表达业务层结果（始终随 body 返回）。
-> 例外：回调接口不遵循统一包装——收钱吧 `POST /api/pay/notify` 按收钱吧协议返回纯文本 `success`/`fail`（见 §2.10）；企业微信 `POST /api/wecom/notify` 为 B 阶段未实现（见 §2.11）。
+> 例外：回调接口不遵循统一包装——微信小店 `POST /api/pay/notify` 与 `POST /api/pay/refund-notify` 按推送协议返回纯文本 `success`/`fail`（见 §2.10）；企业微信 `POST /api/wecom/notify` 为 B 阶段未实现（见 §2.11）。
 
 ### 1.5 分页约定
 
@@ -410,13 +410,13 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
     "amount": 990,
     "payType": "h5",
     "payChannel": "wx_h5",
-    "payUrl": "https://qr.shouqianba.com/gateway?terminal_sn=...&sign=...",
+    "payUrl": "https://.../preorder-h5-short-link",
     "codeUrl": null
   }
 }
 ```
 
-> 支付配置齐全（收钱吧终端号/密钥/操作员/回调地址就绪）时：`payType` 为 `h5`（WAP 跳转收银台）或 `native`（聚合码扫码），对应填充 `payUrl`/`codeUrl`（H5 下备选码为 best-effort 可能为 null）；配置未就绪时三字段恒为 `null` 降级（订单仍可创建，前端展示待支付）。
+> 支付配置齐全（微信小店 appid/商城/卖家/推送地址就绪）时：建预订单成功并取到 H5 短链则 `payType=h5` + `payUrl`；配置未就绪时两者恒为 `null` 降级（订单仍可创建，前端展示待支付）。单 H5 路径，`codeUrl` 恒为 null。
 
 #### 响应字段说明
 
@@ -424,16 +424,16 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 |---|---|---|
 | data.orderNo | string | 内部订单号 |
 | data.amount | int | 实际应付金额（分） |
-| data.payType | string \| null | 展示用：`h5`（WAP 跳转）/ `native`（扫码）；支付配置未就绪时为 `null` |
-| data.payChannel | string | 入库通道：`wx_h5/ali_h5/wx_native/ali_qr`（`auto/h5→wx_h5`，`native→wx_native`） |
-| data.payUrl | string \| null | WAP 跳转 URL（payType=h5 时）；否则 null |
-| data.codeUrl | string \| null | 聚合码短链/二维码内容（payType=native 时；H5 备选码也可能返回）；否则 null |
+| data.payType | string \| null | 展示用：恒为 `h5`（有短链时）；支付配置未就绪时为 `null` |
+| data.payChannel | string | 入库通道：恒为 `wx_h5`（单 H5 路径） |
+| data.payUrl | string \| null | 微信小店 H5 短链（payType=h5 时）；否则 null |
+| data.codeUrl | string \| null | 恒为 null（单 H5 路径，无扫码分支，保留字段兼容） |
 
 #### 错误响应
 
 | HTTP 状态码 | 业务 code | message | 说明 |
 |---|---|---|---|
-| 400 | 10001 | 参数校验失败 | `Idempotency-Key` 缺失或 `paymentMethod` 非法（需为 auto/h5/native/wx_h5/ali_h5/wx_native/ali_qr） |
+| 400 | 10001 | 参数校验失败 | `Idempotency-Key` 缺失或 `paymentMethod` 非法（需为 auto/h5） |
 | 400 | 12001 | 金额校验失败 | 防改价：下单金额与产品表不一致 |
 | 404 | 10004 | 资源不存在 | profileId 不存在 |
 | 404 | 13001 | 产品不存在或已下架 | 产品下架 |
@@ -467,7 +467,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
     "state": "CREATED",
     "payType": "h5",
     "payChannel": "wx_h5",
-    "payUrl": "https://qr.shouqianba.com/gateway?terminal_sn=...&sign=...",
+    "payUrl": "https://.../preorder-h5-short-link",
     "codeUrl": null,
     "openid": "",
     "adParams": null,
@@ -483,12 +483,12 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | 字段 | 类型 | 说明 |
 |---|---|---|
 | data.productId | int | 产品 ID |
-| data.outTradeNo | string | 收钱吧 `client_sn`（= orderNo） |
+| data.outTradeNo | string | 历史字段（= orderNo，微信小店切换后保留兼容；支付关联改用预订单号） |
 | data.state | string | 状态机：CREATED/PAID/UNLOCKED/DELIVERED/ADDED_WECOM/CLOSED（DELIVERED/ADDED_WECOM 为 B 阶段） |
-| data.payType | string \| null | 展示用：按 URL 归一化为 `h5`/`native`；支付配置未就绪时为 `null` |
-| data.payChannel | string | 入库通道：`wx_h5/ali_h5/wx_native/ali_qr`（不回写覆盖） |
-| data.payUrl | string \| null | WAP 跳转 URL（payType=h5 时）；否则 null |
-| data.codeUrl | string \| null | 聚合码短链/二维码内容（payType=native 时）；否则 null |
+| data.payType | string \| null | 展示用：有短链为 `h5`；支付配置未就绪时为 `null` |
+| data.payChannel | string | 入库通道：恒为 `wx_h5`（不回写覆盖） |
+| data.payUrl | string \| null | 微信小店 H5 短链（payType=h5 时）；否则 null |
+| data.codeUrl | string \| null | 恒为 null（保留字段兼容） |
 | data.openid | string | 预留字段（当前恒为空串） |
 | data.adParams | object \| null | 磁力投放归因参数（原样返回，未传为 null） |
 | data.failReason | string \| null | 失败原因（正常为 null） |
@@ -525,7 +525,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 }
 ```
 
-> 支付配置就绪时同步调用收钱吧撤单（`POST /upay/v2/cancel`，best-effort，失败不阻塞本地关单，由 paid_after_close/对账兜底）；仅 CREATED 可关，已支付 12002，其余状态 12003。
+> 支付配置就绪且订单有预订单号时同步调用微信小店删单（`deletePreOrder`，best-effort，失败不阻塞本地关单，由 paid_after_close/对账兜底）；仅 CREATED 可关，已支付 12002，其余状态 12003。
 
 #### 错误响应
 
@@ -653,49 +653,51 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | 404 | 10004 | 资源不存在 | 订单不存在 |
 | 500 | 50000 | 服务器内部错误 | 联系管理员 |
 
-### 2.10 收钱吧支付结果回调
+### 2.10 微信小店订单支付成功推送
 
-> 协议假设（待沙箱真报文复核）：回调头为 `Authorization: {terminal_sn} {base64(RSA-SHA256)}` 两段式，验签原文为 body 整体字节；成功态 `order_status=PAID`。
+> 协议来源：代客下单对接文档 v1.0 第六章。推送体为 `{eventId, timestamp, nonce, content, signature}`；
+> 明文 `eventId + timestamp + nonce + content` 无分隔拼接，SHA256WithRSA 验签；
+> `content` 为 JSON 字符串，取原始字符串验签后再解析。
 
 #### 基本信息
 
 | 项目 | 内容 |
 |---|---|
-| 接口名称 | 收钱吧支付结果回调 |
+| 接口名称 | 微信小店订单支付成功推送 |
 | 接口地址 | `POST /api/pay/notify` |
-| 鉴权要求 | 无（`terminal_sn` 比对 + 收钱吧公钥 RSA 验签） |
+| 鉴权要求 | 无（推送 RSA 验签，公钥默认文档产线公共公钥，`WXS_PUSH_PUBLIC_KEY` 可覆盖） |
 | 实现状态 | **A 阶段已实现** |
 | 版本 | v1 |
 | 协议 | **例外**：不遵循统一包装，返回纯文本 `success` / `fail` |
 
 #### 处理流程
 
-1. 验签：`Authorization` 两段式 + 正文 `terminal_sn` 双重比对 + RSA-SHA256 验 body，失败返回 `fail`；公钥未配置时一律 `fail`
-2. 归一化：取 `terminal_sn/client_sn/total_amount/order_status`；失败态 `PAY_CANCELED` 关单（CREATED→CLOSED），待定态记日志，均回 `success`
-3. 幂等：订单已支付/已解锁直接返回 `success`（不重复解锁）
-4. 一致性：`total_amount` 与订单金额精确比对，不一致记死信并回 `success` 止血（防重试风暴）；`CLOSED` 后到账记 `paid_after_close` 人工核账
-5. 成功：事务内 CAS（`UPDATE ... WHERE state='CREATED'`）推进订单状态并解锁报告，保证并发回调「恰好一次」解锁；重复回调幂等返回 `success`
+1. 验签：原始 `content` 验签，失败返回 `fail`
+2. 幂等：`eventId` 经 `idempotency_records`（scope=`wxs-push`）判重 24h，重复返回 `success`
+3. 关联：经 `content.preOrderList[].preOrderId` 回关联本地订单；无关联记日志后回 `success` 止血
+4. 一致性：`content.orderAmount` 与订单金额精确比对，不一致记死信并回 `success` 止血（防重试风暴）；`CLOSED` 后到账记 `paid_after_close` 人工核账
+5. 成功：事务内 CAS（`UPDATE ... WHERE state='CREATED'`）推进订单状态并解锁报告、落 `SUCCESS` 流水（`transaction_id=orderSn`），保证并发推送「恰好一次」解锁；重复推送幂等返回 `success`
 
 #### 错误响应
 
 | HTTP 状态码 | body | 说明 |
 |---|---|---|
 | 200 | `success` | 处理成功或确定性失败止血 |
-| 200 | `fail` | 验签/解析/落库异常可重试，收钱吧按 1s/5s/30s/600s 重试 |
+| 200 | `fail` | 验签/解析/落库异常可重试 |
 
-> 对账兜底：支付配置就绪时后台定时任务（每 5 分钟）扫描超 30 分钟仍为 CREATED 的订单（上限 60 单/轮），调用收钱吧查单（`POST /upay/v2/query`）按结果推进状态；未知/退款态转死信人工核账。
+> 对账兜底：支付配置就绪时后台定时任务（每 5 分钟）扫描超 30 分钟仍为 CREATED 且有预订单号的订单（上限 60 单/轮），调用 `queryPreOrder` 按 `state`（0 待支付/1 已完成/2 已取消）推进；未知态转死信人工核账。
 
-### 2.10.1 收钱吧退款结果回调
+### 2.10.1 微信小店退款状态变更推送
 
 | 项目 | 内容 |
 |---|---|
-| 接口名称 | 收钱吧退款结果回调 |
+| 接口名称 | 微信小店退款状态变更推送 |
 | 接口地址 | `POST /api/pay/refund-notify` |
-| 鉴权要求 | 无（`terminal_sn` 比对 + 收钱吧公钥 RSA 验签，与 §2.10 同规则） |
-| 实现状态 | **已实现（只记录可查）** |
+| 鉴权要求 | 无（与 §2.10 同验签规则） |
+| 实现状态 | **已实现（只记录可查，不做退款发起）** |
 | 协议 | **例外**：不遵循统一包装，返回纯文本 `success` / `fail` |
 
-语义：验签通过后落一条 `pay_state=REFUNDED` 流水 + `order.fail_reason` 打标 `refund:{status}`，**不改 `order.state`**，后续人工核账；以收钱吧 `sn` 为流水主键去重，重复投递幂等回 `success`；金额不符/订单不存在记日志后回 `success` 止血。
+语义：终态（`targetState` 20 完成/30 失败）验签通过后落一条 `pay_state=REFUNDED` 流水 + `order.fail_reason` 打标 `refund:{targetState}`，**不改 `order.state`**，后续人工核账；以 `ticketSn` 为流水主键去重，重复投递幂等回 `success`；订单不存在记日志后回 `success` 止血。
 
 ### 2.11 企业微信事件回调
 
@@ -842,8 +844,8 @@ POST /api/orders/S20260809001/pay-success-mock
 | 12001 | 400 | 金额校验失败 | 防改价：下单金额与产品表不一致 |
 | 12002 | 409 | 订单已支付 | 重复支付/已支付订单操作冲突 |
 | 12003 | 409 | 订单状态不允许操作 | 状态机约束（如非 CREATED 关单） |
-| 12004 | 502 | 支付拉起失败 | （预留）收银台跳转/聚合码下单失败，请改用扫码 |
-| 12005 | 400 | 回调验签失败 | 收钱吧回调验签失败 |
+| 12004 | 502 | 支付拉起失败 | （预留）H5 短链获取失败 |
+| 12005 | 400 | 回调验签失败 | 微信小店推送验签失败 |
 | 13001 | 404 | 产品不存在或已下架 | 产品 ID 无效或已禁用 |
 | 14001 | 422 | 测算信息无效 | 生辰/姓名校验失败 |
 
