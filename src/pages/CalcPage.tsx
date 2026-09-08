@@ -20,8 +20,8 @@ const HOURS = [
   { value: '', label: '时辰不详 (系统推算)' },
 ]
 
-const FOCUS_TAGS = ['正缘画像', '桃花旺衰年份', '婚后走势', '相处之道', '脱单锦囊']
-const DEFAULT_FOCUS = ['正缘画像', '桃花旺衰年份', '婚后走势']
+const FOCUS_TAGS = ['桃花旺衰年份', '婚后走势', '相处之道', '脱单锦囊']
+const DEFAULT_FOCUS = ['桃花旺衰年份', '婚后走势', '相处之道']
 
 const LOADING_STEPS = [
   '合参八字与生肖桃花…',
