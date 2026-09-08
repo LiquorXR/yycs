@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
+import { AlipayIcon, WechatPayIcon } from '@/components/ui/pay-icons'
 import PageHeader from '@/components/PageHeader'
 import { getOrder, getOrderReport, type OrderDetail } from '@/api/orders'
 import { formatPrice } from '@/lib/format'
@@ -241,11 +242,13 @@ export default function PayPage() {
               <div className="mt-6 grid w-full max-w-[280px] grid-cols-2 gap-2.5">
                 <a href={wechatHref!} rel="noopener noreferrer">
                   <Button size="lg" className="w-full rounded-full bg-[#2b7a63] text-base font-bold text-white hover:bg-[#35907a]">
+                    <WechatPayIcon className="mr-1.5 size-5 shrink-0" />
                     微信支付
                   </Button>
                 </a>
                 <a href={alipayHref!} rel="noopener noreferrer">
                   <Button size="lg" className="w-full rounded-full bg-[#1677ff] text-base font-bold text-white hover:bg-[#3b8bff]">
+                    <AlipayIcon className="mr-1.5 size-5 shrink-0" />
                     支付宝
                   </Button>
                 </a>
