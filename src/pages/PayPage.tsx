@@ -241,7 +241,6 @@ export default function PayPage() {
                   微信支付
                 </Button>
               </a>
-              <p className="mt-3 text-xs text-muted">未自动拉起？可点击右上角在浏览器中打开</p>
             </div>
           ) : showEmpty ? (
             <div className="mt-3">
@@ -253,7 +252,11 @@ export default function PayPage() {
         {!loading && !error && order && !isPaid && order.state === 'CREATED' ? (
           <p className="text-center text-xs text-muted">
             已支付？{' '}
-            <button type="button" className="text-gold underline underline-offset-2" onClick={() => void fetchOrder({ silent: true })}>
+            <button
+              type="button"
+              className="text-gold underline underline-offset-2"
+              onClick={() => window.location.reload()}
+            >
               刷新支付状态
             </button>
           </p>
