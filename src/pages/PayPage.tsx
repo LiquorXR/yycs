@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { AlipayIcon, WechatPayIcon } from '@/components/ui/pay-icons'
+import { WechatPayIcon } from '@/components/ui/pay-icons'
 import PageHeader from '@/components/PageHeader'
 import { getOrder, getOrderReport, type OrderDetail } from '@/api/orders'
 import { formatPrice } from '@/lib/format'
-import { isSafeAliJumpUrl, isSafePayUrl, isSafeQrcodeUrl, isSafeWxJumpUrl } from '@/lib/url'
+import { isSafePayUrl, isSafeQrcodeUrl, isSafeWxJumpUrl } from '@/lib/url'
 
 interface PayState {
   payType: string | null
@@ -13,7 +13,6 @@ interface PayState {
   codeUrl: string | null
   jumpUrl?: string | null
   wxJumpUrl?: string | null
-  aliJumpUrl?: string | null
 }
 
 /** 已支付（付款成功，进入人工交付流程）的订单状态 */
@@ -140,12 +139,9 @@ export default function PayPage() {
   const showH5 = effectivePayType === 'h5' && isSafePayUrl(effectivePayUrl)
   const showEmpty = !showH5
   const wxJump = order?.wxJumpUrl ?? pay?.wxJumpUrl ?? null
-  const aliJump = order?.aliJumpUrl ?? pay?.aliJumpUrl ?? null
   const safeWxJump = isSafeWxJumpUrl(wxJump) ? wxJump!.trim() : null
-  const safeAliJump = isSafeAliJumpUrl(aliJump) ? aliJump!.trim() : null
   // 直跳缺失时回落 H5 短链（中转页）；短链也没有则按钮禁用
   const wechatHref = safeWxJump ?? (showH5 ? effectivePayUrl! : null)
-  const alipayHref = safeAliJump ?? (showH5 ? effectivePayUrl! : null)
   const isClosed = order?.state === 'CLOSED'
   const paidAfterClose = !!order?.failReason?.includes(PAID_AFTER_CLOSE)
   const countdownText = `${String(Math.floor(payCountdown / 60)).padStart(2, '0')}:${String(payCountdown % 60).padStart(2, '0')}`
@@ -235,24 +231,16 @@ export default function PayPage() {
           ) : showH5 ? (
             <div className="flex flex-col items-center py-4 text-center">
               <p className="text-sm leading-relaxed text-fg-secondary">
-                选择支付方式完成支付
+                仅支持微信支付
                 <br />
                 支付成功后请手动切回本页查看报告
               </p>
-              <div className="mt-6 grid w-full max-w-[280px] grid-cols-2 gap-2.5">
-                <a href={wechatHref!} rel="noopener noreferrer">
-                  <Button size="lg" className="w-full rounded-full bg-[#2b7a63] text-base font-bold text-white hover:bg-[#35907a]">
-                    <WechatPayIcon className="mr-1.5 size-5 shrink-0" />
-                    微信支付
-                  </Button>
-                </a>
-                <a href={alipayHref!} rel="noopener noreferrer">
-                  <Button size="lg" className="w-full rounded-full bg-[#1677ff] text-base font-bold text-white hover:bg-[#3b8bff]">
-                    <AlipayIcon className="mr-1.5 size-5 shrink-0" />
-                    支付宝
-                  </Button>
-                </a>
-              </div>
+              <a href={wechatHref!} rel="noopener noreferrer" className="mt-6 block w-full max-w-[280px]">
+                <Button size="lg" className="w-full rounded-full bg-[#2b7a63] text-base font-bold text-white hover:bg-[#35907a]">
+                  <WechatPayIcon className="mr-1.5 size-5 shrink-0" />
+                  微信支付
+                </Button>
+              </a>
               <p className="mt-3 text-xs text-muted">未自动拉起？可点击右上角在浏览器中打开</p>
             </div>
           ) : showEmpty ? (

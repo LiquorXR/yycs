@@ -113,7 +113,6 @@ async def create_order(
         "codeUrl": pay_info["codeUrl"],
         "jumpUrl": pay_info.get("jumpUrl"),
         "wxJumpUrl": pay_info.get("wxJumpUrl"),
-        "aliJumpUrl": pay_info.get("aliJumpUrl"),
     }
     await run_in_threadpool(store_idempotent_response, db, idempotency_key, IDEM_SCOPE_ORDER, data, payload_hash)
     await run_in_threadpool(db.commit)
@@ -132,7 +131,7 @@ def get_order(
         raise BizError(ErrorCode.NOT_FOUND, "资源不存在")
     if profileId is not None and order.profile_id != profileId:
         raise BizError(ErrorCode.NOT_FOUND, "资源不存在")
-    jump = pay_service.get_jump_urls(order.pre_order_id)
+    wx_jump_url = pay_service.get_wechat_jump_url(order.pre_order_id)
     return ok_response(
         {
             "orderNo": order.order_no,
@@ -146,8 +145,7 @@ def get_order(
             "payUrl": order.pay_url,
             "codeUrl": order.code_url,
             "jumpUrl": order.h5_jump_url,
-            "wxJumpUrl": jump["wxJumpUrl"],
-            "aliJumpUrl": jump["aliJumpUrl"],
+            "wxJumpUrl": wx_jump_url,
             "openid": order.openid,
             "adParams": order.ad_params,
             "failReason": order.fail_reason,

@@ -66,7 +66,7 @@ def display_pay_type(original: str | None, pay_url: str | None, code_url: str | 
 
 
 async def ensure_payment(db: Session, order: Order, client_ip: str | None = None) -> dict:
-    """微信小店下单（async），返回 {payType, payUrl, codeUrl, jumpUrl}。
+    """微信小店下单（async），返回 {payType, payUrl, codeUrl, jumpUrl, wxJumpUrl}。
 
     建预订单 savePreOrder → 取 H5 短链 generatePreOrderH5Link → best-effort 解析
     直达收银台地址；pre_order_id 与 h5_jump_url 写回 order（由调用方 commit）。
@@ -76,7 +76,7 @@ async def ensure_payment(db: Session, order: Order, client_ip: str | None = None
     _ = client_ip
     if not wxs_ready():
         return {"payType": None, "payUrl": None, "codeUrl": None, "jumpUrl": None,
-                "wxJumpUrl": None, "aliJumpUrl": None}
+                "wxJumpUrl": None}
 
     try:
         product = await run_in_threadpool(db.query(Product).filter(Product.id == order.product_id).first)
@@ -90,39 +90,34 @@ async def ensure_payment(db: Session, order: Order, client_ip: str | None = None
         except Exception as e:  # noqa: BLE001 H5 短链失败降级（预订单已建，对账可查）
             logger.warning("微信小店 H5 短链失败：order_no=%s %s", order.order_no, type(e).__name__)
             return {"payType": None, "payUrl": None, "codeUrl": None, "jumpUrl": None,
-                    "wxJumpUrl": None, "aliJumpUrl": None}
+                    "wxJumpUrl": None}
         try:
             order.h5_jump_url = await wxstore.client.resolve_h5_jump_url(pay_url)
         except Exception as e:  # noqa: BLE001 直达地址解析失败不阻塞（前端回落短链）
             logger.warning("微信小店直达地址解析失败：order_no=%s %s", order.order_no, type(e).__name__)
             order.h5_jump_url = None
-        jump = await run_in_threadpool(get_jump_urls, order.pre_order_id)
+        wx_jump_url = await run_in_threadpool(get_wechat_jump_url, order.pre_order_id)
         return {"payType": "h5", "payUrl": pay_url, "codeUrl": None, "jumpUrl": order.h5_jump_url,
-                "wxJumpUrl": jump["wxJumpUrl"], "aliJumpUrl": jump["aliJumpUrl"]}
+                "wxJumpUrl": wx_jump_url}
     except Exception as e:  # noqa: BLE001 下单兜底：任何意外均降级 null，不抛 500
         logger.exception("微信小店下单兜底降级：order_no=%s %s", getattr(order, "order_no", "?"), type(e).__name__)
         return {"payType": None, "payUrl": None, "codeUrl": None, "jumpUrl": None,
-                "wxJumpUrl": None, "aliJumpUrl": None}
+                "wxJumpUrl": None}
 
 
 def is_paid_state(state: str) -> bool:
     return state in _PAID_CHAIN_STATES
 
 
-def get_jump_urls(pre_order_id: str | None) -> dict:
-    """双端直跳 URL best-effort 获取 {wxJumpUrl, aliJumpUrl}。
-
-    失败返回全 None，前端回落 H5 短链流程，绝不抛异常。
-    """
-    empty = {"wxJumpUrl": None, "aliJumpUrl": None}
+def get_wechat_jump_url(pre_order_id: str | None) -> str | None:
+    """微信直跳 URL best-effort 获取；失败返回 None，前端回落 H5 短链，绝不抛异常。"""
     if not pre_order_id or not wxs_ready():
-        return empty
+        return None
     try:
-        urls = wxstore.client.build_jump_urls(str(pre_order_id))
-        return {"wxJumpUrl": urls["wechat"], "aliJumpUrl": urls["alipay"]}
+        return wxstore.client.build_wechat_jump(str(pre_order_id))
     except Exception as e:  # noqa: BLE001
-        logger.warning("直跳 URL 构造失败，已回落短链：%r", e)
-        return empty
+        logger.warning("微信直跳 URL 构造失败，已回落短链：%r", e)
+        return None
 
 
 def _append_fail_reason(order: Order, reason: str) -> None:
@@ -402,7 +397,7 @@ __all__ = [
     "apply_payment_result",
     "display_pay_type",
     "ensure_payment",
-    "get_jump_urls",
+    "get_wechat_jump_url",
     "handle_pay_notify",
     "handle_refund_notify",
     "is_paid_state",

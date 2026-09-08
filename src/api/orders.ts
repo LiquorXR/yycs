@@ -19,8 +19,6 @@ export interface OrderResult {
   jumpUrl?: string | null
   /** 微信直跳（weixin:// 小程序，官方中转页同款；失败为 null 时回落） */
   wxJumpUrl?: string | null
-  /** 支付宝直跳（ds.alipay.com 桥页，官方中转页同款；失败为 null 时回落） */
-  aliJumpUrl?: string | null
 }
 
 export interface OrderDetail {
@@ -34,7 +32,6 @@ export interface OrderDetail {
   codeUrl: string | null
   jumpUrl?: string | null
   wxJumpUrl?: string | null
-  aliJumpUrl?: string | null
   failReason?: string | null
   createdAt?: string
   paidAt?: string | null

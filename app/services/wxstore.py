@@ -58,9 +58,8 @@ JUMP_URL_HOST = "optimus-c-share.shouqianba.com"
 JUMP_URL_PATH_PREFIX = "/jumpMallLandingPage/"
 
 # 微信小店小程序直跳（复刻官方中转页行为，解决普通浏览器/快手 WebView 内
-# 拉起微信/支付宝 App 支付；失败一律回落 H5 短链流程）。
-# 支付宝小程序 AppId 为常量；微信小程序 appId/pagePath 按商城经公开接口获取后缓存。
-ALIPAY_MINIAPP_ID = "2019012963170386"
+# 拉起微信 App 支付；失败一律回落 H5 短链流程）。
+# 微信小程序 appId/pagePath 按商城经公开接口获取后缓存。
 MINIAPP_ENV_VERSION = "release"
 
 
@@ -79,18 +78,6 @@ def build_wechat_jump_url(appid: str, page_path: str, mall_sn: str, signature: s
         f"&query={quote(inner, safe='')}"
         f"&env_version={MINIAPP_ENV_VERSION}"
     )
-
-
-def build_alipay_jump_url(page_path: str, mall_sn: str, signature: str, pre_order_id: str) -> str:
-    """构造支付宝直跳 URL：经 ds.alipay.com 桥页转 alipays scheme（与官方逐字节对齐）。"""
-    inner = urlencode(
-        {"mallSn": mall_sn, "signature": signature, "pageType": "5", "preOrderId": pre_order_id}
-    )
-    scheme = (
-        f"alipays://platformapi/startapp?appId={ALIPAY_MINIAPP_ID}"
-        f"&page={page_path.lstrip('/')}?{inner}"
-    )
-    return f"https://ds.alipay.com/?scheme={quote(scheme, safe='')}"
 
 
 # 预订单状态（queryPreOrder state）：0 待支付；1 已完成；2 已取消
@@ -390,17 +377,13 @@ class WxstoreClient:
         self._miniapp_cache[mall_sn] = info
         return info
 
-    def build_jump_urls(self, pre_order_id: str) -> dict:
-        """构造双端直跳 URL {wechat, alipay}；任一失败抛错由调用方回落。"""
+    def build_wechat_jump(self, pre_order_id: str) -> str:
+        """构造微信直跳 URL；失败抛错由调用方回落短链。"""
         c = self._cfg
         info = self.get_miniapp_info()
         mall_sn = str(c.WXS_MALL_SN or "").strip()
         signature = str(c.WXS_MALL_SIGNATURE or "").strip()
-        pre = str(pre_order_id)
-        return {
-            "wechat": build_wechat_jump_url(info["appid"], info["page_path"], mall_sn, signature, pre),
-            "alipay": build_alipay_jump_url(info["page_path"], mall_sn, signature, pre),
-        }
+        return build_wechat_jump_url(info["appid"], info["page_path"], mall_sn, signature, str(pre_order_id))
 
     # ---- 推送验签 ----
 

@@ -378,7 +378,7 @@ Body（JSON）：
 |---|---|---|---|
 | profileId | string | 是 | 测算信息 ID |
 | productId | int | 是 | 产品 ID（金额以服务端产品表为准，杜绝前端改价） |
-| paymentMethod | string | 否 | `auto`（默认微信，可大小写）/ `h5` / `native`（历史兼容）/ `wx_h5` / `ali_h5` / `wx_native` / `ali_qr`；入库归一化见 payChannel |
+| paymentMethod | string | 否 | `auto` / `h5`（单 H5 路径，归一到 h5） |
 | adParams | object | 否 | 磁力投放归因：`{ad_id, creative_id, campaign_id, ...}` |
 | amount | int | 否 | 防改价校验用：携带时须与产品表价格一致，否则返回 12001；不携带则以后端产品表为准 |
 
@@ -491,7 +491,6 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | data.codeUrl | string \| null | 恒为 null（保留字段兼容） |
 | data.jumpUrl | string \| null | H5 直达收银台地址（短链服务端解析，best-effort；失败为 null 时前端回落 payUrl） |
 | data.wxJumpUrl | string \| null | 微信直跳（`weixin://dl/business` 小程序，官方中转页同款；失败为 null 时回落） |
-| data.aliJumpUrl | string \| null | 支付宝直跳（`ds.alipay.com` 桥页，官方中转页同款；失败为 null 时回落） |
 | data.openid | string | 预留字段（当前恒为空串） |
 | data.adParams | object \| null | 磁力投放归因参数（原样返回，未传为 null） |
 | data.failReason | string \| null | 失败原因（正常为 null） |

@@ -18,7 +18,6 @@ from app.services import wxstore
 from app.services.wxstore import (
     WxstoreClient,
     WxstoreError,
-    build_alipay_jump_url,
     build_wechat_jump_url,
     missing_wxs_config,
     sign_request_body,
@@ -230,16 +229,6 @@ class TestJumpUrlBuilders:
             "&env_version=release"
         )
 
-    def test_build_alipay_jump_url_shape(self):
-        from urllib.parse import quote
-
-        url = build_alipay_jump_url("/P/p/index", "MALL1", "sig-1", "PRE=1")
-        scheme = (
-            "alipays://platformapi/startapp?appId=2019012963170386"
-            "&page=P/p/index?mallSn=MALL1&signature=sig-1&pageType=5&preOrderId=PRE%3D1"
-        )
-        assert url == "https://ds.alipay.com/?scheme=" + quote(scheme, safe="")
-
     def test_get_miniapp_info_caches(self, monkeypatch):
         import json as _json
 
@@ -318,9 +307,9 @@ class TestJumpUrlBuilders:
         )
         assert wxstore.client.get_miniapp_info() == {"appid": "wxCONFIG", "page_path": "/CFG/index"}
 
-    def test_get_jump_urls_degrades(self, monkeypatch):
+    def test_get_wechat_jump_url_degrades(self, monkeypatch):
         from app.services import pay_service
 
         monkeypatch.setattr(settings, "WXS_APPID", None)
-        assert pay_service.get_jump_urls("PRE-1") == {"wxJumpUrl": None, "aliJumpUrl": None}
-        assert pay_service.get_jump_urls(None) == {"wxJumpUrl": None, "aliJumpUrl": None}
+        assert pay_service.get_wechat_jump_url("PRE-1") is None
+        assert pay_service.get_wechat_jump_url(None) is None

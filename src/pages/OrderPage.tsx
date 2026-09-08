@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Card } from '@/components/ui/card'
-import { AlipayIcon, WechatPayIcon } from '@/components/ui/pay-icons'
+import { WechatPayIcon } from '@/components/ui/pay-icons'
 import PageHeader from '@/components/PageHeader'
 import { getProfilePreview, newIdempotencyKey, type ProfilePreview } from '@/api/profiles'
 import { getProducts, type Product } from '@/api/products'
@@ -136,7 +136,7 @@ export default function OrderPage() {
         { profileId, productId: selected.id, paymentMethod, adParams },
         newIdempotencyKey(),
       )
-      navigate(`/pay/${res.orderNo}`, { state: { payType: res.payType, payChannel: res.payChannel ?? paymentMethod, payUrl: res.payUrl, codeUrl: res.codeUrl, jumpUrl: res.jumpUrl ?? null, wxJumpUrl: res.wxJumpUrl ?? null, aliJumpUrl: res.aliJumpUrl ?? null } })
+      navigate(`/pay/${res.orderNo}`, { state: { payType: res.payType, payChannel: res.payChannel ?? paymentMethod, payUrl: res.payUrl, codeUrl: res.codeUrl, jumpUrl: res.jumpUrl ?? null, wxJumpUrl: res.wxJumpUrl ?? null } })
     } catch (err) {
       setSubmitError(err instanceof Error && err.message ? err.message : '提交失败，请稍后重试')
     } finally {
@@ -261,13 +261,12 @@ export default function OrderPage() {
           )}
         </div>
 
-        {/* 支付方式：微信小店 H5 单链路，微信/支付宝在收银台内选择 */}
+        {/* 支付方式：微信小店 H5 单链路，仅微信支付 */}
         <div className="card-guofeng p-4">
           <div className="mb-2.5 text-xs font-semibold tracking-widest text-gold-light">支付方式</div>
           <div className="flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#2b7a63] bg-[#2b7a63]/15 text-[13px] font-medium text-gold-light">
             <WechatPayIcon className="size-5 shrink-0" />
-            <AlipayIcon className="size-5 shrink-0" />
-            在线支付 · 收银台内选择微信 / 支付宝
+            微信支付
           </div>
           <div className="mt-3 flex items-center justify-between text-xs">
             <span className="text-muted">实付金额</span>
