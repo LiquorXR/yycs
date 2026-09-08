@@ -62,6 +62,11 @@ def _configure_wxs(monkeypatch):
     monkeypatch.setattr(wxstore.client, "save_pre_order", _fake_save)
     monkeypatch.setattr(wxstore.client, "generate_h5_link", _fake_h5)
     monkeypatch.setattr(wxstore.client, "resolve_h5_jump_url", _fake_resolve)
+    # 直跳 URL 打桩：避免测试打到真实官方接口
+    monkeypatch.setattr(
+        pay_service, "get_jump_urls",
+        lambda pre: {"wxJumpUrl": f"weixin://jump/{pre}", "aliJumpUrl": f"https://ds.alipay.com/jump/{pre}"},
+    )
     monkeypatch.setattr(
         wxstore.client, "query_pre_order",
         lambda pre, **k: {"state": "0", "amount": 1, "order_sn": None, "pre_order_id": pre},
@@ -180,6 +185,8 @@ def test_create_order_h5_returns_short_link(client_and_factory, monkeypatch):
     assert data["codeUrl"] is None
     assert data["payChannel"] == "wx_h5"
     assert data["jumpUrl"] == "https://optimus-c-share.shouqianba.com/jumpMallLandingPage/9?preOrderId=x&pageType=5"
+    assert data["wxJumpUrl"] == f"weixin://jump/PRE-{order_no}"
+    assert data["aliJumpUrl"] == f"https://ds.alipay.com/jump/PRE-{order_no}"
     assert _pre_order_id(factory, order_no) == f"PRE-{order_no}"
     with factory() as db:
         assert db.query(Order).filter(Order.order_no == order_no).one().h5_jump_url == data["jumpUrl"]

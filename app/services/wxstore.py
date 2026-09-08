@@ -19,6 +19,7 @@ import hashlib
 import json
 import logging
 import urllib.request
+from urllib.parse import quote, urlencode
 
 import httpx
 from cryptography.exceptions import InvalidSignature
@@ -55,6 +56,42 @@ WQIDAQAB
 # H5 直达收银台地址白名单（短链解析后校验，防开放重定向劫持）
 JUMP_URL_HOST = "optimus-c-share.shouqianba.com"
 JUMP_URL_PATH_PREFIX = "/jumpMallLandingPage/"
+
+# 微信小店小程序直跳（复刻官方中转页行为，解决普通浏览器/快手 WebView 内
+# 拉起微信/支付宝 App 支付；失败一律回落 H5 短链流程）。
+# 支付宝小程序 AppId 为常量；微信小程序 appId/pagePath 按商城经公开接口获取后缓存。
+ALIPAY_MINIAPP_ID = "2019012963170386"
+MINIAPP_ENV_VERSION = "release"
+
+
+def build_wechat_jump_url(appid: str, page_path: str, mall_sn: str, signature: str, pre_order_id: str) -> str:
+    """构造微信直跳 URL：weixin://dl/business/?appid=..&path=..&query=..&env_version=release。
+
+    query 内层为标准 urlencode({mallSn, signature, pageType, preOrderId})，
+    外层整体再编码一次（与官方中转页逐字节对齐）。
+    """
+    inner = urlencode(
+        {"mallSn": mall_sn, "signature": signature, "pageType": "5", "preOrderId": pre_order_id}
+    )
+    return (
+        f"weixin://dl/business/?appid={appid}"
+        f"&path={page_path.lstrip('/')}"
+        f"&query={quote(inner, safe='')}"
+        f"&env_version={MINIAPP_ENV_VERSION}"
+    )
+
+
+def build_alipay_jump_url(page_path: str, mall_sn: str, signature: str, pre_order_id: str) -> str:
+    """构造支付宝直跳 URL：经 ds.alipay.com 桥页转 alipays scheme（与官方逐字节对齐）。"""
+    inner = urlencode(
+        {"mallSn": mall_sn, "signature": signature, "pageType": "5", "preOrderId": pre_order_id}
+    )
+    scheme = (
+        f"alipays://platformapi/startapp?appId={ALIPAY_MINIAPP_ID}"
+        f"&page={page_path.lstrip('/')}?{inner}"
+    )
+    return f"https://ds.alipay.com/?scheme={quote(scheme, safe='')}"
+
 
 # 预订单状态（queryPreOrder state）：0 待支付；1 已完成；2 已取消
 PREORDER_PENDING = "0"
@@ -299,6 +336,54 @@ class WxstoreClient:
         """删除/取消未支付预订单（best-effort，供关单时同步上游）。"""
         payload = {**self._base_fields(), "preOrderId": str(pre_order_id)}
         return self._post_sync("/optimus/module/open/preOrder/deletePreOrder", payload, timeout=timeout)
+
+    # ---- 小程序直跳信息（公开接口，无鉴权，按商城缓存） ----
+
+    _miniapp_cache: dict[str, dict] = {}
+
+    def get_miniapp_info(self, timeout: float = 10.0) -> dict:
+        """查询商城小程序信息 {appid, page_path}（queryMallUsingAppId，无需签名）。
+
+        结果按 mallSn 缓存；失败抛 WxstoreError，由调用方回落短链流程。
+        """
+        c = self._cfg
+        mall_sn = str(c.WXS_MALL_SN or "").strip()
+        if not mall_sn:
+            raise WxstoreError("CONFIG_ERROR", "商城号缺失")
+        cached = self._miniapp_cache.get(mall_sn)
+        if cached:
+            return cached
+        url = "https://mapi.shouqianba.com/optimus/mall/queryMallUsingAppId?client_version=1.0.0"
+        payload = {"mallID": self._mall_fields(), "environment": "weixin"}
+        raw_body = _compact_dumps(payload)
+        req = urllib.request.Request(url, data=raw_body.encode("utf-8"), method="POST")
+        req.add_header("Content-Type", "application/json;charset=UTF-8")
+        req.add_header("User-Agent", "ZhenFan/1.0")
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+        except Exception as e:  # noqa: BLE001
+            raise WxstoreError("NETWORK_ERROR", "小程序信息查询网络错误") from None
+        try:
+            inner = (data.get("data") or {}).get("data") or {}
+            appid, page_path = inner["appid"], inner["pagePath"]
+        except (KeyError, AttributeError, TypeError) as e:
+            raise WxstoreError("BIZ_FAIL", f"小程序信息缺失: {str(data)[:200]}") from None
+        info = {"appid": str(appid), "page_path": str(page_path)}
+        self._miniapp_cache[mall_sn] = info
+        return info
+
+    def build_jump_urls(self, pre_order_id: str) -> dict:
+        """构造双端直跳 URL {wechat, alipay}；任一失败抛错由调用方回落。"""
+        c = self._cfg
+        info = self.get_miniapp_info()
+        mall_sn = str(c.WXS_MALL_SN or "").strip()
+        signature = str(c.WXS_MALL_SIGNATURE or "").strip()
+        pre = str(pre_order_id)
+        return {
+            "wechat": build_wechat_jump_url(info["appid"], info["page_path"], mall_sn, signature, pre),
+            "alipay": build_alipay_jump_url(info["page_path"], mall_sn, signature, pre),
+        }
 
     # ---- 推送验签 ----
 

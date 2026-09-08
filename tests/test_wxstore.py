@@ -18,6 +18,8 @@ from app.services import wxstore
 from app.services.wxstore import (
     WxstoreClient,
     WxstoreError,
+    build_alipay_jump_url,
+    build_wechat_jump_url,
     missing_wxs_config,
     sign_request_body,
 )
@@ -215,3 +217,62 @@ class TestResolveJumpUrl:
 
         with pytest.raises(WxstoreError, match="NETWORK_ERROR"):
             asyncio.run(self._resolve(monkeypatch, boom=True))
+
+
+class TestJumpUrlBuilders:
+    """双端直跳 URL 构造（与官方中转页逐字节对齐；合成值断言编码层级）。"""
+
+    def test_build_wechat_jump_url_exact(self):
+        url = build_wechat_jump_url("wxTEST123", "/P/p/index", "MALL1", "sig-1", "PRE=1")
+        assert url == (
+            "weixin://dl/business/?appid=wxTEST123&path=P/p/index"
+            "&query=mallSn%3DMALL1%26signature%3Dsig-1%26pageType%3D5%26preOrderId%3DPRE%253D1"
+            "&env_version=release"
+        )
+
+    def test_build_alipay_jump_url_shape(self):
+        from urllib.parse import quote
+
+        url = build_alipay_jump_url("/P/p/index", "MALL1", "sig-1", "PRE=1")
+        scheme = (
+            "alipays://platformapi/startapp?appId=2019012963170386"
+            "&page=P/p/index?mallSn=MALL1&signature=sig-1&pageType=5&preOrderId=PRE%3D1"
+        )
+        assert url == "https://ds.alipay.com/?scheme=" + quote(scheme, safe="")
+
+    def test_get_miniapp_info_caches(self, monkeypatch):
+        import json as _json
+
+        calls = []
+
+        class _Resp:
+            def read(self):
+                return _json.dumps(
+                    {"data": {"data": {"appid": "wxTEST", "pagePath": "/P/p/index"}}}
+                ).encode()
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+        monkeypatch.setattr(
+            wxstore.urllib.request, "urlopen", lambda req, timeout=10: calls.append(req) or _Resp()
+        )
+        monkeypatch.setattr(settings, "WXS_MALL_SN", "M1")
+        WxstoreClient._miniapp_cache.clear()
+        try:
+            info = wxstore.client.get_miniapp_info()
+            assert info == {"appid": "wxTEST", "page_path": "/P/p/index"}
+            assert wxstore.client.get_miniapp_info() is info
+            assert len(calls) == 1
+        finally:
+            WxstoreClient._miniapp_cache.clear()
+
+    def test_get_jump_urls_degrades(self, monkeypatch):
+        from app.services import pay_service
+
+        monkeypatch.setattr(settings, "WXS_APPID", None)
+        assert pay_service.get_jump_urls("PRE-1") == {"wxJumpUrl": None, "aliJumpUrl": None}
+        assert pay_service.get_jump_urls(None) == {"wxJumpUrl": None, "aliJumpUrl": None}

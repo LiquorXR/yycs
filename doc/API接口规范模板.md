@@ -490,6 +490,8 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | data.payUrl | string \| null | 微信小店 H5 短链（payType=h5 时）；否则 null |
 | data.codeUrl | string \| null | 恒为 null（保留字段兼容） |
 | data.jumpUrl | string \| null | H5 直达收银台地址（短链服务端解析，best-effort；失败为 null 时前端回落 payUrl） |
+| data.wxJumpUrl | string \| null | 微信直跳（`weixin://dl/business` 小程序，官方中转页同款；失败为 null 时回落） |
+| data.aliJumpUrl | string \| null | 支付宝直跳（`ds.alipay.com` 桥页，官方中转页同款；失败为 null 时回落） |
 | data.openid | string | 预留字段（当前恒为空串） |
 | data.adParams | object \| null | 磁力投放归因参数（原样返回，未传为 null） |
 | data.failReason | string \| null | 失败原因（正常为 null） |

@@ -45,6 +45,25 @@ export function isSafeJumpUrl(url: string | null | undefined): boolean {
   return isSafeHttpUrl(url, JUMP_ALLOW_HOSTS)
 }
 
+/** 微信直跳：weixin://dl/business/ 小程序路径（官方中转页同款，后端构造） */
+export function isSafeWxJumpUrl(url: string | null | undefined): boolean {
+  if (!url || typeof url !== 'string') return false
+  const t = url.trim()
+  return t.startsWith('weixin://dl/business/?appid=') && t.includes('&path=') && t.includes('&query=')
+}
+
+/** 支付宝直跳：ds.alipay.com 桥页转 alipays scheme（官方中转页同款，后端构造） */
+const ALI_JUMP_HOSTS = ['ds.alipay.com']
+
+export function isSafeAliJumpUrl(url: string | null | undefined): boolean {
+  if (!isSafeHttpUrl(url, ALI_JUMP_HOSTS)) return false
+  try {
+    return (new URL(url!.trim()).searchParams.get('scheme') ?? '').startsWith('alipays://platformapi/startapp?')
+  } catch {
+    return false
+  }
+}
+
 export function isSafeQrcodeUrl(url: string | null | undefined): boolean {
   return isSafeHttpUrl(url, QRCODE_ALLOW_HOSTS)
 }
