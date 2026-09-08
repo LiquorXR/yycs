@@ -15,6 +15,8 @@ export interface OrderResult {
   payChannel?: string | null
   payUrl: string | null
   codeUrl: string | null
+  /** H5 直达收银台地址（短链解析，best-effort；失败为 null 时回落 payUrl） */
+  jumpUrl?: string | null
 }
 
 export interface OrderDetail {
@@ -26,6 +28,7 @@ export interface OrderDetail {
   payChannel?: string | null
   payUrl: string | null
   codeUrl: string | null
+  jumpUrl?: string | null
   failReason?: string | null
   createdAt?: string
   paidAt?: string | null

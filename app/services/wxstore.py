@@ -52,6 +52,10 @@ YtgnNtaPT+SqhXRQdFcc9kiVybAGs8WEGqsdwxsmD9aZTd4rQMvLEGWIj/MLdo7w
 WQIDAQAB
 -----END PUBLIC KEY-----"""
 
+# H5 直达收银台地址白名单（短链解析后校验，防开放重定向劫持）
+JUMP_URL_HOST = "optimus-c-share.shouqianba.com"
+JUMP_URL_PATH_PREFIX = "/jumpMallLandingPage/"
+
 # 预订单状态（queryPreOrder state）：0 待支付；1 已完成；2 已取消
 PREORDER_PENDING = "0"
 PREORDER_DONE = "1"
@@ -233,6 +237,42 @@ class WxstoreClient:
         if not link:
             raise WxstoreError("BIZ_FAIL", "生成 H5 链接失败")
         return str(link)
+
+    @staticmethod
+    def is_jump_url(url: str | None) -> bool:
+        """直达收银台地址合法性：限定官方 host + 跳转路径前缀，防开放重定向。"""
+        if not url or not isinstance(url, str):
+            return False
+        try:
+            from urllib.parse import urlparse
+
+            u = urlparse(url.strip())
+            return (
+                u.scheme == "https"
+                and u.hostname == JUMP_URL_HOST
+                and (u.path or "").startswith(JUMP_URL_PATH_PREFIX)
+            )
+        except Exception:  # noqa: BLE001
+            return False
+
+    async def resolve_h5_jump_url(self, short_link: str, timeout: float = 5.0) -> str:
+        """解析 H5 短链得直达收银台地址（跟随跳转一次，无状态变更）。
+
+        短链由官方生成，直达地址 path-id 随单变化，不可硬编码/自拼。
+        非法目标直接抛错，由调用方降级（绝不阻塞建单）。
+        """
+        try:
+            async with httpx.AsyncClient(timeout=timeout, follow_redirects=True, max_redirects=5) as hc:
+                resp = await hc.get(
+                    short_link.strip(),
+                    headers={"User-Agent": "ZhenFan/1.0"},
+                )
+        except Exception as e:  # noqa: BLE001
+            raise WxstoreError("NETWORK_ERROR", "短链解析网络错误") from None
+        final_url = str(resp.url)
+        if not self.is_jump_url(final_url):
+            raise WxstoreError("BIZ_FAIL", f"短链目标非法: {final_url[:120]}")
+        return final_url
 
     def query_pre_order(self, pre_order_id: str, timeout: float = 10.0) -> dict:
         """查询预订单（同步，供对账线程用），返回归一化 {state, amount, order_sn}。

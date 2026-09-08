@@ -111,6 +111,7 @@ async def create_order(
         "payChannel": pay_channel,
         "payUrl": pay_info["payUrl"],
         "codeUrl": pay_info["codeUrl"],
+        "jumpUrl": pay_info.get("jumpUrl"),
     }
     await run_in_threadpool(store_idempotent_response, db, idempotency_key, IDEM_SCOPE_ORDER, data, payload_hash)
     await run_in_threadpool(db.commit)
@@ -141,6 +142,7 @@ def get_order(
             "payChannel": order.pay_type,
             "payUrl": order.pay_url,
             "codeUrl": order.code_url,
+            "jumpUrl": order.h5_jump_url,
             "openid": order.openid,
             "adParams": order.ad_params,
             "failReason": order.fail_reason,

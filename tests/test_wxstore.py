@@ -154,3 +154,64 @@ class TestEnvelopeAndConfig:
         monkeypatch.setattr(settings, "WXS_REFUND_NOTIFY_URL", "https://www.sxzfcm.top/api/pay/refund-notify")
         monkeypatch.setattr(settings, "WXS_RETURN_URL", "https://www.sxzfcm.top/pay/{orderNo}")
         assert WxstoreClient(settings).is_ready is True
+
+
+JUMP_OK = (
+    "https://optimus-c-share.shouqianba.com/jumpMallLandingPage/1788850072518"
+    "?merchantSn=1680009353146&mallSn=2026090711470228436&signature=s"
+    "&preOrderId=abc%3D&pageType=5"
+)
+
+
+def _fake_http_client(final_url=None, boom=False):
+    import httpx
+
+    class _Resp:
+        url = httpx.URL(final_url or "")
+
+    class _Client:
+        def __init__(self, *a, **k):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
+        async def get(self, url, **k):
+            if boom:
+                raise TimeoutError("t")
+            return _Resp()
+
+    return _Client
+
+
+class TestResolveJumpUrl:
+    def test_is_jump_url(self):
+        assert WxstoreClient.is_jump_url(JUMP_OK) is True
+        assert WxstoreClient.is_jump_url("https://i.wosai.cn/5pp5eF") is False
+        assert WxstoreClient.is_jump_url("https://evil.com/jumpMallLandingPage/1") is False
+        assert WxstoreClient.is_jump_url("http://optimus-c-share.shouqianba.com/jumpMallLandingPage/1") is False
+        assert WxstoreClient.is_jump_url(None) is False
+
+    async def _resolve(self, monkeypatch, final_url=None, boom=False):
+        monkeypatch.setattr(wxstore.httpx, "AsyncClient", _fake_http_client(final_url, boom))
+        return await wxstore.client.resolve_h5_jump_url("https://i.wosai.cn/abc")
+
+    def test_resolve_returns_final_url(self, monkeypatch):
+        import asyncio
+
+        assert asyncio.run(self._resolve(monkeypatch, JUMP_OK)) == JUMP_OK
+
+    def test_resolve_rejects_foreign_host(self, monkeypatch):
+        import asyncio
+
+        with pytest.raises(WxstoreError):
+            asyncio.run(self._resolve(monkeypatch, "https://evil.com/x"))
+
+    def test_resolve_network_error(self, monkeypatch):
+        import asyncio
+
+        with pytest.raises(WxstoreError, match="NETWORK_ERROR"):
+            asyncio.run(self._resolve(monkeypatch, boom=True))

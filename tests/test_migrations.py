@@ -137,3 +137,20 @@ def test_orders_wxstore_columns_downgrade(migrate_db):
     cols = _order_columns(engine)
     assert "pre_order_id" not in cols and "order_sn" not in cols
     engine.dispose()
+
+
+def test_orders_h5_jump_url_roundtrip(migrate_db):
+    """head 具备 h5_jump_url；降级回 27db9620e834 移除；再升级恢复。"""
+    url, cfg = migrate_db
+    command.upgrade(cfg, "head")
+    engine = create_engine(url)
+    assert "h5_jump_url" in _order_columns(engine)
+    engine.dispose()
+    command.downgrade(cfg, "27db9620e834")
+    engine = create_engine(url)
+    assert "h5_jump_url" not in _order_columns(engine)
+    engine.dispose()
+    command.upgrade(cfg, "head")
+    engine = create_engine(url)
+    assert "h5_jump_url" in _order_columns(engine)
+    engine.dispose()

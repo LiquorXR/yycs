@@ -56,8 +56,12 @@ def _configure_wxs(monkeypatch):
     async def _fake_h5(pre_order_id, **k):
         return f"https://h5.test/pay/{pre_order_id}"
 
+    async def _fake_resolve(short_link, **k):
+        return "https://optimus-c-share.shouqianba.com/jumpMallLandingPage/9?preOrderId=x&pageType=5"
+
     monkeypatch.setattr(wxstore.client, "save_pre_order", _fake_save)
     monkeypatch.setattr(wxstore.client, "generate_h5_link", _fake_h5)
+    monkeypatch.setattr(wxstore.client, "resolve_h5_jump_url", _fake_resolve)
     monkeypatch.setattr(
         wxstore.client, "query_pre_order",
         lambda pre, **k: {"state": "0", "amount": 1, "order_sn": None, "pre_order_id": pre},
@@ -175,7 +179,24 @@ def test_create_order_h5_returns_short_link(client_and_factory, monkeypatch):
     assert data["payUrl"] == f"https://h5.test/pay/PRE-{order_no}"
     assert data["codeUrl"] is None
     assert data["payChannel"] == "wx_h5"
+    assert data["jumpUrl"] == "https://optimus-c-share.shouqianba.com/jumpMallLandingPage/9?preOrderId=x&pageType=5"
     assert _pre_order_id(factory, order_no) == f"PRE-{order_no}"
+    with factory() as db:
+        assert db.query(Order).filter(Order.order_no == order_no).one().h5_jump_url == data["jumpUrl"]
+
+
+def test_create_order_jump_resolve_failure_falls_back_to_short_link(client_and_factory, monkeypatch):
+    client, factory = client_and_factory
+    _configure_wxs(monkeypatch)
+
+    async def _fail_resolve(*a, **k):
+        raise wxstore.WxstoreError("NETWORK_ERROR", "x")
+
+    monkeypatch.setattr(wxstore.client, "resolve_h5_jump_url", _fail_resolve)
+    order_no = _create_order(client, key="wxs-jumpfail")
+    data = client.get(f"/api/orders/{order_no}").json()["data"]
+    assert data["payUrl"] == f"https://h5.test/pay/PRE-{order_no}"
+    assert data["jumpUrl"] is None
 
 
 def test_create_order_upstream_failure_degrades_to_null(client_and_factory, monkeypatch):

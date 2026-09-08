@@ -38,6 +38,13 @@ export function isSafePayUrl(url: string | null | undefined): boolean {
   return isSafeHttpUrl(url, PAY_ALLOW_HOSTS)
 }
 
+// 微信小店直达收银台地址白名单（短链解析目标，显式 host；后端落库前已校验一次）
+const JUMP_ALLOW_HOSTS = ["optimus-c-share.shouqianba.com"]
+
+export function isSafeJumpUrl(url: string | null | undefined): boolean {
+  return isSafeHttpUrl(url, JUMP_ALLOW_HOSTS)
+}
+
 export function isSafeQrcodeUrl(url: string | null | undefined): boolean {
   return isSafeHttpUrl(url, QRCODE_ALLOW_HOSTS)
 }

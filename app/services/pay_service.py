@@ -66,10 +66,11 @@ def display_pay_type(original: str | None, pay_url: str | None, code_url: str | 
 
 
 async def ensure_payment(db: Session, order: Order, client_ip: str | None = None) -> dict:
-    """微信小店下单（async），返回 {payType, payUrl, codeUrl}。
+    """微信小店下单（async），返回 {payType, payUrl, codeUrl, jumpUrl}。
 
-    建预订单 savePreOrder → 取 H5 短链 generatePreOrderH5Link；pre_order_id 写回
-    order（由调用方 commit）。配置缺失或任何异常均优雅降级返回 null（订单仍可创建）。
+    建预订单 savePreOrder → 取 H5 短链 generatePreOrderH5Link → best-effort 解析
+    直达收银台地址；pre_order_id 与 h5_jump_url 写回 order（由调用方 commit）。
+    配置缺失或任何异常均优雅降级返回 null（订单仍可创建）。
     本期只留 H5 单路径，codeUrl 恒为 None。
     """
     _ = client_ip
@@ -87,11 +88,16 @@ async def ensure_payment(db: Session, order: Order, client_ip: str | None = None
             pay_url = await wxstore.client.generate_h5_link(pre_order_id)
         except Exception as e:  # noqa: BLE001 H5 短链失败降级（预订单已建，对账可查）
             logger.warning("微信小店 H5 短链失败：order_no=%s %s", order.order_no, type(e).__name__)
-            return {"payType": None, "payUrl": None, "codeUrl": None}
-        return {"payType": "h5", "payUrl": pay_url, "codeUrl": None}
+            return {"payType": None, "payUrl": None, "codeUrl": None, "jumpUrl": None}
+        try:
+            order.h5_jump_url = await wxstore.client.resolve_h5_jump_url(pay_url)
+        except Exception as e:  # noqa: BLE001 直达地址解析失败不阻塞（前端回落短链）
+            logger.warning("微信小店直达地址解析失败：order_no=%s %s", order.order_no, type(e).__name__)
+            order.h5_jump_url = None
+        return {"payType": "h5", "payUrl": pay_url, "codeUrl": None, "jumpUrl": order.h5_jump_url}
     except Exception as e:  # noqa: BLE001 下单兜底：任何意外均降级 null，不抛 500
         logger.exception("微信小店下单兜底降级：order_no=%s %s", getattr(order, "order_no", "?"), type(e).__name__)
-        return {"payType": None, "payUrl": None, "codeUrl": None}
+        return {"payType": None, "payUrl": None, "codeUrl": None, "jumpUrl": None}
 
 
 def is_paid_state(state: str) -> bool:

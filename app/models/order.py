@@ -39,6 +39,7 @@ class Order(Base):
     pre_order_id: Mapped[str | None] = mapped_column(String(256), nullable=True, unique=True, comment="微信小店预订单号（代客下单返回，全局唯一）")
     order_sn: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="微信小店正式订单号（支付推送返回）")
     order_signature: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="微信小店订单签名（支付推送返回）")
+    h5_jump_url: Mapped[str | None] = mapped_column(String(512), nullable=True, comment="H5直达收银台地址（短链解析，best-effort）")
     openid: Mapped[str | None] = mapped_column(String(64), nullable=True, default="")
     amount: Mapped[int] = mapped_column(Integer, nullable=False, comment="金额（分）")
     state: Mapped[str] = mapped_column(String(16), nullable=False, default=OrderState.CREATED.value)

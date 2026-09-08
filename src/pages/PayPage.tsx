@@ -4,12 +4,33 @@ import { Button } from '@/components/ui/button'
 import PageHeader from '@/components/PageHeader'
 import { getOrder, getOrderReport, type OrderDetail } from '@/api/orders'
 import { formatPrice } from '@/lib/format'
-import { isSafePayUrl, isSafeQrcodeUrl } from '@/lib/url'
+import { isSafeJumpUrl, isSafePayUrl, isSafeQrcodeUrl } from '@/lib/url'
 
 interface PayState {
   payType: string | null
   payUrl: string | null
   codeUrl: string | null
+  jumpUrl?: string | null
+}
+
+/** 安卓 intent 直跳微信（打通 H5 短链 → 微信小店收银台）；失败时浏览器回落原链接 */
+function buildWechatIntentUrl(jumpUrl: string): string | null {
+  try {
+    const u = new URL(jumpUrl.trim())
+    if (u.protocol !== 'https:') return null
+    const rest = `${u.host}${u.pathname}${u.search}${u.hash}`
+    return `intent://${rest}#Intent;scheme=https;package=com.tencent.mm;S.browser_fallback_url=${encodeURIComponent(jumpUrl.trim())};end`
+  } catch {
+    return null
+  }
+}
+
+function isAndroid(): boolean {
+  try {
+    return /android/i.test(navigator.userAgent)
+  } catch {
+    return false
+  }
 }
 
 /** 已支付（付款成功，进入人工交付流程）的订单状态 */
@@ -132,9 +153,12 @@ export default function PayPage() {
   // 订单加载后以服务端字段为准（防旧 location.state 过期链接）；加载前用首屏透传加速
   const effectivePayType = order?.payType ?? pay?.payType ?? null
   const effectivePayUrl = order?.payUrl ?? pay?.payUrl ?? null
-  // 微信小店 H5 单链路：仅 h5 有效
+  // 微信小店 H5 单链路：仅 h5 有效；jumpUrl 为短链解析的直达收银台地址（安卓 intent 直跳微信）
   const showH5 = effectivePayType === 'h5' && isSafePayUrl(effectivePayUrl)
   const showEmpty = !showH5
+  const jumpUrl = order?.jumpUrl ?? pay?.jumpUrl ?? null
+  const safeJumpUrl = isSafeJumpUrl(jumpUrl) ? jumpUrl!.trim() : null
+  const androidWechatIntent = isAndroid() && safeJumpUrl ? buildWechatIntentUrl(safeJumpUrl) : null
   const isClosed = order?.state === 'CLOSED'
   const paidAfterClose = !!order?.failReason?.includes(PAID_AFTER_CLOSE)
   const countdownText = `${String(Math.floor(payCountdown / 60)).padStart(2, '0')}:${String(payCountdown % 60).padStart(2, '0')}`
@@ -224,13 +248,13 @@ export default function PayPage() {
           ) : showH5 ? (
             <div className="flex flex-col items-center py-4 text-center">
               <p className="text-sm leading-relaxed text-fg-secondary">
-                将前往微信小店收银台完成支付
+                {androidWechatIntent ? '将拉起微信完成支付' : '将前往微信小店收银台完成支付'}
                 <br />
-                可使用微信 / 支付宝，支付成功后自动返回本页查看报告
+                可使用微信 / 支付宝，支付成功后请手动切回本页查看报告
               </p>
-              <a href={effectivePayUrl!} rel="noopener noreferrer" className="mt-6 w-full max-w-[280px]">
+              <a href={androidWechatIntent ?? effectivePayUrl!} rel="noopener noreferrer" className="mt-6 w-full max-w-[280px]">
                 <Button size="lg" className="w-full rounded-full text-base font-bold">
-                  前往收银台支付
+                  {androidWechatIntent ? '拉起微信支付' : '前往收银台支付'}
                 </Button>
               </a>
               <p className="mt-3 text-xs text-muted">未自动拉起？可点击右上角在浏览器中打开</p>

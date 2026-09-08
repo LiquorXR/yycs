@@ -489,6 +489,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | data.payChannel | string | 入库通道：恒为 `wx_h5`（不回写覆盖） |
 | data.payUrl | string \| null | 微信小店 H5 短链（payType=h5 时）；否则 null |
 | data.codeUrl | string \| null | 恒为 null（保留字段兼容） |
+| data.jumpUrl | string \| null | H5 直达收银台地址（短链服务端解析，best-effort；失败为 null 时前端回落 payUrl） |
 | data.openid | string | 预留字段（当前恒为空串） |
 | data.adParams | object \| null | 磁力投放归因参数（原样返回，未传为 null） |
 | data.failReason | string \| null | 失败原因（正常为 null） |
