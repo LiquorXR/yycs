@@ -3,7 +3,7 @@
 const ALLOWED_URL_PATTERN = /^https:\/\//i
 
 // 支付/活码允许的域名白名单（前缀匹配）
-const PAY_ALLOW_HOSTS = ["qr.shouqianba.com", "alipay.com", "alipay.cn", "work.weixin.qq.com", "qywx."]
+const PAY_ALLOW_HOSTS = ["qr.shouqianba.com", "alipay.com", "alipay.cn", "work.weixin.qq.com", "qywx.", "wosai.cn"]
 const QRCODE_ALLOW_HOSTS = ["work.weixin.qq.com", "qywx."]
 
 function hostAllowed(host: string, allowList: string[]): boolean {
