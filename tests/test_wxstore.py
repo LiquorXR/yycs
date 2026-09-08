@@ -261,6 +261,8 @@ class TestJumpUrlBuilders:
             wxstore.urllib.request, "urlopen", lambda req, timeout=10: calls.append(req) or _Resp()
         )
         monkeypatch.setattr(settings, "WXS_MALL_SN", "M1")
+        monkeypatch.setattr(settings, "WXS_MINIAPP_APPID", None)
+        monkeypatch.setattr(settings, "WXS_MINIAPP_PAGE_PATH", None)
         WxstoreClient._miniapp_cache.clear()
         try:
             info = wxstore.client.get_miniapp_info()
@@ -269,6 +271,16 @@ class TestJumpUrlBuilders:
             assert len(calls) == 1
         finally:
             WxstoreClient._miniapp_cache.clear()
+
+    def test_get_miniapp_info_prefers_config(self, monkeypatch):
+        """配置了 appid/pagePath 时跳过运行时查询（直接返回配置值）。"""
+        monkeypatch.setattr(settings, "WXS_MINIAPP_APPID", "wxCONFIG")
+        monkeypatch.setattr(settings, "WXS_MINIAPP_PAGE_PATH", "/CFG/index")
+        monkeypatch.setattr(
+            wxstore.urllib.request, "urlopen",
+            lambda *a, **k: pytest.fail("配置化后不应触发运行时查询"),
+        )
+        assert wxstore.client.get_miniapp_info() == {"appid": "wxCONFIG", "page_path": "/CFG/index"}
 
     def test_get_jump_urls_degrades(self, monkeypatch):
         from app.services import pay_service

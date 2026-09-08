@@ -68,6 +68,10 @@ class Settings(BaseSettings):
     WXS_RETURN_URL: str | None = None
     # 推送验签公钥（PEM 全文；为空时使用文档第六章产线公共公钥常量）
     WXS_PUSH_PUBLIC_KEY: str | None = None
+    # 微信小店小程序直跳参数（开通资料固定值，配置后跳过运行时 queryMallUsingAppId 查询；
+    # 缺失时回退实时查询，查不到则直跳链接为 null，前端回落 H5 短链）
+    WXS_MINIAPP_APPID: str | None = None
+    WXS_MINIAPP_PAGE_PATH: str | None = None
 
     # ===== 直连 IP 限流（仅 IP:8000 生效，域名经 NPM 跳过保峰值）=====
     RATE_LIMIT_IP_PROFILE: int = 10

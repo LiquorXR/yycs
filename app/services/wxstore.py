@@ -342,11 +342,18 @@ class WxstoreClient:
     _miniapp_cache: dict[str, dict] = {}
 
     def get_miniapp_info(self, timeout: float = 10.0) -> dict:
-        """查询商城小程序信息 {appid, page_path}（queryMallUsingAppId，无需签名）。
+        """查询商城小程序信息 {appid, page_path}。
 
-        结果按 mallSn 缓存；失败抛 WxstoreError，由调用方回落短链流程。
+        优先取配置 WXS_MINIAPP_APPID/WXS_MINIAPP_PAGE_PATH（开通资料固定值，跳过运行时
+        无鉴权接口）；未配置才实时调用 queryMallUsingAppId（按商城缓存）。失败抛
+        WxstoreError（携带具体原因），由调用方回落短链流程。
         """
         c = self._cfg
+        cfg_appid = (c.WXS_MINIAPP_APPID or "").strip()
+        cfg_path = (c.WXS_MINIAPP_PAGE_PATH or "").strip()
+        if cfg_appid and cfg_path:
+            return {"appid": cfg_appid, "page_path": cfg_path}
+
         mall_sn = str(c.WXS_MALL_SN or "").strip()
         if not mall_sn:
             raise WxstoreError("CONFIG_ERROR", "商城号缺失")
@@ -361,14 +368,21 @@ class WxstoreClient:
         req.add_header("User-Agent", "ZhenFan/1.0")
         try:
             with urllib.request.urlopen(req, timeout=timeout) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
+                raw = resp.read().decode("utf-8")
         except Exception as e:  # noqa: BLE001
+            logger.error("queryMallUsingAppId 请求异常: %s", e)
             raise WxstoreError("NETWORK_ERROR", "小程序信息查询网络错误") from None
+        try:
+            data = json.loads(raw)
+        except Exception as e:  # noqa: BLE001
+            logger.error("queryMallUsingAppId 响应解析失败: %s raw=%s", e, raw[:300])
+            raise WxstoreError("RESPONSE_ERROR", "小程序信息响应解析失败") from None
         try:
             inner = (data.get("data") or {}).get("data") or {}
             appid, page_path = inner["appid"], inner["pagePath"]
         except (KeyError, AttributeError, TypeError) as e:
-            raise WxstoreError("BIZ_FAIL", f"小程序信息缺失: {str(data)[:200]}") from None
+            logger.error("queryMallUsingAppId 缺字段: %s raw=%s", e, raw[:300])
+            raise WxstoreError("BIZ_FAIL", f"小程序信息缺失: {raw[:200]}") from None
         info = {"appid": str(appid), "page_path": str(page_path)}
         self._miniapp_cache[mall_sn] = info
         return info

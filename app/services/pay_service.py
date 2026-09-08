@@ -121,7 +121,7 @@ def get_jump_urls(pre_order_id: str | None) -> dict:
         urls = wxstore.client.build_jump_urls(str(pre_order_id))
         return {"wxJumpUrl": urls["wechat"], "aliJumpUrl": urls["alipay"]}
     except Exception as e:  # noqa: BLE001
-        logger.warning("直跳 URL 构造失败，已回落短链：%s", type(e).__name__)
+        logger.warning("直跳 URL 构造失败，已回落短链：%r", e)
         return empty
 
 
