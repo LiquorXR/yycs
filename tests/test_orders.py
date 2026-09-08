@@ -62,7 +62,7 @@ def test_create_order_success(client):
     assert body["code"] == 0
     data = body["data"]
     assert data["orderNo"].startswith("S")
-    assert data["amount"] == 990
+    assert data["amount"] == 1
     assert data["payType"] is None
     assert data["payUrl"] is None
     assert data["codeUrl"] is None
@@ -70,16 +70,16 @@ def test_create_order_success(client):
 
 def test_create_order_anti_tamper_amount_12001(client):
     pid = _profile_id(client)
-    resp = _create_order(client, pid, key="order-key-amt", amount=1)
+    resp = _create_order(client, pid, key="order-key-amt", amount=2)
     assert resp.status_code == 400
     assert resp.json()["code"] == 12001
 
 
 def test_create_order_matching_amount_ok(client):
     pid = _profile_id(client)
-    resp = _create_order(client, pid, key="order-key-okamt", amount=990)
+    resp = _create_order(client, pid, key="order-key-okamt", amount=1)
     assert resp.status_code == 200
-    assert resp.json()["data"]["amount"] == 990
+    assert resp.json()["data"]["amount"] == 1
 
 
 def test_create_order_idempotent(client):
@@ -125,7 +125,7 @@ def test_get_order_detail(client):
     data = resp.json()["data"]
     assert data["orderNo"] == order_no
     assert data["profileId"] == pid
-    assert data["amount"] == 990
+    assert data["amount"] == 1
     assert data["state"] == "CREATED"
     assert data["payType"] is None
     assert data["payChannel"] == "wx_h5"

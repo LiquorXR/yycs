@@ -16,7 +16,7 @@ def test_list_products(client):
     assert "姻缘测算·正缘完整报告" in names
     assert "姻缘测算·正缘预览（免费版）" in names
     paid = [i for i in data["list"] if i["name"] == "姻缘测算·正缘完整报告"][0]
-    assert paid["price"] == 990
+    assert paid["price"] == 1
     assert paid["type"] == 1
     assert paid["freeFlag"] == 0
     assert paid["status"] == 1
@@ -53,7 +53,7 @@ def test_get_product(client):
     data = body["data"]
     assert data["id"] == 1
     assert data["name"] == "姻缘测算·正缘完整报告"
-    assert data["price"] == 990
+    assert data["price"] == 1
 
 
 def test_get_product_not_found_13001(client):
