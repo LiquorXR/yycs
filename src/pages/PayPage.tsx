@@ -11,7 +11,6 @@ interface PayState {
   payType: string | null
   payUrl: string | null
   codeUrl: string | null
-  jumpUrl?: string | null
   wxJumpUrl?: string | null
 }
 
@@ -92,6 +91,21 @@ export default function PayPage() {
     return () => clearInterval(t)
   }, [])
 
+  // 从微信切回本页瞬间自动刷新订单状态（协议无回跳，靠可见性变化衔接）
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        void fetchOrder({ silent: true })
+      }
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', onVisible)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('focus', onVisible)
+    }
+  }, [fetchOrder])
+
   // 持久化最近订单，便于付款后重复回看企微码（同设备 last_orderNo + 历史列表，无需跨设备）
   useEffect(() => {
     if (!orderNo) return
@@ -135,7 +149,7 @@ export default function PayPage() {
   // 订单加载后以服务端字段为准（防旧 location.state 过期链接）；加载前用首屏透传加速
   const effectivePayType = order?.payType ?? pay?.payType ?? null
   const effectivePayUrl = order?.payUrl ?? pay?.payUrl ?? null
-  // 微信小店 H5 单链路：仅 h5 有效；双通道直跳（官方中转页同款）失败时回落短链
+  // 微信小店 H5 单链路：仅 h5 有效；微信直跳（官方中转页同款）失败时回落短链
   const showH5 = effectivePayType === 'h5' && isSafePayUrl(effectivePayUrl)
   const showEmpty = !showH5
   const wxJump = order?.wxJumpUrl ?? pay?.wxJumpUrl ?? null

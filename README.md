@@ -36,17 +36,17 @@ alembic upgrade head
 | `BIRTH_DATA_KEY` | base64 32B AES-256-GCM，`openssl rand -base64 32`；dev 为空自动生成临时密钥，prod 缺失直接 `RuntimeError` |
 | `CORS_ORIGINS` | JSON 数组，如 `["http://localhost:5173"]` |
 | `VITE_API_BASE_URL` | 默认 `/api`（`src/api/http.ts:3`），Vite 代理已配置 |
-| `WXS_*` | 收钱吧微信小店·代客下单（H5 单链路），均可选，未配时订单可创建但 `payType/payUrl=null` 优雅降级 |
+| `WXS_*` | 收钱吧微信小店·代客下单（仅微信 H5 单链路），均可选，未配时订单可创建但 `payType/payUrl=null` 优雅降级 |
 | `RECONCILE_ENABLED` | 默认 `false`，生产 `true`（每 300s 扫描超时 `CREATED` 订单） |
 
 ## 项目结构
 
 ```
-src/pages/        Landing / Calc / Order / Pay / Report
+src/pages/        Landing / Calc / Order / Pay / Report / Privacy
 src/components/   生辰选择、装饰、UI 原语
 src/api/          http / profiles / orders / products
 app/routers/      health / products / profiles / orders / pay
-app/services/     divination / report / order_service / pay_service / shouqianba / reconcile
+app/services/     divination / report / order_service / pay_service / wxstore / reconcile
 app/models/       ORM（Profile / Order / Product / Report / PayTransaction 等）
 ```
 

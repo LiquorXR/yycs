@@ -136,7 +136,7 @@ export default function OrderPage() {
         { profileId, productId: selected.id, paymentMethod, adParams },
         newIdempotencyKey(),
       )
-      navigate(`/pay/${res.orderNo}`, { state: { payType: res.payType, payChannel: res.payChannel ?? paymentMethod, payUrl: res.payUrl, codeUrl: res.codeUrl, jumpUrl: res.jumpUrl ?? null, wxJumpUrl: res.wxJumpUrl ?? null } })
+      navigate(`/pay/${res.orderNo}`, { state: { payType: res.payType, payChannel: res.payChannel ?? paymentMethod, payUrl: res.payUrl, codeUrl: res.codeUrl, wxJumpUrl: res.wxJumpUrl ?? null } })
     } catch (err) {
       setSubmitError(err instanceof Error && err.message ? err.message : '提交失败，请稍后重试')
     } finally {

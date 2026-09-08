@@ -38,13 +38,6 @@ export function isSafePayUrl(url: string | null | undefined): boolean {
   return isSafeHttpUrl(url, PAY_ALLOW_HOSTS)
 }
 
-// 微信小店直达收银台地址白名单（短链解析目标，显式 host；后端落库前已校验一次）
-const JUMP_ALLOW_HOSTS = ["optimus-c-share.shouqianba.com"]
-
-export function isSafeJumpUrl(url: string | null | undefined): boolean {
-  return isSafeHttpUrl(url, JUMP_ALLOW_HOSTS)
-}
-
 /** 微信直跳：weixin://dl/business/ 小程序路径（官方中转页同款，后端构造） */
 export function isSafeWxJumpUrl(url: string | null | undefined): boolean {
   if (!url || typeof url !== 'string') return false

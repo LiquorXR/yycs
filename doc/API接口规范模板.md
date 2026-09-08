@@ -28,6 +28,7 @@
 | v1.0.8 | 2026-08-18 | 报告交付模式变更：获取报告（§2.8）改为**一律返回锁定态**（title + locked=true + lockedPreview），不再下发 score/rank/analysis/karma 等完整内容——付费后由人工经企业微信交付完整结果；wecom 字段改为「已支付 + 配置企微二维码」时返回；移除 14002 错误码（报告不再抛越权/未解锁错误，代码与文档同步删除） |  |
 | v1.0.9 | 2026-08-23 | 姻缘主线收敛：产品更名为「姻缘测算·正缘完整报告」/「姻缘测算·正缘预览（免费版）」；提交测算信息 focusTags 去除事业运势、新增正缘画像/桃花旺衰年份/婚后走势/相处之道/脱单锦囊；报告 title 改为「姓名 · 姻缘天书·正缘详批（预览）」，lockedPreview 第二章改为婚后走势与相处经营指南 |  |
 | v1.0.10 | 2026-09-04 | 支付通道切换微信 V3 → 收钱吧聚合（微信+支付宝）：创建订单 paymentMethod 新增 wx_h5/ali_h5/wx_native/ali_qr（兼容 auto/h5/native），响应新增 payChannel；订单详情新增 payChannel、payType 按 URL 归一化；关单改为收钱吧撤单 best-effort；支付回调（§2.10）改为收钱吧 RSA 验签纯文本 success/fail；企微回调（§2.11）与交付状态（§2.9）标注 B 阶段未实现 |  |
+| v1.1.0 | 2026-09-08 | 整体切换微信小店代客下单 H5 单路径（仅微信支付）：paymentMethod 收敛 auto/h5；建单/详情返回 H5 短链 + 微信直跳 `wxJumpUrl`（`weixin://dl/business` 小程序，官方中转页同款）；推送改为原始 content 验签 + eventId 幂等；关单改删预订单；企微事件回调与交付状态、动态活码、退款发起统一封存不做（静态跳转链接为最终形态） |  |
 
 ---
 
@@ -105,7 +106,7 @@ Authorization: Bearer <token>
 ```
 
 > 约定：HTTP 状态码表达传输层结果（2xx 成功、4xx 客户端错误、5xx 服务端错误）；业务状态码表达业务层结果（始终随 body 返回）。
-> 例外：回调接口不遵循统一包装——微信小店 `POST /api/pay/notify` 与 `POST /api/pay/refund-notify` 按推送协议返回纯文本 `success`/`fail`（见 §2.10）；企业微信 `POST /api/wecom/notify` 为 B 阶段未实现（见 §2.11）。
+> 例外：回调接口不遵循统一包装——微信小店 `POST /api/pay/notify` 与 `POST /api/pay/refund-notify` 按推送协议返回纯文本 `success`/`fail`（见 §2.10）；企业微信事件回调已封存不做（见 §2.11）。
 
 ### 1.5 分页约定
 
@@ -484,7 +485,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 |---|---|---|
 | data.productId | int | 产品 ID |
 | data.outTradeNo | string | 历史字段（= orderNo，微信小店切换后保留兼容；支付关联改用预订单号） |
-| data.state | string | 状态机：CREATED/PAID/UNLOCKED/DELIVERED/ADDED_WECOM/CLOSED（DELIVERED/ADDED_WECOM 为 B 阶段） |
+| data.state | string | 状态机：CREATED/PAID/UNLOCKED/CLOSED 为主流程（DELIVERED/ADDED_WECOM 保留未推进）；已支付态为 PAID/UNLOCKED |
 | data.payType | string \| null | 展示用：有短链为 `h5`；支付配置未就绪时为 `null` |
 | data.payChannel | string | 入库通道：恒为 `wx_h5`（不回写覆盖） |
 | data.payUrl | string \| null | 微信小店 H5 短链（payType=h5 时）；否则 null |
@@ -550,7 +551,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | 实现状态 | **A 阶段已实现** |
 | 版本 | v1 |
 
-> 说明：**本期系统不在页面下发完整测算结果**（评分/总评/章节详批等），付费后由人工通过企业微信交付完整结果。因此本接口**无论订单状态如何，一律返回锁定态**：`title` + `locked=true` + `lockedPreview`（2 条预览章节，付费前后一致）。`wecom` 字段仅在订单已支付（PAID/UNLOCKED/DELIVERED/ADDED_WECOM）且配置了企微二维码时返回；否则为 `null`。
+> 说明：**本期系统不在页面下发完整测算结果**（评分/总评/章节详批等），付费后由人工通过企业微信交付完整结果。因此本接口**无论订单状态如何，一律返回锁定态**：`title` + `locked=true` + `lockedPreview`（2 条预览章节，付费前后一致）。`wecom` 字段仅在订单已支付（PAID/UNLOCKED）且配置了企微跳转链接时返回；否则为 `null`。
 
 #### 响应示例（已支付，返回企微引导）
 
@@ -570,10 +571,10 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
       ]
     },
     "wecom": {
-      "addWay": "contact_way",          // 企业微信「联系我」活码/链接（预留）
+      "addWay": "contact_way",          // 企业微信「联系我」跳转链接
       "qrcodeUrl": "https://qywx...",
       "state": "S20260809001",
-      "note": "已生成姻缘专属客服码，扫码添加后由人工为您深度解读正缘"
+      "note": "点击添加企业微信后由人工为您深度解读正缘"
     }
   }
 }
@@ -605,13 +606,13 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
-| data.state | string | 订单状态：CREATED/PAID/UNLOCKED/DELIVERED/ADDED_WECOM/CLOSED；已支付态为 PAID/UNLOCKED/DELIVERED/ADDED_WECOM |
+| data.state | string | 订单状态：CREATED/PAID/UNLOCKED/CLOSED 为主流程（DELIVERED/ADDED_WECOM 保留未推进）；已支付态为 PAID/UNLOCKED |
 | data.report | object | 报告内容；**恒为锁定态**：仅含 title/locked/lockedPreview（locked=true），不再返回 score/rank/analysis/karma 等完整字段 |
 | data.report.title | string | 报告标题（`姓名 · 姻缘天书·正缘详批（预览）`）；报告记录缺失时返回兜底标题 |
 | data.report.locked | boolean | 恒为 `true`（完整结果由人工企微交付，页面不展示） |
 | data.report.lockedPreview | array | 锁定预览 `[{title, body}]`（2 条：正缘画像与桃花旺衰节点 / 婚后走势与相处经营指南），付费前后均返回；报告记录缺失时返回默认预览 |
 | data.wecom | object \| null | 企微加好友信息；已支付且配置 `WECOM_QRCODE_URL` 时返回，否则 null |
-| data.wecom.qrcodeUrl | string | 企微「联系我」**跳转链接**（环境变量 `WECOM_QRCODE_URL`，如 `https://work.weixin.qq.com/ca/...`）；前端以按钮引导用户**整页跳转**该链接落地页，不再内嵌渲染二维码；企微真活码（state=订单号归因）后续接入后填充 |
+| data.wecom.qrcodeUrl | string | 企微「联系我」**跳转链接**（环境变量 `WECOM_QRCODE_URL`，如 `https://work.weixin.qq.com/ca/...`）；前端以按钮引导用户**整页跳转**该链接落地页，不再内嵌渲染二维码（静态链接为最终形态） |
 | data.wecom.note | string | 加好友提示语 |
 
 #### 错误响应
@@ -630,7 +631,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | 接口名称 | 交付状态/企微添加状态 |
 | 接口地址 | `GET /api/orders/{orderNo}/delivery` |
 | 鉴权要求 | 公开（免鉴权） |
-| 实现状态 | **B 阶段未实现（代码无此路由，调用返回 404）** |
+| 实现状态 | **已封存不做（代码无此路由；企微静态跳转链接为最终形态）** |
 | 版本 | v1 |
 
 #### 响应示例
@@ -710,7 +711,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | 接口名称 | 企业微信事件回调 |
 | 接口地址 | `POST /api/wecom/notify`（GET 用于 URL 验证） |
 | 鉴权要求 | 无（msg_signature + Token + EncodingAESKey 验签） |
-| 实现状态 | **B 阶段未实现（代码无此路由；当前报告页活码为静态 `WECOM_QRCODE_URL` 配置）** |
+| 实现状态 | **已封存不做（代码无此路由；当前报告页企微入口为静态 `WECOM_QRCODE_URL` 配置，最终形态）** |
 | 版本 | v1 |
 | 协议 | **例外**：GET 校验返回 `echostr`；POST 事件处理成功返回 `success` |
 
@@ -734,7 +735,7 @@ Idempotency-Key: 8f14e45f-8b32-4d3a-9c1d-7e2b3a4c5d6e
 | 实现状态 | **仅开发环境可用**（APP_ENV=dev 时注册路由；生产返回 404） |
 | 版本 | v1 |
 
-> 说明：仅用于本地联调打通「解锁 → 获取报告」链路。开发/联调环境通过本接口模拟支付成功，将订单置为已解锁并落 mock 支付流水。生产环境（APP_ENV=prod）路由不注册，请求返回 HTTP 404（FastAPI 默认响应，无统一业务包装）；正式支付走 §2.10 收钱吧支付结果回调。
+> 说明：仅用于本地联调打通「解锁 → 获取报告」链路。开发/联调环境通过本接口模拟支付成功，将订单置为已解锁并落 mock 支付流水。生产环境（APP_ENV=prod）路由不注册，请求返回 HTTP 404（FastAPI 默认响应，无统一业务包装）；正式支付走 §2.10 微信小店订单支付成功推送。
 
 #### 请求示例
 
@@ -802,7 +803,7 @@ POST /api/orders/S20260809001/pay-success-mock
 | 12 | 订单/支付 | 金额校验、状态冲突、支付拉起、回调验签 |
 | 13 | 商品 | 产品不存在/下架 |
 | 14 | 测算/报告 | 测算信息校验、报告解锁 |
-| 15 | 企业微信 | 预留（活码/事件错误） |
+| 15 | 企业微信 | 已封存（静态跳转链接为最终形态，无事件回调） |
 
 - 业务错误码明细见 §4.3。
 - `code=0` 保留给成功；`code<0` 不使用。
