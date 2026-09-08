@@ -248,7 +248,7 @@ class TestJumpUrlBuilders:
         class _Resp:
             def read(self):
                 return _json.dumps(
-                    {"data": {"data": {"appid": "wxTEST", "pagePath": "/P/p/index"}}}
+                    {"data": {"data": {"appId": "wxTEST", "pagePath": "/P/p/index"}}}
                 ).encode()
 
             def __enter__(self):
@@ -269,6 +269,42 @@ class TestJumpUrlBuilders:
             assert info == {"appid": "wxTEST", "page_path": "/P/p/index"}
             assert wxstore.client.get_miniapp_info() is info
             assert len(calls) == 1
+        finally:
+            WxstoreClient._miniapp_cache.clear()
+
+    def test_get_miniapp_info_parses_real_response_shape(self, monkeypatch):
+        """回归：官方真实响应字段为 appId(大写)/pagePath，解析不得 KeyError。"""
+        import json as _json
+
+        real_raw = _json.dumps(
+            {"code": "10000", "data": {"code": "0000",
+                                       "data": {"carrier": 1, "terminalSn": "T1",
+                                                "pagePath": "/KQPUJDAZVXH7/y4otuwrldsgy/index",
+                                                "appId": "wx36e68952a60af089"},
+                                       "success": True, "msg": "处理成功"}, "msg": "succ"}
+        )
+
+        class _Resp:
+            def read(self):
+                return real_raw.encode()
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+        monkeypatch.setattr(
+            wxstore.urllib.request, "urlopen", lambda req, timeout=10: _Resp()
+        )
+        monkeypatch.setattr(settings, "WXS_MALL_SN", "M1")
+        monkeypatch.setattr(settings, "WXS_MINIAPP_APPID", None)
+        monkeypatch.setattr(settings, "WXS_MINIAPP_PAGE_PATH", None)
+        WxstoreClient._miniapp_cache.clear()
+        try:
+            info = wxstore.client.get_miniapp_info()
+            assert info == {"appid": "wx36e68952a60af089",
+                            "page_path": "/KQPUJDAZVXH7/y4otuwrldsgy/index"}
         finally:
             WxstoreClient._miniapp_cache.clear()
 

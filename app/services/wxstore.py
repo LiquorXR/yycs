@@ -379,7 +379,10 @@ class WxstoreClient:
             raise WxstoreError("RESPONSE_ERROR", "小程序信息响应解析失败") from None
         try:
             inner = (data.get("data") or {}).get("data") or {}
-            appid, page_path = inner["appid"], inner["pagePath"]
+            appid = inner.get("appId") or inner.get("appid")
+            page_path = inner.get("pagePath")
+            if not appid or not page_path:
+                raise KeyError("appId/pagePath")
         except (KeyError, AttributeError, TypeError) as e:
             logger.error("queryMallUsingAppId 缺字段: %s raw=%s", e, raw[:300])
             raise WxstoreError("BIZ_FAIL", f"小程序信息缺失: {raw[:200]}") from None
