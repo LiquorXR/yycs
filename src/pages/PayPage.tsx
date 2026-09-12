@@ -195,7 +195,7 @@ export default function PayPage() {
             订单号 <span className="font-mono text-fg">{order?.orderNo ?? orderNo}</span> · 姻缘专属报告
           </div>
           <div className="mt-1 font-kai text-[22px] font-bold leading-none text-gold">
-            {order ? (order.amount === 0 ? '限时0元' : formatPrice(order.amount)) : '¥9.9'}
+            {order ? (order.amount === 0 ? '限时0元' : formatPrice(order.amount)) : '¥0'}
           </div>
 
           {loading ? (

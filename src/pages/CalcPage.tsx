@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { createProfile, newIdempotencyKey } from '@/api/profiles'
+import { getProducts } from '@/api/products'
+import { formatPrice } from '@/lib/format'
 import BirthDateSelect from '@/components/BirthDateSelect'
 import { PRIVACY_VERSION } from '@/lib/agreement'
 
@@ -436,6 +438,8 @@ function CalcPage() {
   const [progress, setProgress] = useState(0)
   const [timedOut, setTimedOut] = useState(false)
   const [agreed, setAgreed] = useState(false)
+  // 解锁栏价格取服务端有效价（限时0元时显示0元）；取不到时按0元兜底
+  const [unlockPrice, setUnlockPrice] = useState<number | null>(null)
   const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const abortRef = useRef<AbortController | null>(null)
@@ -452,6 +456,21 @@ function CalcPage() {
       }
     } catch {
       /* 忽略损坏数据 */
+    }
+  }, [])
+
+  /* 解锁栏价格：以付费档产品有效价为准 */
+  useEffect(() => {
+    let active = true
+    getProducts({ type: 1 })
+      .then((list) => {
+        if (active) setUnlockPrice(list[0]?.price ?? 0)
+      })
+      .catch(() => {
+        if (active) setUnlockPrice(0)
+      })
+    return () => {
+      active = false
     }
   }, [])
 
@@ -687,7 +706,7 @@ function CalcPage() {
             <div>
               <p className="text-xs text-muted">解锁姻缘完整报告</p>
               <p className="font-kai text-xl font-bold text-gold">
-                ¥9.9
+                {unlockPrice === 0 || unlockPrice === null ? '限时0元' : formatPrice(unlockPrice)}
                 <span className="ml-1 text-xs font-normal text-muted">
                   含正缘画像与桃花年份
                 </span>

@@ -535,7 +535,7 @@ function ReportPage() {
               ) : (
                 <>
                   解锁姻缘报告 + 大师亲批 (
-                  {formatPrice(amount ?? 990)})
+                  {formatPrice(amount ?? 0)})
                 </>
               )}
             </span>
@@ -548,7 +548,7 @@ function ReportPage() {
               </>
             ) : (
               <>
-                <span>原价 {formatPrice(Math.round((amount ?? 990) * 2))} · 已有 28.4 万人解锁</span>
+                <span>原价 {formatPrice(Math.round((amount ?? 0) * 2))} · 已有 28.4 万人解锁</span>
                 <span>不支持退款承诺·测算加密</span>
               </>
             )}
@@ -562,7 +562,7 @@ function ReportPage() {
           className="modal-backdrop open"
           role="dialog"
           aria-modal="true"
-          aria-label="确认支付解锁天书"
+          aria-label={isFree ? '确认领取解锁天书' : '确认支付解锁天书'}
         >
           <div className="modal-guofeng">
             <div className="modal-header">
@@ -628,9 +628,11 @@ function ReportPage() {
                 {isFree ? '限时免费（0元领取）' : '特惠现价（限时剩余 3 席）'}
               </span>
               <span className="flex items-baseline gap-1.5">
-                <span className="text-xs text-muted line-through">{isFree ? '¥9.9' : formatPrice(Math.round((amount ?? 990) * 2))}</span>
+                {isFree ? null : (
+                  <span className="text-xs text-muted line-through">{formatPrice(Math.round((amount ?? 0) * 2))}</span>
+                )}
                 <span className="font-mono text-2xl font-bold text-gold">
-                  {isFree ? '¥0' : formatPrice(amount ?? 990)}
+                  {isFree ? '¥0' : formatPrice(amount ?? 0)}
                 </span>
               </span>
             </div>
@@ -657,7 +659,7 @@ function ReportPage() {
                 navigate(`/pay/${orderNo}`)
               }}
             >
-              {isFree ? '0元领取 开启姻缘天书' : `确认支付 ${formatPrice(amount ?? 990)} 开启姻缘天书`}
+              {isFree ? '0元领取 开启姻缘天书' : `确认支付 ${formatPrice(amount ?? 0)} 开启姻缘天书`}
             </button>
             <p className="mt-2.5 text-center text-[11px] text-muted">
               🔒 256 位安全加密传输 · 解锁后永久随时查阅

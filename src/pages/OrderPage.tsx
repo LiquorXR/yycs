@@ -256,10 +256,7 @@ export default function OrderPage() {
                   </div>
                   <div className="shrink-0 text-right">
                     {p.price === 0 ? (
-                      <>
-                        <div className="font-bold text-gold">限时0元</div>
-                        <div className="text-[11px] text-muted line-through">{p.originalPrice ? formatPrice(p.originalPrice) : '¥9.9'}</div>
-                      </>
+                      <div className="font-bold text-gold">限时0元</div>
                     ) : (
                       <>
                         <div className="font-bold text-gold">{formatPrice(p.price)}</div>
@@ -288,7 +285,7 @@ export default function OrderPage() {
           )}
           <div className="mt-3 flex items-center justify-between text-xs">
             <span className="text-muted">实付金额</span>
-            <span className="text-[18px] font-bold text-gold">{selected ? (selected.price === 0 ? '限时免费 ¥0' : formatPrice(selected.price)) : '¥9.9'}</span>
+            <span className="text-[18px] font-bold text-gold">{selected ? (selected.price === 0 ? '限时免费 ¥0' : formatPrice(selected.price)) : '¥0'}</span>
           </div>
         </div>
 
@@ -298,7 +295,7 @@ export default function OrderPage() {
           disabled={!selected || submitting || loading || Boolean(productsError)}
           className="btn-guofeng-primary h-[50px] w-full font-kai text-[17px] font-bold disabled:opacity-60"
         >
-          {submitting ? '提交中…' : isFree ? '立即领取 · 0元添加企微' : `立即解锁 · 支付 ${selected ? formatPrice(selected.price) : '¥9.9'}`}
+          {submitting ? '提交中…' : isFree ? '立即领取 · 0元添加企微' : `立即解锁 · 支付 ${selected ? formatPrice(selected.price) : '¥0'}`}
         </button>
         <p className="text-center text-[10px] leading-relaxed text-white/40">
           {isFree ? '领取即视为同意自动解锁报告（见' : '支付即视为同意自动解锁报告（见'}{' '}
