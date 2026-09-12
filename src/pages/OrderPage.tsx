@@ -258,7 +258,7 @@ export default function OrderPage() {
                     {p.price === 0 ? (
                       <>
                         <div className="font-bold text-gold">限时0元</div>
-                        <div className="text-[11px] text-muted line-through">¥9.9</div>
+                        <div className="text-[11px] text-muted line-through">{p.originalPrice ? formatPrice(p.originalPrice) : '¥9.9'}</div>
                       </>
                     ) : (
                       <>

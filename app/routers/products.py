@@ -9,6 +9,7 @@ from app.core.errors import BizError, ErrorCode
 from app.core.response import ok_response
 from app.db.session import get_db
 from app.models.product import Product
+from app.services.promo import get_effective_price
 
 router = APIRouter(tags=["products"])
 
@@ -19,7 +20,9 @@ def _serialize(product: Product) -> dict:
     return {
         "id": product.id,
         "name": product.name,
-        "price": product.price,
+        # 限时0元促销：price 为运行时有效价（命中为 0），originalPrice 为 DB 原价（前端划线用）
+        "price": get_effective_price(product),
+        "originalPrice": product.price,
         "type": product.type,
         "freeFlag": product.free_flag,
         "status": product.status,

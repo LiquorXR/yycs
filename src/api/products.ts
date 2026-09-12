@@ -4,6 +4,8 @@ export interface Product {
   id: number
   name: string
   price: number
+  /** DB 原价（分）；限时0元时前端划线用 */
+  originalPrice?: number
   type: number
   freeFlag: number
   status: number

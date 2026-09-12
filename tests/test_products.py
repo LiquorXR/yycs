@@ -62,3 +62,28 @@ def test_get_product_not_found_13001(client):
     body = resp.json()
     assert body["code"] == 13001
     assert body["data"] is None
+
+
+def test_free_promo_products_return_effective_price(client, monkeypatch):
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "FREE_PROMO_ENABLED", True)
+    monkeypatch.setattr(settings, "FREE_PROMO_PRODUCT_IDS", [1])
+    monkeypatch.setattr(settings, "FREE_PROMO_END_AT", None)
+
+    data = client.get("/api/products", params={"type": 1}).json()["data"]
+    assert len(data["list"]) == 1
+    paid = data["list"][0]
+    assert paid["price"] == 0
+    assert paid["originalPrice"] == 990
+
+    detail = client.get("/api/products/1").json()["data"]
+    assert detail["price"] == 0
+    assert detail["originalPrice"] == 990
+
+
+def test_free_promo_off_products_return_db_price(client):
+    data = client.get("/api/products", params={"type": 1}).json()["data"]
+    paid = data["list"][0]
+    assert paid["price"] == 990
+    assert paid["originalPrice"] == 990
