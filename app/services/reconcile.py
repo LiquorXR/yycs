@@ -74,6 +74,9 @@ def reconcile_once(db: Session) -> dict:
     )
     summary = {"checked": 0, "success": 0, "closed": 0, "pending": 0, "error": 0, "dead": 0, "paid_after_close": 0}
     for order in orders:
+        if int(order.amount or 0) == 0:
+            # 0元促销订单无预订单/无需查单：创建时已自解锁，跳过本轮
+            continue
         if not order.pre_order_id:
             # 微信小店未配置下降级建单（无预订单号）：跳过本轮，不计 checked
             continue

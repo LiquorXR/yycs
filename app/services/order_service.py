@@ -12,6 +12,7 @@ from app.core.errors import BizError, ErrorCode
 from app.models.order import Order, OrderState
 from app.models.product import Product
 from app.models.profile import Profile
+from app.services.promo import get_effective_price
 from app.services.seq import next_order_no
 
 
@@ -32,7 +33,10 @@ def create_order(
     if product is None or product.status != 1:
         raise BizError(ErrorCode.PRODUCT_NOT_FOUND, "产品不存在或已下架")
 
-    if amount_from_request is not None and amount_from_request != product.price:
+    # 限时0元促销：有效价运行时覆盖，DB 原价不动（关闭即恢复）；
+    # 促销期请求可带 0 或原价，皆视为合法，防旧缓存金额误杀。
+    effective_price = get_effective_price(product)
+    if amount_from_request is not None and amount_from_request not in (effective_price, product.price):
         raise BizError(ErrorCode.AMOUNT_INVALID, "金额校验失败")
 
     for _ in range(5):
@@ -43,7 +47,7 @@ def create_order(
             product_id=product.id,
             out_trade_no=order_no,
             openid="",
-            amount=product.price,
+            amount=effective_price,
             state=OrderState.CREATED.value,
             pay_type=payment_method,
             ad_params=ad_params,
@@ -51,7 +55,7 @@ def create_order(
         db.add(order)
         try:
             db.commit()
-            return order_no, product.price
+            return order_no, effective_price
         except IntegrityError:
             # 序列号并发冲突，重试
             db.rollback()

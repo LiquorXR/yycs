@@ -383,6 +383,8 @@ function ReportPage() {
   }, [payModalOpen])
 
   const paid = report ? isPaid(report) : false
+  // 限时0元：订单金额为 0 时免付，直显企微领取
+  const isFree = amount === 0
   const reportTitle = report?.report.title
   const countdown = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(
     seconds % 60,
@@ -488,7 +490,7 @@ function ReportPage() {
                   <LockIcon className="size-6" />
                 </span>
                 <h4 className="mb-1 font-kai text-[17px] text-gold-light">
-                  完整版需付费解锁《姻缘天书·正缘深度报告》
+                  {isFree ? '完整版限时免费领取《姻缘天书·正缘深度报告》' : '完整版需付费解锁《姻缘天书·正缘深度报告》'}
                 </h4>
                 <p className="mb-2.5 text-xs text-fg-secondary">
                   解锁后包含正缘画像、近三年桃花节点、婚后走势与相处锦囊及大师一对一亲批
@@ -519,7 +521,7 @@ function ReportPage() {
         </div>
       ) : null}
 
-      {/* 底部固定解锁栏（真实订单价格，仅未支付显示） */}
+      {/* 底部固定解锁栏（真实订单价格，仅未支付显示；0元时免付领取） */}
       {report && !paid ? (
         <div className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-border-gold bg-bg/96 px-4 pt-2.5 pb-5 backdrop-blur-md">
           <button
@@ -528,13 +530,28 @@ function ReportPage() {
             className="btn-guofeng-primary"
           >
             <span>
-              解锁姻缘报告 + 大师亲批 (
-              {formatPrice(amount ?? 990)})
+              {isFree ? (
+                '0元领取 · 添加企微大师亲批'
+              ) : (
+                <>
+                  解锁姻缘报告 + 大师亲批 (
+                  {formatPrice(amount ?? 990)})
+                </>
+              )}
             </span>
           </button>
           <div className="mt-1 flex justify-between px-1 text-[11px] text-muted">
-            <span>原价 {formatPrice(Math.round((amount ?? 990) * 2))} · 已有 28.4 万人解锁</span>
-            <span>不支持退款承诺·测算加密</span>
+            {isFree ? (
+              <>
+                <span>限时0元 · 已有 28.4 万人领取</span>
+                <span>测算加密·永久查阅</span>
+              </>
+            ) : (
+              <>
+                <span>原价 {formatPrice(Math.round((amount ?? 990) * 2))} · 已有 28.4 万人解锁</span>
+                <span>不支持退款承诺·测算加密</span>
+              </>
+            )}
           </div>
         </div>
       ) : null}
@@ -605,25 +622,31 @@ function ReportPage() {
               </ul>
             </div>
 
-            {/* 特惠现价行 — 价格统一取订单真实金额，防价格欺诈 */}
+            {/* 特惠现价行 — 价格统一取订单真实金额，防价格欺诈；0元时免付 */}
             <div className="mb-3 flex items-center justify-between">
               <span className="text-xs text-fg-secondary">
-                特惠现价（限时剩余 3 席）
+                {isFree ? '限时免费（0元领取）' : '特惠现价（限时剩余 3 席）'}
               </span>
               <span className="flex items-baseline gap-1.5">
-                <span className="text-xs text-muted line-through">{formatPrice(Math.round((amount ?? 990) * 2))}</span>
+                <span className="text-xs text-muted line-through">{isFree ? '¥9.9' : formatPrice(Math.round((amount ?? 990) * 2))}</span>
                 <span className="font-mono text-2xl font-bold text-gold">
-                  {formatPrice(amount ?? 990)}
+                  {isFree ? '¥0' : formatPrice(amount ?? 990)}
                 </span>
               </span>
             </div>
 
-            {/* 支付方式：仅微信支付 */}
+            {/* 支付方式：0元免付，仅微信支付 */}
             <div className="pay-methods">
-              <span className="pay-option active">
-                <WechatPayIcon className="size-5 shrink-0" />
-                微信支付
-              </span>
+              {isFree ? (
+                <span className="pay-option active">
+                  限时免费 · 无需支付
+                </span>
+              ) : (
+                <span className="pay-option active">
+                  <WechatPayIcon className="size-5 shrink-0" />
+                  微信支付
+                </span>
+              )}
             </div>
 
             <button
@@ -634,7 +657,7 @@ function ReportPage() {
                 navigate(`/pay/${orderNo}`)
               }}
             >
-              确认支付 {formatPrice(amount ?? 990)} 开启姻缘天书
+              {isFree ? '0元领取 开启姻缘天书' : `确认支付 ${formatPrice(amount ?? 990)} 开启姻缘天书`}
             </button>
             <p className="mt-2.5 text-center text-[11px] text-muted">
               🔒 256 位安全加密传输 · 解锁后永久随时查阅

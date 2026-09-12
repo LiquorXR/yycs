@@ -282,3 +282,62 @@ def test_pay_success_mock_disabled_in_prod(monkeypatch):
     importlib.reload(orders_mod)
     paths = [r.path for r in orders_mod.router.routes]
     assert any(p.endswith("/pay-success-mock") for p in paths)
+
+
+def _enable_free_promo(monkeypatch, **overrides):
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "FREE_PROMO_ENABLED", True)
+    monkeypatch.setattr(settings, "FREE_PROMO_PRODUCT_IDS", [1])
+    monkeypatch.setattr(settings, "FREE_PROMO_END_AT", None)
+    for key, value in overrides.items():
+        monkeypatch.setattr(settings, key, value)
+
+
+def test_free_promo_zero_amount_auto_unlock(client, monkeypatch):
+    _enable_free_promo(monkeypatch, WECOM_QRCODE_URL="https://qywx.example.com/qr")
+    pid = _profile_id(client)
+    resp = _create_order(client, pid, key="free-promo-1")
+    assert resp.status_code == 200, resp.text
+    data = resp.json()["data"]
+    assert data["amount"] == 0
+    assert data["payType"] == "free"
+    assert data["payUrl"] is None
+    assert data["freeUnlocked"] is True
+
+    order_no = data["orderNo"]
+    detail = client.get(f"/api/orders/{order_no}").json()["data"]
+    assert detail["state"] == "UNLOCKED"
+    assert detail["payType"] == "free"
+    assert detail["paidAt"]
+
+    report = client.get(f"/api/orders/{order_no}/report").json()["data"]
+    assert report["state"] == "UNLOCKED"
+    assert report["wecom"]["qrcodeUrl"] == "https://qywx.example.com/qr"
+
+
+def test_free_promo_anti_tamper_still_rejects(client, monkeypatch):
+    _enable_free_promo(monkeypatch)
+    pid = _profile_id(client)
+    resp = _create_order(client, pid, key="free-promo-tamper", amount=123)
+    assert resp.status_code == 400
+    assert resp.json()["code"] == 12001
+
+
+def test_free_promo_accepts_cached_original_amount(client, monkeypatch):
+    _enable_free_promo(monkeypatch)
+    pid = _profile_id(client)
+    resp = _create_order(client, pid, key="free-promo-oldamt", amount=990)
+    assert resp.status_code == 200
+    assert resp.json()["data"]["amount"] == 0
+
+
+def test_free_promo_expired_restores_price(client, monkeypatch):
+    _enable_free_promo(monkeypatch, FREE_PROMO_END_AT="2020-01-01T00:00:00Z")
+    pid = _profile_id(client)
+    resp = _create_order(client, pid, key="free-promo-expired")
+    assert resp.status_code == 200
+    data = resp.json()["data"]
+    assert data["amount"] == 990
+    assert data["payType"] is None
+    assert data["freeUnlocked"] in (False, None)

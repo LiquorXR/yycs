@@ -59,7 +59,9 @@ def normalize_payment_method(payment_method: str | None) -> str:
 
 
 def display_pay_type(original: str | None, pay_url: str | None, code_url: str | None) -> str | None:
-    """展示用 payType：有 H5 短链为 h5，否则 null（建单/详情降级一致）。"""
+    """展示用 payType：0元促销为 free；有 H5 短链为 h5，否则 null（建单/详情降级一致）。"""
+    if (original or "").lower() == "free":
+        return "free"
     if pay_url:
         return "h5"
     return None
@@ -68,12 +70,16 @@ def display_pay_type(original: str | None, pay_url: str | None, code_url: str | 
 async def ensure_payment(db: Session, order: Order, client_ip: str | None = None) -> dict:
     """微信小店下单（async），返回 {payType, payUrl, codeUrl, jumpUrl, wxJumpUrl}。
 
+    0元订单直接返回 payType='free'，跳过预订单/H5 短链（无需外呼）。
     建预订单 savePreOrder → 取 H5 短链 generatePreOrderH5Link → best-effort 解析
     直达收银台地址；pre_order_id 与 h5_jump_url 写回 order（由调用方 commit）。
     配置缺失或任何异常均优雅降级返回 null（订单仍可创建）。
     本期只留 H5 单路径，codeUrl 恒为 None。
     """
     _ = client_ip
+    if int(order.amount or 0) == 0:
+        return {"payType": "free", "payUrl": None, "codeUrl": None, "jumpUrl": None,
+                "wxJumpUrl": None}
     if not wxs_ready():
         return {"payType": None, "payUrl": None, "codeUrl": None, "jumpUrl": None,
                 "wxJumpUrl": None}

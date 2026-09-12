@@ -7,7 +7,7 @@ export interface CreateOrderPayload {
   adParams?: Record<string, string>
 }
 
-/** 创建订单响应：微信小店 H5 单链路；未配置时 payType/payUrl 为 null，codeUrl 恒为 null */
+/** 创建订单响应：微信小店 H5 单链路；未配置时 payType/payUrl 为 null，codeUrl 恒为 null；限时0元时 payType='free' 且 freeUnlocked=true */
 export interface OrderResult {
   orderNo: string
   amount: number
@@ -19,6 +19,8 @@ export interface OrderResult {
   jumpUrl?: string | null
   /** 微信直跳（weixin:// 小程序，官方中转页同款；失败为 null 时回落） */
   wxJumpUrl?: string | null
+  /** 限时0元：已自解锁，无需支付 */
+  freeUnlocked?: boolean | null
 }
 
 export interface OrderDetail {

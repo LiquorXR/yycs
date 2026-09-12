@@ -104,15 +104,45 @@ async def create_order(
     order.pay_url = pay_info["payUrl"]
     order.code_url = pay_info["codeUrl"]
 
+    # 限时0元：跳过微信支付，直接自解锁并落免费流水；报告接口据此返回企微引导
+    free_unlocked = False
+    if amount == 0 and order.state == OrderState.CREATED.value:
+        order.pay_type = "free"
+        order.state = OrderState.UNLOCKED.value
+        order.paid_at = utcnow()
+        report = (
+            db.query(Report)
+            .filter(Report.profile_id == order.profile_id)
+            .order_by(Report.id.desc())
+            .first()
+        )
+        if report is not None:
+            report.order_no = order.order_no
+            report.state = "unlocked"
+            report.unlocked_at = order.paid_at
+        db.add(
+            PayTransaction(
+                transaction_id=f"FREE-{order.order_no}",
+                order_no=order.order_no,
+                pay_type="free",
+                amount=0,
+                pay_state="SUCCESS",
+                raw_callback="free-promo",
+            )
+        )
+        free_unlocked = True
+        logger.info("0元促销自解锁 order_no=%s", order.order_no)
+
     data = {
         "orderNo": order_no,
         "amount": amount,
         "payType": pay_info["payType"],
-        "payChannel": pay_channel,
+        "payChannel": order.pay_type,
         "payUrl": pay_info["payUrl"],
         "codeUrl": pay_info["codeUrl"],
         "jumpUrl": pay_info.get("jumpUrl"),
         "wxJumpUrl": pay_info.get("wxJumpUrl"),
+        "freeUnlocked": free_unlocked,
     }
     await run_in_threadpool(store_idempotent_response, db, idempotency_key, IDEM_SCOPE_ORDER, data, payload_hash)
     await run_in_threadpool(db.commit)

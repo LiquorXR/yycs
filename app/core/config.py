@@ -39,6 +39,13 @@ class Settings(BaseSettings):
     # 企微「联系我」活码二维码 URL；未配置时已解锁报告 wecom 字段返回 null
     WECOM_QRCODE_URL: str | None = None
 
+    # ===== 限时0元促销（免付加企微）=====
+    # 开启后名单内产品有效价为 0，0元订单跳过微信支付直接自解锁；
+    # 关闭或超过 END_AT（UTC ISO8601，为空则不限时）自动恢复 DB 原价，无需改数据。
+    FREE_PROMO_ENABLED: bool = False
+    FREE_PROMO_PRODUCT_IDS: list[int] = [1]
+    FREE_PROMO_END_AT: str | None = None
+
     # 前端构建产物目录（容器内 WORKDIR 为 /app，默认 ./dist 即 /app/dist）；
     # 生产由 backend 容器内托管前端静态产物，nginx 仅反代 127.0.0.1:8000；
     # dev/测试使用 Vite，目录不存在时静默跳过静态托管

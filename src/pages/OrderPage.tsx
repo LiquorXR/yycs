@@ -126,6 +126,9 @@ export default function OrderPage() {
     return entries.length > 0 ? Object.fromEntries(entries) : undefined
   })()
 
+  // 限时0元促销：选中产品价格为 0 时免付，直达企微领取
+  const isFree = selected?.price === 0
+
   const handleSubmit = async () => {
     if (!profileId || !selected) return
     setSubmitting(true)
@@ -197,7 +200,7 @@ export default function OrderPage() {
                   <span className="flex size-14 items-center justify-center rounded-full bg-gradient-to-b from-gold to-gold-dark text-[#591010] shadow-[0_0_20px_rgba(226,180,95,0.6)]">
                     <LockIcon className="size-7" />
                   </span>
-                  <p className="mt-3 font-kai text-base font-bold text-gold-light">完整版需付费解锁</p>
+                  <p className="mt-3 font-kai text-base font-bold text-gold-light">完整版限时免费领取</p>
                   <p className="mt-1 text-xs leading-relaxed text-fg-secondary">
                     解锁后可查看完整姻缘天书与
                     <br />
@@ -252,8 +255,17 @@ export default function OrderPage() {
                     <div className="truncate text-[11px] text-muted">{isYinyuan ? '含正缘画像/桃花年份/婚后走势/相处锦囊 + 大师亲批' : '需补充另一半信息 · 合婚指数'}</div>
                   </div>
                   <div className="shrink-0 text-right">
-                    <div className="font-bold text-gold">{formatPrice(p.price)}</div>
-                    <div className="text-[11px] text-muted line-through">{formatPrice(Math.round(p.price * 2))}</div>
+                    {p.price === 0 ? (
+                      <>
+                        <div className="font-bold text-gold">限时0元</div>
+                        <div className="text-[11px] text-muted line-through">¥9.9</div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="font-bold text-gold">{formatPrice(p.price)}</div>
+                        <div className="text-[11px] text-muted line-through">{formatPrice(Math.round(p.price * 2))}</div>
+                      </>
+                    )}
                   </div>
                 </label>
               )
@@ -261,16 +273,22 @@ export default function OrderPage() {
           )}
         </div>
 
-        {/* 支付方式：微信小店 H5 单链路，仅微信支付 */}
+        {/* 支付方式：微信小店 H5 单链路，仅微信支付；限时0元时免付 */}
         <div className="card-guofeng p-4">
           <div className="mb-2.5 text-xs font-semibold tracking-widest text-gold-light">支付方式</div>
-          <div className="flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#2b7a63] bg-[#2b7a63]/15 text-[13px] font-medium text-gold-light">
-            <WechatPayIcon className="size-5 shrink-0" />
-            微信支付
-          </div>
+          {isFree ? (
+            <div className="flex h-11 items-center justify-center gap-2 rounded-2xl border border-gold bg-gold/15 text-[13px] font-bold text-gold-light">
+              限时免费 · 无需支付
+            </div>
+          ) : (
+            <div className="flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#2b7a63] bg-[#2b7a63]/15 text-[13px] font-medium text-gold-light">
+              <WechatPayIcon className="size-5 shrink-0" />
+              微信支付
+            </div>
+          )}
           <div className="mt-3 flex items-center justify-between text-xs">
             <span className="text-muted">实付金额</span>
-            <span className="text-[18px] font-bold text-gold">{selected ? formatPrice(selected.price) : '¥9.9'}</span>
+            <span className="text-[18px] font-bold text-gold">{selected ? (selected.price === 0 ? '限时免费 ¥0' : formatPrice(selected.price)) : '¥9.9'}</span>
           </div>
         </div>
 
@@ -280,10 +298,10 @@ export default function OrderPage() {
           disabled={!selected || submitting || loading || Boolean(productsError)}
           className="btn-guofeng-primary h-[50px] w-full font-kai text-[17px] font-bold disabled:opacity-60"
         >
-          {submitting ? '提交中…' : `立即解锁 · 支付 ${selected ? formatPrice(selected.price) : '¥9.9'}`}
+          {submitting ? '提交中…' : isFree ? '立即领取 · 0元添加企微' : `立即解锁 · 支付 ${selected ? formatPrice(selected.price) : '¥9.9'}`}
         </button>
         <p className="text-center text-[10px] leading-relaxed text-white/40">
-          支付即视为同意自动解锁报告（见{' '}
+          {isFree ? '领取即视为同意自动解锁报告（见' : '支付即视为同意自动解锁报告（见'}{' '}
           <Link to="/privacy" className="text-white/60 underline decoration-white/20 underline-offset-2 hover:text-gold">
             隐私政策
           </Link>

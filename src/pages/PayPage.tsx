@@ -149,9 +149,13 @@ export default function PayPage() {
   // 订单加载后以服务端字段为准（防旧 location.state 过期链接）；加载前用首屏透传加速
   const effectivePayType = order?.payType ?? pay?.payType ?? null
   const effectivePayUrl = order?.payUrl ?? pay?.payUrl ?? null
+  // 限时0元：金额为 0 或 payType=free 时免付，直显企微领取
+  const isFree = (order?.amount ?? null) === 0 || effectivePayType === 'free'
   // 微信小店 H5 单链路：仅 h5 有效；微信直跳（官方中转页同款）失败时回落短链
-  const showH5 = effectivePayType === 'h5' && isSafePayUrl(effectivePayUrl)
-  const showEmpty = !showH5
+  const showH5 = !isFree && effectivePayType === 'h5' && isSafePayUrl(effectivePayUrl)
+  // 0元订单创建即自解锁，理论上恒为已支付态；兜底分支防旧数据瞬时 CREATED
+  const showFreePending = isFree && !isPaid && order?.state !== 'CLOSED'
+  const showEmpty = !isFree && !showH5
   const wxJump = order?.wxJumpUrl ?? pay?.wxJumpUrl ?? null
   const safeWxJump = isSafeWxJumpUrl(wxJump) ? wxJump!.trim() : null
   // 直跳缺失时回落 H5 短链（中转页）；短链也没有则按钮禁用
@@ -176,6 +180,11 @@ export default function PayPage() {
             <div className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-xs text-muted">
               订单已关闭
             </div>
+          ) : isFree ? (
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-2.5 py-1 text-xs text-emerald-200">
+              <span className="size-1.5 shrink-0 animate-pulse rounded-full bg-emerald-400" aria-hidden="true" />
+              限时免费 · 正在解锁
+            </div>
           ) : (
             <div className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-500/15 px-2.5 py-1 text-xs text-amber-200">
               <span className="size-1.5 shrink-0 animate-pulse rounded-full bg-amber-400" aria-hidden="true" />
@@ -186,7 +195,7 @@ export default function PayPage() {
             订单号 <span className="font-mono text-fg">{order?.orderNo ?? orderNo}</span> · 姻缘专属报告
           </div>
           <div className="mt-1 font-kai text-[22px] font-bold leading-none text-gold">
-            {order ? formatPrice(order.amount) : '¥9.9'}
+            {order ? (order.amount === 0 ? '限时0元' : formatPrice(order.amount)) : '¥9.9'}
           </div>
 
           {loading ? (
@@ -207,8 +216,8 @@ export default function PayPage() {
                   <path d="M5 12l4.5 4.5L19 7" />
                 </svg>
               </span>
-              <p className="mt-4 font-kai text-lg font-bold text-gold-light">支付成功</p>
-              <p className="mt-1 text-sm text-fg-secondary">姻缘天书已解锁，由玄天道长微信人工交付完整报告</p>
+              <p className="mt-4 font-kai text-lg font-bold text-gold-light">{isFree ? '领取成功' : '支付成功'}</p>
+              <p className="mt-1 text-sm text-fg-secondary">{isFree ? '限时免费已解锁，由玄天道长微信人工交付完整报告' : '姻缘天书已解锁，由玄天道长微信人工交付完整报告'}</p>
               {wecomUrl ? (
                 <>
                   <a href={wecomUrl} className="mt-6 w-full max-w-[280px]" rel="noopener noreferrer">
@@ -242,6 +251,19 @@ export default function PayPage() {
               )}
               <p className="mt-3 font-mono text-xs text-muted">{order?.orderNo ?? orderNo}</p>
             </div>
+          ) : showFreePending ? (
+            <div className="flex flex-col items-center py-4 text-center">
+              <p className="text-sm leading-relaxed text-fg-secondary">
+                限时免费 · 无需支付
+                <br />
+                正在解锁报告，请稍候…
+              </p>
+              <Link to={`/report/${orderNo}`} className="mt-6 block w-full max-w-[280px]">
+                <Button size="lg" variant="gold" className="w-full rounded-full text-base font-bold">
+                  添加企业微信 · 领取完整报告
+                </Button>
+              </Link>
+            </div>
           ) : showH5 ? (
             <div className="flex flex-col items-center py-4 text-center">
               <p className="text-sm leading-relaxed text-fg-secondary">
@@ -263,7 +285,7 @@ export default function PayPage() {
           ) : null}
         </div>
 
-        {!loading && !error && order && !isPaid && order.state === 'CREATED' ? (
+        {!loading && !error && order && !isPaid && !isFree && order.state === 'CREATED' ? (
           <p className="text-center text-xs text-muted">
             已支付？{' '}
             <button
